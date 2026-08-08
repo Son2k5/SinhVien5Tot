@@ -1,0 +1,79 @@
+@SV5T_Api_HostAddress = https://localhost:7080
+@registrationId = 00000000-0000-0000-0000-000000000000
+@resetId = 00000000-0000-0000-0000-000000000000
+@accessToken = replace-with-access-token
+
+POST {{SV5T_Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "2301140067@ms.hanu.edu.vn",
+  "password": "Password123"
+}
+
+###
+
+POST {{SV5T_Api_HostAddress}}/api/auth/verify-otp
+Content-Type: application/json
+
+{
+  "registrationId": "{{registrationId}}",
+  "otp": "000000"
+}
+
+###
+
+POST {{SV5T_Api_HostAddress}}/api/auth/resend-otp
+Content-Type: application/json
+
+{
+  "registrationId": "{{registrationId}}"
+}
+
+###
+
+POST {{SV5T_Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "2301140067@ms.hanu.edu.vn",
+  "password": "Password123"
+}
+
+###
+
+POST {{SV5T_Api_HostAddress}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "2301140067@ms.hanu.edu.vn"
+}
+
+###
+
+POST {{SV5T_Api_HostAddress}}/api/auth/verify-reset-otp
+Content-Type: application/json
+
+{
+  "resetId": "{{resetId}}",
+  "otp": "000000"
+}
+
+###
+
+POST {{SV5T_Api_HostAddress}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "resetId": "{{resetId}}",
+  "otp": "000000",
+  "newPassword": "NewPassword123"
+}
+
+###
+
+GET {{SV5T_Api_HostAddress}}/api/users/me
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
