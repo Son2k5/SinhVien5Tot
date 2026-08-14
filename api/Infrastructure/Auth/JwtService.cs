@@ -23,6 +23,8 @@ public sealed class JwtService(IOptions<JwtOptions> options) : IJwtService
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString("D")),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Jti, jti),
+            new Claim("sv", user.SecurityVersion.ToString(
+                System.Globalization.CultureInfo.InvariantCulture)),
             new Claim(ClaimTypes.Role, user.Role.ToString())
         };
         var credentials = new SigningCredentials(

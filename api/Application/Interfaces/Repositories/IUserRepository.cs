@@ -9,5 +9,13 @@ public interface IUserRepository
         string normalizedEmail,
         bool tracking = false,
         CancellationToken cancellationToken = default);
+    Task<User?> GetByIdWithProfileAsync(
+        Guid id,
+        bool tracking = false,
+        CancellationToken cancellationToken = default);
+    Task<bool> ExistsStudentCodeAsync(
+        string studentCode,
+        Guid excludeUserId,
+        CancellationToken cancellationToken = default);
     Task AddAsync(User user, CancellationToken cancellationToken = default);
 }

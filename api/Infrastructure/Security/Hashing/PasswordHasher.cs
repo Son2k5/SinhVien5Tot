@@ -1,7 +1,6 @@
-
 using SV5T.Application.Interfaces.Services.Commons;
 
-namespace SV5T.Infrastructure.Auth;
+namespace SV5T.Infrastructure.Security.Hashing;
 
 public sealed class PasswordHasher : IPasswordHasher
 {

@@ -15,6 +15,7 @@ using SV5T.Application.Validators;
 using SV5T.Domain.Entities;
 using SV5T.Domain.Enums;
 using SV5T.Infrastructure.Auth;
+using SV5T.Infrastructure.Security.Hashing;
 using SV5T.Infrastructure.Options.Authentication;
 using Xunit;
 
@@ -38,14 +39,34 @@ public sealed class AuthSecurityRegressionTests
         var service = CreateService(users, challenges, email, new FakeRedisStore());
 
         var registrationId = await service.RegisterAsync(
-            new RegisterRequest(existing.Email, "AttackerPassword123"));
+            new RegisterRequest("Nguyễn Minh Anh", existing.Email, "AttackerPassword123"));
 
         Assert.NotEqual(Guid.Empty, registrationId);
         Assert.Equal("original-hash", existing.PasswordHash);
         var challenge = Assert.Single(challenges.Items);
         Assert.Equal(registrationId, challenge.Id);
+        Assert.Equal("Nguyễn Minh Anh", challenge.DisplayName);
         Assert.Equal("hash:AttackerPassword123", challenge.PasswordHash);
         Assert.Single(email.Messages);
+    }
+
+    [Fact]
+    public async Task Register_RemovesChallengeWhenEmailQueueFails()
+    {
+        var challenges = new FakeChallengeRepository();
+        var service = CreateService(
+            new FakeUserRepository(),
+            challenges,
+            new FakeEmailQueue(failEnqueue: true),
+            new FakeRedisStore());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RegisterAsync(new RegisterRequest(
+                "Nguyễn Minh Anh",
+                "student@ms.hanu.edu.vn",
+                "ValidPassword123")));
+
+        Assert.Empty(challenges.Items);
     }
 
     [Fact]
@@ -74,6 +95,7 @@ public sealed class AuthSecurityRegressionTests
             new ResetPasswordRequest(challenge.Id, "123456", "NewPassword123"));
 
         Assert.Equal("hash:NewPassword123", user.PasswordHash);
+        Assert.Equal(2, user.SecurityVersion);
         Assert.Equal(user.Id, refreshTokens.RevokedUserId);
         Assert.DoesNotContain(challenge, challenges.Items);
     }
@@ -105,7 +127,7 @@ public sealed class AuthSecurityRegressionTests
     }
 
     [Fact]
-    public void Jwt_DoesNotContainSecurityVersionClaim()
+    public void Jwt_IsStatelessAndUsesConfiguredFifteenMinuteLifetime()
     {
         var service = new JwtService(
             Options.Create(new JwtOptions
@@ -116,18 +138,25 @@ public sealed class AuthSecurityRegressionTests
                 AccessTokenMinutes = 15
             }));
 
+        var before = DateTime.UtcNow;
         var generated = service.Generate(new User
         {
-            Email = "student@ms.hanu.edu.vn"
+            Email = "student@ms.hanu.edu.vn",
+            SecurityVersion = 3
         });
         var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
             .ReadJwtToken(generated.Token);
 
-        Assert.DoesNotContain(token.Claims, claim => claim.Type == "sv");
+        Assert.Contains(token.Claims, claim => claim.Type == "sv" && claim.Value == "3");
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == "fid");
+        Assert.InRange(
+            generated.ExpiresAtUtc,
+            before.AddMinutes(15).AddSeconds(-1),
+            before.AddMinutes(15).AddSeconds(1));
     }
 
     [Fact]
-    public async Task Refresh_RejectsRevokedSessionAndRevokesActiveSessions()
+    public async Task Refresh_ReuseRevokesEntireTokenFamily()
     {
         var user = new User
         {
@@ -137,15 +166,27 @@ public sealed class AuthSecurityRegressionTests
             IsActive = true
         };
         var redis = new FakeRedisStore();
-        var refreshTokens = new FakeRefreshTokenRepository(new RefreshToken
+        var familyId = Guid.NewGuid();
+        var reusedToken = new RefreshToken
         {
             Id = FakeRefreshTokenFactory.TokenId,
             UserId = user.Id,
+            FamilyId = familyId,
             Token = "refresh",
             IsRevoked = true,
             RevokedAtUtc = DateTime.UtcNow,
             ExpiresAtUtc = DateTime.UtcNow.AddDays(1)
-        });
+        };
+        var activeToken = new RefreshToken
+        {
+            UserId = user.Id,
+            FamilyId = familyId,
+            Token = "next-refresh",
+            ExpiresAtUtc = DateTime.UtcNow.AddDays(1)
+        };
+        var refreshTokens = new FakeRefreshTokenRepository(
+            reusedToken,
+            activeToken);
         var service = CreateService(
             new FakeUserRepository(user),
             new FakeChallengeRepository(),
@@ -156,7 +197,39 @@ public sealed class AuthSecurityRegressionTests
         await Assert.ThrowsAsync<UseCaseException>(() =>
             service.RefreshAsync("refresh"));
 
-        Assert.Equal(user.Id, refreshTokens.RevokedUserId);
+        Assert.True(activeToken.IsRevoked);
+    }
+
+    [Fact]
+    public async Task Refresh_RejectsExpiredToken()
+    {
+        var user = new User
+        {
+            Email = "student@ms.hanu.edu.vn",
+            NormalizedEmail = "STUDENT@MS.HANU.EDU.VN",
+            IsVerified = true,
+            IsActive = true
+        };
+        var refreshTokens = new FakeRefreshTokenRepository(new RefreshToken
+        {
+            Id = FakeRefreshTokenFactory.TokenId,
+            UserId = user.Id,
+            Token = "refresh",
+            ExpiresAtUtc = DateTime.UtcNow.AddMinutes(-1),
+            AbsoluteExpiresAtUtc = DateTime.UtcNow.AddDays(1)
+        });
+        var service = CreateService(
+            new FakeUserRepository(user),
+            new FakeChallengeRepository(),
+            new FakeEmailQueue(),
+            new FakeRedisStore(),
+            refreshTokens: refreshTokens);
+
+        var exception = await Assert.ThrowsAsync<UseCaseException>(() =>
+            service.RefreshAsync("refresh"));
+
+        Assert.Equal(ApplicationErrorKind.Unauthorized, exception.Kind);
+        Assert.Equal("invalid_session", exception.ErrorCode);
     }
 
     [Fact]
@@ -179,6 +252,108 @@ public sealed class AuthSecurityRegressionTests
     }
 
     [Fact]
+    public async Task Login_CreatesTokenFamilyWithCurrentActivity()
+    {
+        var user = new User
+        {
+            Email = "student@ms.hanu.edu.vn",
+            NormalizedEmail = "STUDENT@MS.HANU.EDU.VN",
+            PasswordHash = "hash:Password123",
+            IsVerified = true,
+            IsActive = true
+        };
+        var refreshTokens = new FakeRefreshTokenRepository();
+        var service = CreateService(
+            new FakeUserRepository(user),
+            new FakeChallengeRepository(),
+            new FakeEmailQueue(),
+            new FakeRedisStore(),
+            refreshTokens: refreshTokens);
+        var before = DateTime.UtcNow;
+
+        await service.LoginAsync(
+            new LoginRequest(user.Email, "Password123"),
+            "127.0.0.1");
+
+        var refreshToken = Assert.Single(refreshTokens.Items);
+        Assert.InRange(
+            refreshToken.LastUsedAtUtc,
+            before,
+            DateTime.UtcNow);
+        Assert.NotEqual(Guid.Empty, refreshToken.FamilyId);
+        Assert.Equal(refreshToken.ExpiresAtUtc, refreshToken.AbsoluteExpiresAtUtc);
+    }
+
+    [Fact]
+    public async Task Refresh_SucceedsBeforeIdleTimeoutAndUpdatesLastUsedTime()
+    {
+        var user = ActiveUser();
+        var lastActivity = DateTime.UtcNow.AddMinutes(-119);
+        var oldToken = ActiveRefreshToken(user, lastActivity);
+        var refreshTokens = new FakeRefreshTokenRepository(oldToken);
+        var service = CreateService(
+            new FakeUserRepository(user),
+            new FakeChallengeRepository(),
+            new FakeEmailQueue(),
+            new FakeRedisStore(),
+            refreshTokens: refreshTokens);
+
+        var beforeRefresh = DateTime.UtcNow;
+        var tokens = await service.RefreshAsync("refresh");
+
+        Assert.NotEmpty(tokens.AccessToken);
+        Assert.Equal(lastActivity, oldToken.LastUsedAtUtc);
+        Assert.True(oldToken.IsRevoked);
+        Assert.NotNull(oldToken.ReplacedByTokenId);
+        Assert.Contains(
+            refreshTokens.Items,
+            token => token.Id == oldToken.ReplacedByTokenId &&
+                     token.FamilyId == oldToken.FamilyId &&
+                     token.LastUsedAtUtc >= beforeRefresh &&
+                     token.LastUsedAtUtc <= DateTime.UtcNow &&
+                     !token.IsRevoked);
+    }
+
+    [Fact]
+    public async Task Refresh_RejectsAndRevokesFamilyAfterTwoHoursIdle()
+    {
+        var user = ActiveUser();
+        var refreshToken = ActiveRefreshToken(
+            user,
+            DateTime.UtcNow.AddHours(-2).AddSeconds(-1));
+        var service = CreateService(
+            new FakeUserRepository(user),
+            new FakeChallengeRepository(),
+            new FakeEmailQueue(),
+            new FakeRedisStore(),
+            refreshTokens: new FakeRefreshTokenRepository(refreshToken));
+
+        var exception = await Assert.ThrowsAsync<UseCaseException>(
+            () => service.RefreshAsync("refresh"));
+
+        Assert.Equal("idle_timeout", exception.ErrorCode);
+        Assert.True(refreshToken.IsRevoked);
+    }
+
+    [Fact]
+    public async Task Logout_RevokesWholeTokenFamily()
+    {
+        var user = ActiveUser();
+        var refreshToken = ActiveRefreshToken(user, DateTime.UtcNow);
+        var refreshTokens = new FakeRefreshTokenRepository(refreshToken);
+        var service = CreateService(
+            new FakeUserRepository(user),
+            new FakeChallengeRepository(),
+            new FakeEmailQueue(),
+            new FakeRedisStore(),
+            refreshTokens: refreshTokens);
+
+        await service.LogoutAsync(user.Id, "refresh");
+
+        Assert.True(refreshToken.IsRevoked);
+    }
+
+    [Fact]
     public async Task Validators_RejectNullAndOversizedSecurityInputs()
     {
         var school = new AllowSchoolEmailValidator();
@@ -188,9 +363,10 @@ public sealed class AuthSecurityRegressionTests
         var reset = new ResetPasswordRequestValidator();
 
         Assert.False((await register.ValidateAsync(
-            new RegisterRequest("student@ms.hanu.edu.vn", null!))).IsValid);
+            new RegisterRequest("Nguyễn Minh Anh", "student@ms.hanu.edu.vn", null!))).IsValid);
         Assert.False((await register.ValidateAsync(
             new RegisterRequest(
+                "Nguyễn Minh Anh",
                 "student@ms.hanu.edu.vn",
                 new string('A', 129) + "1"))).IsValid);
         Assert.False((await verify.ValidateAsync(
@@ -229,27 +405,75 @@ public sealed class AuthSecurityRegressionTests
         IEmailQueue email,
         FakeRedisStore redis,
         IPasswordHasher? passwordHasher = null,
-        FakeRefreshTokenRepository? refreshTokens = null) =>
-        new(
+        FakeRefreshTokenRepository? refreshTokens = null)
+    {
+        var refreshRepository = refreshTokens ?? new FakeRefreshTokenRepository();
+        var unitOfWork = new FakeUnitOfWork();
+        var password = passwordHasher ?? new FakePasswordHasher();
+        var otp = new FakeOtpService();
+        var sha = new FakeSha256Hasher();
+        var registration = new RegistrationService(
             users,
-            refreshTokens ?? new FakeRefreshTokenRepository(),
             challenges,
-            new FakeUnitOfWork(),
-            passwordHasher ?? new FakePasswordHasher(),
-            new FakeOtpService(),
-            new FakeSha256Hasher(),
+            unitOfWork,
+            password,
+            otp,
+            redis,
+            email,
+            new RegisterRequestValidator(new AllowSchoolEmailValidator()),
+            new VerifyOtpRequestValidator(),
+            new ResendOtpRequestValidator());
+        var tokens = new TokenService(
+            users,
+            refreshRepository,
+            unitOfWork,
+            password,
+            sha,
             redis,
             new FakeJwtService(),
             new FakeRefreshTokenFactory(),
+            new LoginRequestValidator());
+        var reset = new PasswordResetService(
+            users,
+            refreshRepository,
+            challenges,
+            unitOfWork,
+            password,
+            otp,
+            sha,
+            redis,
             email,
-            NullLogger<AuthService>.Instance,
-            new RegisterRequestValidator(new AllowSchoolEmailValidator()),
-            new LoginRequestValidator(),
-            new VerifyOtpRequestValidator(),
-            new ResendOtpRequestValidator(),
+            NullLogger<PasswordResetService>.Instance,
             new ForgotPasswordRequestValidator(),
             new VerifyResetOtpRequestValidator(),
             new ResetPasswordRequestValidator());
+        return new AuthService(registration, tokens, reset);
+    }
+
+    private static User ActiveUser() =>
+        new()
+        {
+            Email = "student@ms.hanu.edu.vn",
+            NormalizedEmail = "STUDENT@MS.HANU.EDU.VN",
+            PasswordHash = "hash:Password123",
+            IsVerified = true,
+            IsActive = true
+        };
+
+    private static RefreshToken ActiveRefreshToken(
+        User user,
+        DateTime lastUsedAtUtc) =>
+        new()
+        {
+            Id = FakeRefreshTokenFactory.TokenId,
+            UserId = user.Id,
+            FamilyId = Guid.NewGuid(),
+            Token = "refresh",
+            CreatedAtUtc = DateTime.UtcNow.AddMinutes(-10),
+            LastUsedAtUtc = lastUsedAtUtc,
+            ExpiresAtUtc = DateTime.UtcNow.AddDays(1),
+            AbsoluteExpiresAtUtc = DateTime.UtcNow.AddDays(1)
+        };
 
     private static AuthChallengeData PasswordResetChallenge(User user)
     {
@@ -259,6 +483,7 @@ public sealed class AuthSecurityRegressionTests
             AuthChallengePurpose.PasswordReset,
             user.Email,
             user.NormalizedEmail,
+            null,
             null,
             "otp:123456",
             0,
@@ -298,7 +523,7 @@ public sealed class AuthSecurityRegressionTests
 
     private sealed class FakeOtpService : IOtpService
     {
-        public int ExpiryMinutes => 3;
+        public TimeSpan Expiry => TimeSpan.FromMinutes(3);
         public int MaxAttempts => 5;
         public string Generate() => "123456";
         public string Hash(string otp) => $"otp:{otp}";
@@ -328,6 +553,19 @@ public sealed class AuthSecurityRegressionTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(items.FirstOrDefault(
                 user => user.NormalizedEmail == normalizedEmail));
+
+        public Task<User?> GetByIdWithProfileAsync(
+            Guid id,
+            bool tracking = false,
+            CancellationToken cancellationToken = default) =>
+            GetByIdAsync(id, cancellationToken);
+
+        public Task<bool> ExistsStudentCodeAsync(
+            string studentCode,
+            Guid excludeUserId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(items.Any(user => user.Id != excludeUserId &&
+                user.Profile?.StudentCode == studentCode));
 
         public Task AddAsync(
             User user,
@@ -429,7 +667,7 @@ public sealed class AuthSecurityRegressionTests
             CancellationToken cancellationToken = default) => operation(cancellationToken);
     }
 
-    private sealed class FakeEmailQueue : IEmailQueue
+    private sealed class FakeEmailQueue(bool failEnqueue = false) : IEmailQueue
     {
         public List<EmailMessage> Messages { get; } = [];
 
@@ -437,6 +675,10 @@ public sealed class AuthSecurityRegressionTests
             EmailMessage message,
             CancellationToken cancellationToken = default)
         {
+            if (failEnqueue)
+            {
+                throw new InvalidOperationException("Email queue unavailable.");
+            }
             Messages.Add(message);
             return Task.FromResult(Guid.NewGuid());
         }
@@ -450,12 +692,8 @@ public sealed class AuthSecurityRegressionTests
             Task.FromResult(false);
         public Task RecordLoginFailureAsync(string email, string ipAddress) =>
             Task.CompletedTask;
-        public Task ClearLoginFailuresAsync(string email, string ipAddress) =>
+        public Task ClearAccountLoginFailuresAsync(string email) =>
             Task.CompletedTask;
-        public Task BlacklistAccessTokenAsync(string jti, TimeSpan remainingLifetime) =>
-            Task.CompletedTask;
-        public Task<bool> IsAccessTokenBlacklistedAsync(string jti) =>
-            Task.FromResult(false);
     }
 
     private sealed class FakeJwtService : IJwtService
@@ -466,11 +704,24 @@ public sealed class AuthSecurityRegressionTests
 
     private sealed class FakeRefreshTokenFactory : IRefreshTokenFactory
     {
+        public TimeSpan IdleTimeout => TimeSpan.FromHours(2);
+
         public static readonly Guid TokenId = Guid.Parse(
             "11111111-1111-1111-1111-111111111111");
 
-        public GeneratedRefreshToken Generate() =>
-            new(TokenId, "refresh", "refresh", DateTime.UtcNow.AddDays(7));
+        public GeneratedRefreshToken Generate(
+            bool isPersistent,
+            DateTime? absoluteExpiresAtUtc = null)
+        {
+            var absoluteExpiry = absoluteExpiresAtUtc ?? DateTime.UtcNow.AddDays(7);
+            return new GeneratedRefreshToken(
+                Guid.NewGuid(),
+                "refresh",
+                "refresh",
+                absoluteExpiry,
+                absoluteExpiry,
+                isPersistent);
+        }
         public bool TryGetTokenId(string rawToken, out Guid tokenId)
         {
             tokenId = TokenId;
@@ -481,20 +732,20 @@ public sealed class AuthSecurityRegressionTests
     private sealed class FakeRefreshTokenRepository(params RefreshToken[] tokens)
         : IRefreshTokenRepository
     {
-        private readonly List<RefreshToken> items = [.. tokens];
+        public List<RefreshToken> Items { get; } = [.. tokens];
 
         public Guid? RevokedUserId { get; private set; }
 
         public Task<RefreshToken?> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default) =>
-            Task.FromResult(items.FirstOrDefault(token => token.Id == id));
+            Task.FromResult(Items.FirstOrDefault(token => token.Id == id));
 
         public Task AddAsync(
             RefreshToken refreshToken,
             CancellationToken cancellationToken = default)
         {
-            items.Add(refreshToken);
+            Items.Add(refreshToken);
             return Task.CompletedTask;
         }
 
@@ -503,14 +754,14 @@ public sealed class AuthSecurityRegressionTests
             Guid userId,
             string tokenHash,
             DateTime revokedAtUtc,
+            Guid? replacedByTokenId = null,
             CancellationToken cancellationToken = default)
         {
-            var token = items.FirstOrDefault(item =>
+            var token = Items.FirstOrDefault(item =>
                 item.Id == id &&
                 item.UserId == userId &&
                 item.Token == tokenHash &&
-                !item.IsRevoked &&
-                item.ExpiresAtUtc > revokedAtUtc);
+                !item.IsRevoked);
             if (token is null)
             {
                 return Task.FromResult(0);
@@ -518,6 +769,7 @@ public sealed class AuthSecurityRegressionTests
 
             token.IsRevoked = true;
             token.RevokedAtUtc = revokedAtUtc;
+            token.ReplacedByTokenId = replacedByTokenId;
             return Task.FromResult(1);
         }
 
@@ -528,8 +780,28 @@ public sealed class AuthSecurityRegressionTests
         {
             RevokedUserId = userId;
             var changed = 0;
-            foreach (var token in items.Where(
+            foreach (var token in Items.Where(
                          token => token.UserId == userId && !token.IsRevoked))
+            {
+                token.IsRevoked = true;
+                token.RevokedAtUtc = revokedAtUtc;
+                changed++;
+            }
+            return Task.FromResult(changed);
+        }
+
+        public Task<int> RevokeFamilyAsync(
+            Guid familyId,
+            Guid userId,
+            DateTime revokedAtUtc,
+            CancellationToken cancellationToken = default)
+        {
+            var changed = 0;
+            foreach (var token in Items.Where(
+                         token =>
+                             token.FamilyId == familyId &&
+                             token.UserId == userId &&
+                             !token.IsRevoked))
             {
                 token.IsRevoked = true;
                 token.RevokedAtUtc = revokedAtUtc;

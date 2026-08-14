@@ -54,7 +54,7 @@ function useReveal() {
   }, []);
 }
 
-export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
+export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -94,10 +94,8 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
             </div>
           </nav>
           <div className="site-nav__actions">
-            <Link to={isAuthenticated ? '/dashboard' : '/login'} className="button button--ghost">
-              {isAuthenticated ? 'Hồ sơ của tôi' : 'Đăng nhập'}
-            </Link>
-            {!isAuthenticated && <Link to="/register" className="button button--primary">Đăng ký ngay <Icon name="arrow-right" /></Link>}
+            <Link to="/login" className="button button--ghost">Đăng nhập</Link>
+            <Link to="/register" className="button button--primary">Đăng ký ngay <Icon name="arrow-right" /></Link>
           </div>
           <button className="menu-button" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Mở menu" aria-expanded={mobileOpen}>
             <Icon name={mobileOpen ? 'x' : 'menu'} />
@@ -116,7 +114,7 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
               <h1>Biến nỗ lực hôm nay thành <span className="hero-title-dark">dấu ấn</span><br /><span>Sinh viên 5 Tốt</span></h1>
               <p>Một không gian số để bạn quản lý hồ sơ, nhìn rõ tiến độ và kết nối mọi dấu mốc rèn luyện — trực quan, minh bạch và đầy cảm hứng.</p>
               <div className="landing-hero__actions">
-                <Link to={isAuthenticated ? '/dashboard' : '/register'} className="button button--primary button--large">Bắt đầu hành trình <Icon name="arrow-right" /></Link>
+                <Link to="/register" className="button button--primary button--large">Bắt đầu hành trình <Icon name="arrow-right" /></Link>
                 <a href="#gioi-thieu" className="button button--soft button--large"><span className="play-dot"><Icon name="play" /></span> Khám phá thêm</a>
               </div>
               <div className="hero-trust">

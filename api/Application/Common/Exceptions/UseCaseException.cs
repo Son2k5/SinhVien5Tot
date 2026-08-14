@@ -3,8 +3,9 @@ namespace SV5T.Application.Common.Exceptions;
 public sealed class UseCaseException(
     ApplicationErrorKind kind,
     string publicMessage,
-    string? errorCode = null)
-    : Exception("A handled application error occurred.")
+    string? errorCode = null,
+    Exception? innerException = null)
+    : Exception("A handled application error occurred.", innerException)
 {
     public ApplicationErrorKind Kind { get; } = kind;
 

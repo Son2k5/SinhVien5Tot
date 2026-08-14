@@ -1,11 +1,14 @@
-namespace SV5T.Configuration;
+namespace SV5T.Infrastructure.Configuration;
 
-internal static class DotEnvLoader
+/// <summary>
+/// Loads local API configuration from an untracked .env file before the
+/// standard ASP.NET Core configuration pipeline is created.
+/// </summary>
+public static class DotEnvLoader
 {
-    public static void LoadBackendEnvironment()
+    public static void LoadBackendEnvironment(string? contentRoot = null)
     {
-        var workingDirectory = Directory.GetCurrentDirectory();
-        var envPath = ResolveEnvPath(workingDirectory);
+        var envPath = ResolveEnvPath(contentRoot ?? Directory.GetCurrentDirectory());
         if (envPath is null)
         {
             return;
@@ -33,8 +36,9 @@ internal static class DotEnvLoader
             var key = line[..separator].Trim();
             var value = Unquote(line[(separator + 1)..].Trim());
 
-            // Empty template values deliberately fall back to appsettings or
-            // User Secrets. Real process environment variables keep priority.
+            // Process-level variables (for example, values injected by a
+            // production secret manager) always have higher priority. Empty
+            // local values fall through to User Secrets or other providers.
             if (key.Length == 0 || value.Length == 0 ||
                 Environment.GetEnvironmentVariable(key) is not null)
             {
@@ -45,24 +49,23 @@ internal static class DotEnvLoader
         }
     }
 
-    private static string? ResolveEnvPath(string workingDirectory)
+    private static string? ResolveEnvPath(string contentRoot)
     {
-        var repositoryApiDirectory = Path.Combine(workingDirectory, "api");
+        if (File.Exists(Path.Combine(contentRoot, "SV5T.Api.csproj")))
+        {
+            return ExistingPath(Path.Combine(contentRoot, ".env"));
+        }
+
+        var repositoryApiDirectory = Path.Combine(contentRoot, "api");
         if (File.Exists(Path.Combine(repositoryApiDirectory, "SV5T.Api.csproj")))
         {
-            var repositoryEnv = Path.Combine(repositoryApiDirectory, ".env");
-            return File.Exists(repositoryEnv) ? repositoryEnv : null;
+            return ExistingPath(Path.Combine(repositoryApiDirectory, ".env"));
         }
 
-        if (File.Exists(Path.Combine(workingDirectory, "SV5T.Api.csproj")))
-        {
-            var projectEnv = Path.Combine(workingDirectory, ".env");
-            return File.Exists(projectEnv) ? projectEnv : null;
-        }
-
-        var publishedEnv = Path.Combine(AppContext.BaseDirectory, ".env");
-        return File.Exists(publishedEnv) ? publishedEnv : null;
+        return ExistingPath(Path.Combine(AppContext.BaseDirectory, ".env"));
     }
+
+    private static string? ExistingPath(string path) => File.Exists(path) ? path : null;
 
     private static string Unquote(string value)
     {

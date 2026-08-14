@@ -1,6 +1,9 @@
 using System.Globalization;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Interfaces.Services.Auth;
 using SV5T.Application.Models.Auth;
 using SV5T.Domain.Enums;
@@ -8,22 +11,35 @@ using SV5T.Infrastructure.Options.Integrations;
 
 namespace SV5T.Infrastructure.Auth;
 
-public sealed class RedisAuthChallengeStore(
+internal sealed class RedisAuthChallengeStore(
     IConnectionMultiplexer connection,
-    IOptions<RedisOptions> options) : IAuthChallengeStore
+    IAuthChallengePayloadProtector payloadProtector,
+    IOptions<RedisOptions> options,
+    ILogger<RedisAuthChallengeStore> logger) : IAuthChallengeStore
 {
-    private static readonly TimeSpan ExpiredChallengeRetention = TimeSpan.FromHours(1);
+    private sealed record SensitivePayload(
+        string Email,
+        string NormalizedEmail,
+        string? DisplayName,
+        string? PasswordHash);
+
     private readonly IDatabase database = connection.GetDatabase();
     private readonly string keyPrefix = options.Value.KeyPrefix;
-
-    private RedisKey Key(Guid id) => $"{keyPrefix}auth:challenge:{id:N}";
 
     public async Task<AuthChallengeData?> GetAsync(
         Guid id,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var entries = await database.HashGetAllAsync(Key(id));
+        HashEntry[] entries;
+        try
+        {
+            entries = await database.HashGetAllAsync(Key(id));
+        }
+        catch (RedisException exception)
+        {
+            throw RedisUnavailable(exception);
+        }
         if (entries.Length == 0)
         {
             return null;
@@ -33,13 +49,25 @@ public sealed class RedisAuthChallengeStore(
             entry => entry.Name.ToString(),
             entry => entry.Value.ToString(),
             StringComparer.Ordinal);
-        if (!TryParse(values, id, out var challenge))
+        try
+        {
+            if (!TryParse(values, id, out var challenge))
+            {
+                throw new InvalidOperationException(
+                    "Redis authentication challenge is malformed.");
+            }
+
+            return challenge;
+        }
+        catch (Exception exception) when (exception is not RedisException)
         {
             await database.KeyDeleteAsync(Key(id));
+            logger.LogError(
+                exception,
+                "Removed malformed authentication challenge {ChallengeId} from Redis.",
+                id);
             return null;
         }
-
-        return challenge;
     }
 
     public async Task StoreAsync(
@@ -47,40 +75,52 @@ public sealed class RedisAuthChallengeStore(
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var ttlSeconds = RetentionSeconds(challenge.ExpiresAtUtc);
+        var sensitivePayload = new SensitivePayload(
+            challenge.Email,
+            challenge.NormalizedEmail,
+            challenge.DisplayName,
+            challenge.PasswordHash);
+        var protectedPayload = payloadProtector.Protect(
+            JsonSerializer.Serialize(sensitivePayload));
+
         const string script = """
             if redis.call('EXISTS', KEYS[1]) == 1 then return 0 end
             redis.call('HSET', KEYS[1],
                 'purpose', ARGV[1],
-                'email', ARGV[2],
-                'normalizedEmail', ARGV[3],
-                'passwordHash', ARGV[4],
-                'otpHash', ARGV[5],
-                'failedAttempts', ARGV[6],
-                'maxAttempts', ARGV[7],
-                'expiresAt', ARGV[8],
-                'createdAt', ARGV[9])
-            redis.call('EXPIRE', KEYS[1], ARGV[10])
+                'payload', ARGV[2],
+                'otpHash', ARGV[3],
+                'failedAttempts', ARGV[4],
+                'maxAttempts', ARGV[5],
+                'expiresAt', ARGV[6],
+                'createdAt', ARGV[7])
+            redis.call('EXPIRE', KEYS[1], ARGV[8])
             return 1
             """;
-        var stored = (long)await database.ScriptEvaluateAsync(
-            script,
-            [Key(challenge.Id)],
-            [
-                (int)challenge.Purpose,
-                challenge.Email,
-                challenge.NormalizedEmail,
-                challenge.PasswordHash ?? string.Empty,
-                challenge.OtpHash,
-                challenge.FailedAttempts,
-                challenge.MaxAttempts,
-                ToUnixMilliseconds(challenge.ExpiresAtUtc),
-                ToUnixMilliseconds(challenge.CreatedAtUtc),
-                ttlSeconds
-            ]);
+        long stored;
+        try
+        {
+            stored = (long)await database.ScriptEvaluateAsync(
+                script,
+                [Key(challenge.Id)],
+                [
+                    (int)challenge.Purpose,
+                    protectedPayload,
+                    challenge.OtpHash,
+                    challenge.FailedAttempts,
+                    challenge.MaxAttempts,
+                    ToUnixMilliseconds(challenge.ExpiresAtUtc),
+                    ToUnixMilliseconds(challenge.CreatedAtUtc),
+                    TtlSeconds(challenge.ExpiresAtUtc)
+                ]);
+        }
+        catch (RedisException exception)
+        {
+            throw RedisUnavailable(exception);
+        }
         if (stored != 1)
         {
-            throw new InvalidOperationException("Authentication challenge id already exists.");
+            throw new InvalidOperationException(
+                "Authentication challenge id already exists.");
         }
     }
 
@@ -89,7 +129,14 @@ public sealed class RedisAuthChallengeStore(
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        await database.KeyDeleteAsync(Key(id));
+        try
+        {
+            await database.KeyDeleteAsync(Key(id));
+        }
+        catch (RedisException exception)
+        {
+            throw RedisUnavailable(exception);
+        }
     }
 
     public async Task<int> IncrementFailureAsync(
@@ -109,10 +156,17 @@ public sealed class RedisAuthChallengeStore(
                not attempts or not maximum or attempts >= maximum then return -1 end
             return redis.call('HINCRBY', KEYS[1], 'failedAttempts', 1)
             """;
-        return (int)(long)await database.ScriptEvaluateAsync(
-            script,
-            [Key(id)],
-            [(int)purpose, ToUnixMilliseconds(nowUtc)]);
+        try
+        {
+            return (int)(long)await database.ScriptEvaluateAsync(
+                script,
+                [Key(id)],
+                [(int)purpose, ToUnixMilliseconds(nowUtc)]);
+        }
+        catch (RedisException exception)
+        {
+            throw RedisUnavailable(exception);
+        }
     }
 
     public async Task<bool> TryConsumeAsync(
@@ -134,11 +188,18 @@ public sealed class RedisAuthChallengeStore(
                not attempts or not maximum or attempts >= maximum then return 0 end
             return redis.call('DEL', KEYS[1])
             """;
-        var consumed = (long)await database.ScriptEvaluateAsync(
-            script,
-            [Key(id)],
-            [(int)purpose, expectedOtpHash, ToUnixMilliseconds(consumedAtUtc)]);
-        return consumed == 1;
+        try
+        {
+            var consumed = (long)await database.ScriptEvaluateAsync(
+                script,
+                [Key(id)],
+                [(int)purpose, expectedOtpHash, ToUnixMilliseconds(consumedAtUtc)]);
+            return consumed == 1;
+        }
+        catch (RedisException exception)
+        {
+            throw RedisUnavailable(exception);
+        }
     }
 
     public async Task<bool> TryReplaceOtpAsync(
@@ -161,20 +222,27 @@ public sealed class RedisAuthChallengeStore(
             redis.call('EXPIRE', KEYS[1], ARGV[5])
             return 1
             """;
-        var replaced = (long)await database.ScriptEvaluateAsync(
-            script,
-            [Key(id)],
-            [
-                (int)purpose,
-                otpHash,
-                ToUnixMilliseconds(expiresAtUtc),
-                ToUnixMilliseconds(updatedAtUtc),
-                RetentionSeconds(expiresAtUtc)
-            ]);
-        return replaced == 1;
+        try
+        {
+            var replaced = (long)await database.ScriptEvaluateAsync(
+                script,
+                [Key(id)],
+                [
+                    (int)purpose,
+                    otpHash,
+                    ToUnixMilliseconds(expiresAtUtc),
+                    ToUnixMilliseconds(updatedAtUtc),
+                    TtlSeconds(expiresAtUtc)
+                ]);
+            return replaced == 1;
+        }
+        catch (RedisException exception)
+        {
+            throw RedisUnavailable(exception);
+        }
     }
 
-    private static bool TryParse(
+    private bool TryParse(
         IReadOnlyDictionary<string, string> values,
         Guid id,
         out AuthChallengeData? challenge)
@@ -182,8 +250,7 @@ public sealed class RedisAuthChallengeStore(
         challenge = null;
         if (!TryGetInt(values, "purpose", out var purpose) ||
             !Enum.IsDefined(typeof(AuthChallengePurpose), purpose) ||
-            !values.TryGetValue("email", out var email) ||
-            !values.TryGetValue("normalizedEmail", out var normalizedEmail) ||
+            !values.TryGetValue("payload", out var protectedPayload) ||
             !values.TryGetValue("otpHash", out var otpHash) ||
             !TryGetInt(values, "failedAttempts", out var failedAttempts) ||
             !TryGetInt(values, "maxAttempts", out var maxAttempts) ||
@@ -193,13 +260,22 @@ public sealed class RedisAuthChallengeStore(
             return false;
         }
 
-        values.TryGetValue("passwordHash", out var passwordHash);
+        var payload = JsonSerializer.Deserialize<SensitivePayload>(
+            payloadProtector.Unprotect(protectedPayload));
+        if (payload is null ||
+            string.IsNullOrWhiteSpace(payload.Email) ||
+            string.IsNullOrWhiteSpace(payload.NormalizedEmail))
+        {
+            return false;
+        }
+
         challenge = new AuthChallengeData(
             id,
             (AuthChallengePurpose)purpose,
-            email,
-            normalizedEmail,
-            string.IsNullOrEmpty(passwordHash) ? null : passwordHash,
+            payload.Email,
+            payload.NormalizedEmail,
+            payload.DisplayName,
+            payload.PasswordHash,
             otpHash,
             failedAttempts,
             maxAttempts,
@@ -207,6 +283,9 @@ public sealed class RedisAuthChallengeStore(
             createdAtUtc);
         return true;
     }
+
+    private RedisKey Key(Guid id) =>
+        $"{keyPrefix}auth:challenge:{id:N}";
 
     private static bool TryGetInt(
         IReadOnlyDictionary<string, string> values,
@@ -229,15 +308,23 @@ public sealed class RedisAuthChallengeStore(
     {
         value = default;
         return values.TryGetValue(name, out var raw) &&
-               long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var unixMs) &&
-               TryFromUnixMilliseconds(unixMs, out value);
+               long.TryParse(
+                   raw,
+                   NumberStyles.Integer,
+                   CultureInfo.InvariantCulture,
+                   out var unixMilliseconds) &&
+               TryFromUnixMilliseconds(unixMilliseconds, out value);
     }
 
-    private static bool TryFromUnixMilliseconds(long unixMs, out DateTime value)
+    private static bool TryFromUnixMilliseconds(
+        long unixMilliseconds,
+        out DateTime value)
     {
         try
         {
-            value = DateTimeOffset.FromUnixTimeMilliseconds(unixMs).UtcDateTime;
+            value = DateTimeOffset
+                .FromUnixTimeMilliseconds(unixMilliseconds)
+                .UtcDateTime;
             return true;
         }
         catch (ArgumentOutOfRangeException)
@@ -251,10 +338,15 @@ public sealed class RedisAuthChallengeStore(
         new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc))
             .ToUnixTimeMilliseconds();
 
-    private static long RetentionSeconds(DateTime expiresAtUtc) =>
+    private static long TtlSeconds(DateTime expiresAtUtc) =>
         Math.Max(
             1,
-            (long)Math.Ceiling(
-                (expiresAtUtc - DateTime.UtcNow + ExpiredChallengeRetention)
-                .TotalSeconds));
+            (long)Math.Ceiling((expiresAtUtc - DateTime.UtcNow).TotalSeconds));
+
+    private static UseCaseException RedisUnavailable(RedisException exception) =>
+        new(
+            ApplicationErrorKind.Unavailable,
+            "Dịch vụ xác thực OTP đang tạm thời gián đoạn. Vui lòng thử lại sau.",
+            "auth_challenge_store_unavailable",
+            exception);
 }

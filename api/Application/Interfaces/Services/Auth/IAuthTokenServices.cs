@@ -10,7 +10,11 @@ public interface IJwtService
 
 public interface IRefreshTokenFactory
 {
-    GeneratedRefreshToken Generate();
+    TimeSpan IdleTimeout { get; }
+
+    GeneratedRefreshToken Generate(
+        bool isPersistent,
+        DateTime? absoluteExpiresAtUtc = null);
     bool TryGetTokenId(string rawToken, out Guid tokenId);
 }
 

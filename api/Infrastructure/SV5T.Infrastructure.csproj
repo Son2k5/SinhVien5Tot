@@ -19,6 +19,7 @@
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.29.2" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
     <ProjectReference Include="..\Application\SV5T.Application.csproj" />
     <ProjectReference Include="..\Domain\SV5T.Domain.csproj" />

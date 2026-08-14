@@ -26,6 +26,8 @@ public sealed class EmailSettings
 
     public int MaxDeliveryAttempts { get; set; } = 3;
 
+    public int MaxPendingMessages { get; set; } = 10_000;
+
     public int DeadLetterRetentionDays { get; set; } = 30;
 
     public int DeadLetterMaxLength { get; set; } = 1_000;

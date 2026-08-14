@@ -11,8 +11,16 @@ public sealed class RefreshTokenFactory(
     ISha256Hasher sha256Hasher,
     IOptions<JwtOptions> options) : IRefreshTokenFactory
 {
-    public GeneratedRefreshToken Generate()
+    public TimeSpan IdleTimeout =>
+        TimeSpan.FromMinutes(options.Value.RefreshTokenIdleMinutes);
+
+    public GeneratedRefreshToken Generate(
+        bool isPersistent,
+        DateTime? absoluteExpiresAtUtc = null)
     {
+        var now = DateTime.UtcNow;
+        var absoluteExpiry = absoluteExpiresAtUtc ??
+            now.AddDays(options.Value.RefreshTokenDays);
         var tokenId = Guid.NewGuid();
         var secret = WebEncoders.Base64UrlEncode(
             RandomNumberGenerator.GetBytes(32));
@@ -21,7 +29,9 @@ public sealed class RefreshTokenFactory(
             tokenId,
             rawToken,
             sha256Hasher.HashToken(rawToken),
-            DateTime.UtcNow.AddDays(options.Value.RefreshTokenDays));
+            absoluteExpiry,
+            absoluteExpiry,
+            isPersistent);
     }
 
     public bool TryGetTokenId(string rawToken, out Guid tokenId)

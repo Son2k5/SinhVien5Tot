@@ -19,8 +19,6 @@ public interface IAuthService
     Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
     Task LogoutAsync(
         Guid userId,
-        string jti,
-        DateTime accessTokenExpiresAtUtc,
         string? refreshToken,
         CancellationToken cancellationToken = default);
 }

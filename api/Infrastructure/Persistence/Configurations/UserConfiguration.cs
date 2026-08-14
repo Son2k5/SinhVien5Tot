@@ -19,6 +19,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.Property(user => user.DisplayName).HasMaxLength(100);
+
         builder.Property(user => user.PasswordHash)
             .HasMaxLength(255)
             .IsRequired();
@@ -28,6 +30,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.AvatarResourceType).HasMaxLength(50);
         builder.Property(user => user.CreatedBy).HasMaxLength(100);
         builder.Property(user => user.UpdatedBy).HasMaxLength(100);
+        builder.Property(user => user.SecurityVersion).HasDefaultValue(1);
         builder.HasIndex(user => user.NormalizedEmail).IsUnique();
     }
 }

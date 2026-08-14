@@ -13,7 +13,7 @@ public sealed class UserAddressConfiguration : IEntityTypeConfiguration<UserAddr
 
         builder.Property(address => address.ProvinceOrCity).HasMaxLength(255).IsRequired();
         builder.Property(address => address.District).HasMaxLength(255).IsRequired();
-        builder.Property(address => address.StreetAddress).HasMaxLength(500).IsRequired();
+        builder.Property(address => address.StreetAddress).HasMaxLength(4096).IsRequired();
 
         builder.HasIndex(address => new { address.UserId, address.AddressType }).IsUnique();
 

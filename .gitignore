@@ -10,7 +10,8 @@ dist/
 
 # Env
 .env
-.env.local
+.env.*
+!.env.example
 
 # Local configuration and IDE
 appsettings.Local.json
@@ -19,3 +20,11 @@ appsettings.Local.json
 .agents/
 .data-protection-keys/
 .api-runtime*.log
+
+# Private keys and local backups
+*.pfx
+*.p12
+*.key
+backups/
+*.sql
+*.rdb

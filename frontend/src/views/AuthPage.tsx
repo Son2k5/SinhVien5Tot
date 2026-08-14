@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { AuthView, LoginPayload, RegisterPayload, User } from '../types/auth';
 import { LoginForm } from '../components/auth/LoginForm';
 import { RegisterForm } from '../components/auth/RegisterForm';
@@ -43,6 +43,7 @@ const slides = [
 
 export function AuthPage({ view, onLoginSuccess }: AuthPageProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [slide, setSlide] = useState(0);
   const [otpOpen, setOtpOpen] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
@@ -51,6 +52,7 @@ export function AuthPage({ view, onLoginSuccess }: AuthPageProps) {
   const [registrationId, setRegistrationId] = useState('');
   const [resetId, setResetId] = useState('');
   const [verifiedResetOtp, setVerifiedResetOtp] = useState('');
+  const sessionEndReason = searchParams.get('reason');
 
   useEffect(() => {
     const interval = window.setInterval(
@@ -228,6 +230,14 @@ export function AuthPage({ view, onLoginSuccess }: AuthPageProps) {
             <div className="auth-card__eyebrow">
               <span /> Cổng sinh viên trực tuyến
             </div>
+            {view === 'login' && sessionEndReason && (
+              <div className="auth-message auth-message--notice" role="status">
+                <Icon name="shield" />
+                <span>{sessionEndReason === 'inactive'
+                  ? 'Phiên đăng nhập đã kết thúc sau 2 giờ không hoạt động. Vui lòng đăng nhập lại.'
+                  : 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'}</span>
+              </div>
+            )}
             {view === 'login' && (
               <LoginForm onLogin={handleLogin} onSwitchView={switchView} />
             )}

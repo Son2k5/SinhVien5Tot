@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Email;
 using SV5T.Application.Interfaces.Services.Email;
 using SV5T.Application.Models.Email;
@@ -17,7 +18,7 @@ internal sealed record QueuedEmail(
     EmailMessage Message,
     string ProtectedPayload);
 
-public sealed class RedisEmailQueue : IEmailQueue
+internal sealed class RedisEmailQueue : IEmailQueue
 {
     private const string ConsumerGroup = "email-workers";
     private static readonly RedisValue Beginning = "0-0";
@@ -58,20 +59,45 @@ public sealed class RedisEmailQueue : IEmailQueue
         ArgumentException.ThrowIfNullOrWhiteSpace(message.Body);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var id = Guid.NewGuid();
-        var normalized = message with { To = message.To.Trim() };
-        var payload = payloadProtector.Protect(JsonSerializer.Serialize(normalized));
-        var stream = IsPasswordReset(normalized)
-            ? priorityStream
-            : standardStream;
-        await database.StreamAddAsync(
-            stream,
-            [
-                new NameValueEntry("id", id.ToString("N")),
-                new NameValueEntry("payload", payload)
-            ]);
-        logger.LogInformation("Email {EmailQueueId} added to Redis Stream.", id);
-        return id;
+        try
+        {
+            var lengths = await Task.WhenAll(
+                database.StreamLengthAsync(priorityStream),
+                database.StreamLengthAsync(standardStream));
+            if (lengths.Sum() >= settings.MaxPendingMessages)
+            {
+                throw new UseCaseException(
+                    ApplicationErrorKind.Unavailable,
+                    "Dịch vụ gửi email đang quá tải. Vui lòng thử lại sau.",
+                    "email_queue_full");
+            }
+
+            var id = Guid.NewGuid();
+            var normalized = message with { To = message.To.Trim() };
+            var protectedPayload = payloadProtector.Protect(
+                JsonSerializer.Serialize(normalized));
+            var stream = IsPasswordReset(normalized)
+                ? priorityStream
+                : standardStream;
+            await database.StreamAddAsync(
+                stream,
+                [
+                    new NameValueEntry("id", id.ToString("N")),
+                    new NameValueEntry("payload", protectedPayload)
+                ]);
+            logger.LogInformation(
+                "Email {EmailQueueId} added to Redis Stream.",
+                id);
+            return id;
+        }
+        catch (RedisException exception)
+        {
+            throw new UseCaseException(
+                ApplicationErrorKind.Unavailable,
+                "Dịch vụ gửi email đang tạm thời gián đoạn. Vui lòng thử lại sau.",
+                "email_queue_unavailable",
+                exception);
+        }
     }
 
     internal async Task InitializeAsync(CancellationToken cancellationToken)
@@ -108,14 +134,16 @@ public sealed class RedisEmailQueue : IEmailQueue
         cancellationToken.ThrowIfCancellationRequested();
         var batch = database.CreateBatch();
         var acknowledge = batch.StreamAcknowledgeAsync(
-            queued.Stream, ConsumerGroup, queued.StreamId);
+            queued.Stream,
+            ConsumerGroup,
+            queued.StreamId);
         var delete = batch.StreamDeleteAsync(queued.Stream, [queued.StreamId]);
         var clearRetry = batch.KeyDeleteAsync(RetryKey(queued.Id));
         batch.Execute();
         await Task.WhenAll(acknowledge, delete, clearRetry);
     }
 
-    internal async Task<bool> RecordFailureAsync(
+    internal async Task RecordFailureAsync(
         QueuedEmail queued,
         Exception exception,
         CancellationToken cancellationToken)
@@ -132,12 +160,10 @@ public sealed class RedisEmailQueue : IEmailQueue
                 queued.Id,
                 attempts,
                 settings.MaxDeliveryAttempts);
-            return false;
+            return;
         }
 
-        var error = exception.Message.Length <= 4_000
-            ? exception.Message
-            : exception.Message[..4_000];
+        var error = TruncateError(exception.Message);
         await database.StreamAddAsync(
             deadLetterStream,
             [
@@ -159,7 +185,6 @@ public sealed class RedisEmailQueue : IEmailQueue
             "Email {EmailQueueId} moved to the Redis dead-letter stream after {AttemptCount} failed cycles.",
             queued.Id,
             attempts);
-        return true;
     }
 
     private async Task EnsureConsumerGroupAsync(RedisKey stream)
@@ -175,7 +200,7 @@ public sealed class RedisEmailQueue : IEmailQueue
         catch (RedisServerException exception)
             when (exception.Message.Contains("BUSYGROUP", StringComparison.Ordinal))
         {
-            // The group is shared by all API instances and only needs to be created once.
+            // A consumer group is shared by all API instances.
         }
     }
 
@@ -214,21 +239,26 @@ public sealed class RedisEmailQueue : IEmailQueue
         RedisKey stream,
         StreamEntry entry)
     {
-        var idValue = entry.Values.FirstOrDefault(value => value.Name == "id").Value;
+        var idValue = entry.Values
+            .FirstOrDefault(value => value.Name == "id")
+            .Value;
         var payloadValue = entry.Values
-            .FirstOrDefault(value => value.Name == "payload").Value;
+            .FirstOrDefault(value => value.Name == "payload")
+            .Value;
         try
         {
             if (!Guid.TryParseExact(idValue.ToString(), "N", out var id) ||
                 payloadValue.IsNullOrEmpty)
             {
-                throw new InvalidOperationException("Redis email entry is malformed.");
+                throw new InvalidOperationException(
+                    "Redis email entry is malformed.");
             }
 
             var protectedPayload = payloadValue.ToString();
             var message = JsonSerializer.Deserialize<EmailMessage>(
                 payloadProtector.Unprotect(protectedPayload)) ??
-                throw new InvalidOperationException("Redis email payload is empty.");
+                throw new InvalidOperationException(
+                    "Redis email payload is empty.");
             return new QueuedEmail(
                 stream,
                 entry.Id,
@@ -236,18 +266,22 @@ public sealed class RedisEmailQueue : IEmailQueue
                 message,
                 protectedPayload);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not RedisException)
         {
-            var fallbackId = Guid.TryParseExact(idValue.ToString(), "N", out var id)
+            var fallbackId = Guid.TryParseExact(
+                idValue.ToString(),
+                "N",
+                out var id)
                 ? id
                 : Guid.NewGuid();
-            var malformed = new QueuedEmail(
-                stream,
-                entry.Id,
-                fallbackId,
-                new EmailMessage("invalid", "invalid", "invalid"),
-                payloadValue.ToString());
-            await MoveMalformedToDeadLetterAsync(malformed, exception);
+            await MoveMalformedToDeadLetterAsync(
+                new QueuedEmail(
+                    stream,
+                    entry.Id,
+                    fallbackId,
+                    new EmailMessage("invalid", "invalid", "invalid"),
+                    payloadValue.ToString()),
+                exception);
             return null;
         }
     }
@@ -256,23 +290,25 @@ public sealed class RedisEmailQueue : IEmailQueue
         QueuedEmail queued,
         Exception exception)
     {
-        var error = exception.Message.Length <= 4_000
-            ? exception.Message
-            : exception.Message[..4_000];
         await database.StreamAddAsync(
             deadLetterStream,
             [
                 new NameValueEntry("id", queued.Id.ToString("N")),
                 new NameValueEntry("payload", queued.ProtectedPayload),
-                new NameValueEntry("error", error),
+                new NameValueEntry("error", TruncateError(exception.Message)),
                 new NameValueEntry(
                     "failedAt",
                     DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
             ],
             maxLength: settings.DeadLetterMaxLength,
             useApproximateMaxLength: true);
+        await database.KeyExpireAsync(
+            deadLetterStream,
+            TimeSpan.FromDays(settings.DeadLetterRetentionDays));
         await database.StreamAcknowledgeAsync(
-            queued.Stream, ConsumerGroup, queued.StreamId);
+            queued.Stream,
+            ConsumerGroup,
+            queued.StreamId);
         await database.StreamDeleteAsync(queued.Stream, [queued.StreamId]);
         logger.LogError(
             exception,
@@ -280,7 +316,11 @@ public sealed class RedisEmailQueue : IEmailQueue
             queued.Id);
     }
 
-    private RedisKey RetryKey(Guid id) => $"{retryKeyPrefix}{id:N}";
+    private RedisKey RetryKey(Guid id) =>
+        $"{retryKeyPrefix}{id:N}";
+
+    private static string TruncateError(string error) =>
+        error.Length <= 4_000 ? error : error[..4_000];
 
     private static bool IsPasswordReset(EmailMessage message) =>
         string.Equals(

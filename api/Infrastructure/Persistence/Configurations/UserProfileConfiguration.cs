@@ -12,7 +12,7 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
         builder.HasKey(profile => profile.Id);
 
         builder.Property(profile => profile.FullName).HasMaxLength(255).IsRequired();
-        builder.Property(profile => profile.IdentityCardNumber).HasMaxLength(50).IsRequired();
+        builder.Property(profile => profile.IdentityCardNumber).HasMaxLength(2048).IsRequired();
         builder.Property(profile => profile.Ethnicity).HasMaxLength(100).IsRequired();
         builder.Property(profile => profile.School).HasMaxLength(255).IsRequired();
         builder.Property(profile => profile.Major).HasMaxLength(255);
@@ -20,8 +20,8 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
         builder.Property(profile => profile.AdministrativeClass).HasMaxLength(100).IsRequired();
         builder.Property(profile => profile.Faculty).HasMaxLength(255).IsRequired();
         builder.Property(profile => profile.CurrentPosition).HasMaxLength(255).IsRequired();
-        builder.Property(profile => profile.ContactEmail).HasMaxLength(255).IsRequired();
-        builder.Property(profile => profile.PhoneNumber).HasMaxLength(30).IsRequired();
+        builder.Property(profile => profile.ContactEmail).HasMaxLength(2048).IsRequired();
+        builder.Property(profile => profile.PhoneNumber).HasMaxLength(2048).IsRequired();
         builder.Property(profile => profile.UnionPosition).HasMaxLength(255);
 
         builder.HasIndex(profile => profile.UserId).IsUnique();

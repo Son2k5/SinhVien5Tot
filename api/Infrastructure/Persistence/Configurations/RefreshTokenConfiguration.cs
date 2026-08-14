@@ -23,11 +23,14 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
             token.CreatedAtUtc
         });
         builder.HasIndex(token => token.ExpiresAtUtc);
-        builder.HasIndex(token => token.RevokedAtUtc);
+        builder.HasIndex(token => token.AbsoluteExpiresAtUtc);
+        builder.HasIndex(token => new { token.IsRevoked, token.RevokedAtUtc });
+        builder.HasIndex(token => new { token.FamilyId, token.IsRevoked });
 
         builder.HasOne(token => token.User)
             .WithMany(user => user.RefreshTokens)
             .HasForeignKey(token => token.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
     }
 }

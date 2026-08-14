@@ -11,10 +11,14 @@ using SV5T.Infrastructure;
 using SV5T.Presentation.Middleware;
 using SV5T.Presentation.Security;
 using SV5T.Application.Interfaces.Services.Commons;
-using SV5T.Configuration;
+using SV5T.Infrastructure.Configuration;
 
 DotEnvLoader.LoadBackendEnvironment();
 var builder = WebApplication.CreateBuilder(args);
+if (!builder.Environment.IsDevelopment())
+{
+    ValidateProductionConfiguration(builder.Configuration);
+}
 
 builder.WebHost.ConfigureKestrel(options =>
     options.Limits.MaxRequestBodySize = 64 * 1024);
@@ -81,7 +85,7 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 
@@ -125,11 +129,11 @@ builder.Services.AddRateLimiter(options =>
             cancellationToken);
     };
 
-    AddIpPolicy(options, "auth-register", 5, TimeSpan.FromMinutes(10));
-    AddIpPolicy(options, "auth-login", 10, TimeSpan.FromMinutes(1));
-    AddIpPolicy(options, "auth-otp", 10, TimeSpan.FromMinutes(1));
-    AddIpPolicy(options, "auth-email", 5, TimeSpan.FromMinutes(10));
-    AddIpPolicy(options, "auth-refresh", 30, TimeSpan.FromMinutes(1));
+    AddIpPolicy(options, AuthRateLimitPolicies.Register, 5, TimeSpan.FromMinutes(10));
+    AddIpPolicy(options, AuthRateLimitPolicies.Login, 10, TimeSpan.FromMinutes(1));
+    AddIpPolicy(options, AuthRateLimitPolicies.Otp, 10, TimeSpan.FromMinutes(1));
+    AddIpPolicy(options, AuthRateLimitPolicies.Email, 5, TimeSpan.FromMinutes(10));
+    AddIpPolicy(options, AuthRateLimitPolicies.Refresh, 30, TimeSpan.FromMinutes(1));
 });
 
 var allowedOrigins = builder.Configuration
@@ -143,23 +147,28 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(allowedOrigins)
             .WithHeaders("Content-Type", "Authorization", CorrelationIdMiddleware.HeaderName)
-            .WithMethods("GET", "POST", "OPTIONS")
+            .WithMethods("GET", "POST", "PUT", "OPTIONS")
             .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHsts();
+}
 
-app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseRateLimiter();
@@ -199,6 +208,30 @@ static void AddIpPolicy(
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
+}
+
+static void ValidateProductionConfiguration(IConfiguration configuration)
+{
+    var allowedHosts = configuration["AllowedHosts"];
+    if (string.IsNullOrWhiteSpace(allowedHosts) || allowedHosts == "*")
+    {
+        throw new InvalidOperationException(
+            "Production AllowedHosts must contain explicit host names.");
+    }
+
+    var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+    if (origins.Length == 0 || origins.Any(origin =>
+            !Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps))
+    {
+        throw new InvalidOperationException(
+            "Production CORS origins must be explicit HTTPS origins.");
+    }
+
+    if (configuration.GetValue<bool>("Redis:RequireTls") is false)
+    {
+        throw new InvalidOperationException("Production Redis TLS is required.");
+    }
 }
 
 app.Run();

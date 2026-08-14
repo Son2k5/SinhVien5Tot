@@ -18,8 +18,5 @@ public interface IAuthRedisStore
     Task<OtpIssueResult> ReserveOtpRequestAsync(string email);
     Task<bool> IsLoginBlockedAsync(string email, string ipAddress);
     Task RecordLoginFailureAsync(string email, string ipAddress);
-    Task ClearLoginFailuresAsync(string email, string ipAddress);
-
-    Task BlacklistAccessTokenAsync(string jti, TimeSpan remainingLifetime);
-    Task<bool> IsAccessTokenBlacklistedAsync(string jti);
+    Task ClearAccountLoginFailuresAsync(string email);
 }

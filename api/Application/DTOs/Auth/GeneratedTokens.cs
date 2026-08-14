@@ -9,4 +9,6 @@ public sealed record GeneratedRefreshToken(
     Guid TokenId,
     string RawToken,
     string TokenHash,
-    DateTime ExpiresAtUtc);
+    DateTime ExpiresAtUtc,
+    DateTime AbsoluteExpiresAtUtc,
+    bool IsPersistent);

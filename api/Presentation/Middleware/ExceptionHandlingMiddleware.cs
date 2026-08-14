@@ -75,6 +75,7 @@ public sealed class ExceptionHandlingMiddleware(
         ApplicationErrorKind.NotFound => StatusCodes.Status404NotFound,
         ApplicationErrorKind.Conflict => StatusCodes.Status409Conflict,
         ApplicationErrorKind.RateLimited => StatusCodes.Status429TooManyRequests,
+        ApplicationErrorKind.Unavailable => StatusCodes.Status503ServiceUnavailable,
         _ => StatusCodes.Status500InternalServerError
     };
 }

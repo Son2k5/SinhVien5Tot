@@ -11,7 +11,7 @@ npm run setup:https
 Chạy backend bằng HTTPS từ thư mục gốc dự án:
 
 ```powershell
-dotnet run --project api/SV5T.Api.csproj --launch-profile https
+dotnet run --project api/SV5T.Api.csproj
 ```
 
 Chạy frontend:
@@ -23,6 +23,10 @@ npm run dev
 
 Truy cập `https://localhost:5173`. Frontend gọi `/api`; Vite proxy request đến
 `https://localhost:7080`, vì vậy trình duyệt không gặp lỗi mixed content.
+
+Toàn bộ URL, cổng và đường dẫn chứng chỉ được đọc từ `frontend/.env`. Không đặt
+secret trong biến `VITE_*` vì các giá trị này được đóng gói vào mã JavaScript gửi
+đến trình duyệt.
 
 # React + TypeScript + Vite
 

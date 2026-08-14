@@ -14,9 +14,12 @@ internal sealed class EmailBackgroundWorker(
     IEmailSender emailSender,
     ILogger<EmailBackgroundWorker> logger) : BackgroundService
 {
-    private static readonly TimeSpan EmptyQueueDelay = TimeSpan.FromMilliseconds(250);
-    private static readonly TimeSpan StaleScanInterval = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan RedisReconnectDelay = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan EmptyQueueDelay =
+        TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan StaleScanInterval =
+        TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan RedisReconnectDelay =
+        TimeSpan.FromSeconds(5);
     private readonly string consumerName =
         $"{Environment.MachineName}-{Environment.ProcessId}-{Guid.NewGuid():N}";
 
@@ -33,7 +36,8 @@ internal sealed class EmailBackgroundWorker(
                     await emailQueue.InitializeAsync(stoppingToken);
                     await ConsumeAsync(retryPipeline, stoppingToken);
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                catch (OperationCanceledException)
+                    when (stoppingToken.IsCancellationRequested)
                 {
                     break;
                 }
@@ -84,22 +88,15 @@ internal sealed class EmailBackgroundWorker(
 
             try
             {
-                var attempt = 0;
                 await retryPipeline.ExecuteAsync(
                     async cancellationToken =>
-                    {
-                        attempt++;
-                        logger.LogInformation(
-                            "Sending email {EmailQueueId}, SMTP attempt {Attempt}/3.",
-                            queued.Id,
-                            attempt);
                         await emailSender.SendAsync(
                             queued.Message,
-                            cancellationToken);
-                    },
+                            cancellationToken),
                     stoppingToken);
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            catch (OperationCanceledException)
+                when (stoppingToken.IsCancellationRequested)
             {
                 return;
             }
@@ -121,11 +118,9 @@ internal sealed class EmailBackgroundWorker(
             }
             catch (Exception exception)
             {
-                // SMTP has already accepted the message. Leaving it pending gives
-                // at-least-once delivery and may produce a duplicate after recovery.
                 logger.LogCritical(
                     exception,
-                    "SMTP accepted email {EmailQueueId}, but Redis acknowledgement failed.",
+                    "SMTP accepted email {EmailQueueId}, but Redis acknowledgement failed; it may be delivered again.",
                     queued.Id);
             }
         }
@@ -139,7 +134,7 @@ internal sealed class EmailBackgroundWorker(
                     MaxRetryAttempts = 2,
                     Delay = TimeSpan.FromSeconds(2),
                     BackoffType = DelayBackoffType.Exponential,
-                    UseJitter = false,
+                    UseJitter = true,
                     ShouldHandle = new PredicateBuilder()
                         .Handle<SmtpCommandException>()
                         .Handle<SmtpProtocolException>(),
@@ -147,9 +142,8 @@ internal sealed class EmailBackgroundWorker(
                     {
                         logger.LogWarning(
                             arguments.Outcome.Exception,
-                            "Transient SMTP failure. Retrying after {Delay}; next attempt {Attempt}/3.",
-                            arguments.RetryDelay,
-                            arguments.AttemptNumber + 2);
+                            "Transient SMTP failure; retrying after {Delay}.",
+                            arguments.RetryDelay);
                         return default;
                     }
                 })
@@ -178,11 +172,6 @@ internal sealed class EmailBackgroundWorker(
         {
             delay = TimeSpan.FromSeconds(1);
         }
-
-        logger.LogWarning(
-            "Distributed email quota reached for priority {Priority}. Next slot is expected at {RetryAtUtc}.",
-            isPasswordReset ? "password-reset" : "standard",
-            retryAt);
         await Task.Delay(
             delay < TimeSpan.FromSeconds(30)
                 ? delay
@@ -197,7 +186,7 @@ internal sealed class EmailBackgroundWorker(
     {
         try
         {
-            _ = await emailQueue.RecordFailureAsync(
+            await emailQueue.RecordFailureAsync(
                 queued,
                 exception,
                 CancellationToken.None);
@@ -215,7 +204,9 @@ internal sealed class EmailBackgroundWorker(
     {
         try
         {
-            await quotaStore.ReleaseAsync(emailQueueId, CancellationToken.None);
+            await quotaStore.ReleaseAsync(
+                emailQueueId,
+                CancellationToken.None);
         }
         catch (Exception exception)
         {

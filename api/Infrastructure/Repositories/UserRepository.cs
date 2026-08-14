@@ -13,7 +13,31 @@ public sealed class UserRepository(ApplicationDbContext dbContext) : IUserReposi
     {
         return dbContext.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+            .Where(user => user.Id == id)
+            .Select(user => new User
+            {
+                Id = user.Id,
+                Email = user.Email,
+                NormalizedEmail = user.NormalizedEmail,
+                DisplayName = user.DisplayName,
+                Role = user.Role,
+                AvatarUrl = user.AvatarUrl,
+                IsVerified = user.IsVerified,
+                IsActive = user.IsActive,
+                SecurityVersion = user.SecurityVersion,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                Profile = user.Profile == null
+                    ? null
+                    : new UserProfile
+                    {
+                        Id = user.Profile.Id,
+                        UserId = user.Profile.UserId,
+                        FullName = user.Profile.FullName,
+                        Faculty = user.Profile.Faculty
+                    }
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public Task<User?> GetByNormalizedEmailAsync(
@@ -30,6 +54,34 @@ public sealed class UserRepository(ApplicationDbContext dbContext) : IUserReposi
             user => user.NormalizedEmail == normalizedEmail,
             cancellationToken);
     }
+
+    public Task<User?> GetByIdWithProfileAsync(
+        Guid id,
+        bool tracking = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Users
+            .Include(user => user.Profile)
+            .Include(user => user.Addresses)
+            .AsQueryable();
+        if (!tracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return query.FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+    }
+
+    public Task<bool> ExistsStudentCodeAsync(
+        string studentCode,
+        Guid excludeUserId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.UserProfiles
+            .AsNoTracking()
+            .AnyAsync(
+                profile => profile.StudentCode == studentCode &&
+                           profile.UserId != excludeUserId,
+                cancellationToken);
 
     public Task AddAsync(
         User user,

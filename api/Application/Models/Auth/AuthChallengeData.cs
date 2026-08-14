@@ -7,6 +7,7 @@ public sealed record AuthChallengeData(
     AuthChallengePurpose Purpose,
     string Email,
     string NormalizedEmail,
+    string? DisplayName,
     string? PasswordHash,
     string OtpHash,
     int FailedAttempts,

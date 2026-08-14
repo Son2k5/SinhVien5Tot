@@ -7,5 +7,6 @@ public enum ApplicationErrorKind
     Forbidden,
     NotFound,
     Conflict,
-    RateLimited
+    RateLimited,
+    Unavailable
 }

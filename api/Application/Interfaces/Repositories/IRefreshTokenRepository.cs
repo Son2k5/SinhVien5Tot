@@ -17,9 +17,16 @@ public interface IRefreshTokenRepository
         Guid userId,
         string token,
         DateTime revokedAtUtc,
+        Guid? replacedByTokenId = null,
         CancellationToken cancellationToken = default);
 
     Task<int> RevokeAllActiveAsync(
+        Guid userId,
+        DateTime revokedAtUtc,
+        CancellationToken cancellationToken = default);
+
+    Task<int> RevokeFamilyAsync(
+        Guid familyId,
         Guid userId,
         DateTime revokedAtUtc,
         CancellationToken cancellationToken = default);

@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -12,14 +13,19 @@ using SV5T.Application.Interfaces.Persistence;
 using SV5T.Application.Interfaces.Repositories;
 using SV5T.Application.Interfaces.Services.Auth;
 using SV5T.Application.Interfaces.Services.Commons;
+using SV5T.Application.Interfaces.Services.Media;
 using SV5T.Infrastructure.Auth;
 using SV5T.Infrastructure.Email;
 using SV5T.Infrastructure.Health;
+using SV5T.Infrastructure.Media;
 using SV5T.Infrastructure.Options.Authentication;
 using SV5T.Infrastructure.Options.Integrations;
 using SV5T.Infrastructure.Persistence;
 using SV5T.Infrastructure.Repositories;
-using System.Globalization;
+using Microsoft.Extensions.Hosting;
+using SV5T.Infrastructure.Options;
+using SV5T.Infrastructure.Security;
+using SV5T.Infrastructure.Security.Hashing;
 
 namespace SV5T.Infrastructure;
 
@@ -27,7 +33,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
@@ -58,9 +65,10 @@ public static class DependencyInjection
                     !string.IsNullOrWhiteSpace(value.Issuer) &&
                     !string.IsNullOrWhiteSpace(value.Audience) &&
                     Encoding.UTF8.GetByteCount(value.Key) >= 32 &&
-                    value.AccessTokenMinutes is > 0 and <= 60 &&
-                    value.RefreshTokenDays is > 0 and <= 30 &&
-                    value.MaxConcurrentSessions is >= 1 and <= 20,
+                     value.AccessTokenMinutes is > 0 and <= 60 &&
+                     value.RefreshTokenIdleMinutes is >= 15 and <= 1_440 &&
+                     value.RefreshTokenDays is >= 1 and <= 90 &&
+                     value.MaxConcurrentSessions is >= 1 and <= 20,
                 "Jwt configuration is invalid.")
             .ValidateOnStart();
         services.AddOptions<OtpOptions>()
@@ -100,6 +108,20 @@ public static class DependencyInjection
                     value.LoginIpMaxAttempts is >= 5 and <= 100 &&
                     value.LoginBlockMinutes is >= 5 and <= 120,
                 "Redis configuration is invalid.")
+            .ValidateOnStart();
+        services.AddOptions<PiiEncryptionOptions>()
+            .Bind(configuration.GetSection(PiiEncryptionOptions.SectionName))
+            .Validate(
+                value => value.BatchSize is >= 10 and <= 1_000,
+                "PiiEncryption configuration is invalid.")
+            .ValidateOnStart();
+        services.AddOptions<CloudinaryOptions>()
+            .Bind(configuration.GetSection(CloudinaryOptions.SectionName))
+            .Validate(
+                value => !string.IsNullOrWhiteSpace(value.CloudName) &&
+                         !string.IsNullOrWhiteSpace(value.ApiKey) &&
+                         !string.IsNullOrWhiteSpace(value.ApiSecret),
+                "Cloudinary configuration is invalid.")
             .ValidateOnStart();
 
         var redisConnection = configuration.GetConnectionString("Redis");
@@ -160,7 +182,21 @@ public static class DependencyInjection
             return connection;
         });
 
+        services.AddSingleton<IPiiProtector, DataProtectionPiiProtector>();
+        services.AddSingleton(provider =>
+        {
+            var options = provider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<CloudinaryOptions>>()
+                .Value;
+            var cloudinary = new Cloudinary(new Account(
+                options.CloudName, options.ApiKey, options.ApiSecret));
+            cloudinary.Api.Secure = true;
+            return cloudinary;
+        });
+
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAvatarStorage, CloudinaryAvatarStorage>();
+        services.AddScoped<IPortalContentRepository, PortalContentRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -169,10 +205,12 @@ public static class DependencyInjection
         services.AddSingleton<ISchoolEmailValidator, SchoolEmailValidator>();
         services.AddSingleton<IRefreshTokenFactory, RefreshTokenFactory>();
         services.AddSingleton<IAuthRedisStore, AuthRedisStore>();
+        services.AddSingleton<IAuthChallengePayloadProtector, DataProtectionAuthChallengePayloadProtector>();
         services.AddSingleton<IAuthChallengeStore, RedisAuthChallengeStore>();
         services.AddSingleton<IJwtService, JwtService>();
         services.AddHostedService<RefreshTokenCleanupService>();
-        services.AddEmailServices(configuration);
+        services.AddHostedService<PiiReencryptionService>();
+        services.AddEmailServices(configuration, environment);
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>(
                 "database",
@@ -232,44 +270,6 @@ public static class DependencyInjection
                             code = "forbidden",
                             traceId = context.HttpContext.TraceIdentifier
                         });
-                    },
-                    OnTokenValidated = async context =>
-                    {
-                        var jti = context.Principal?.FindFirst(
-                            JwtRegisteredClaimNames.Jti)?.Value;
-                        if (string.IsNullOrWhiteSpace(jti))
-                        {
-                            context.Fail("JWT không có jti.");
-                            return;
-                        }
-
-                        var store = context.HttpContext.RequestServices
-                            .GetRequiredService<IAuthRedisStore>();
-                        if (await store.IsAccessTokenBlacklistedAsync(jti))
-                        {
-                            context.Fail("Access token đã bị thu hồi.");
-                            return;
-                        }
-
-                        var subject = context.Principal?.FindFirst(
-                            JwtRegisteredClaimNames.Sub)?.Value;
-                        if (!Guid.TryParse(subject, out var userId))
-                        {
-                            context.Fail("JWT thiếu thông tin phiên bắt buộc.");
-                            return;
-                        }
-
-                        var users = context.HttpContext.RequestServices
-                            .GetRequiredService<IUserRepository>();
-                        var user = await users.GetByIdAsync(
-                            userId,
-                            context.HttpContext.RequestAborted);
-                        if (user is null ||
-                            !user.IsActive ||
-                            !user.IsVerified)
-                        {
-                            context.Fail("Phiên đăng nhập không còn hiệu lực.");
-                        }
                     }
                 };
             });

@@ -29,18 +29,21 @@ public sealed class RefreshTokenRepository(
         Guid userId,
         string token,
         DateTime revokedAtUtc,
+        Guid? replacedByTokenId = null,
         CancellationToken cancellationToken = default) =>
         dbContext.RefreshTokens
             .Where(refreshToken =>
                 refreshToken.Id == id &&
                 refreshToken.UserId == userId &&
                 refreshToken.Token == token &&
-                !refreshToken.IsRevoked &&
-                refreshToken.ExpiresAtUtc > revokedAtUtc)
+                !refreshToken.IsRevoked)
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(refreshToken => refreshToken.IsRevoked, true)
-                    .SetProperty(refreshToken => refreshToken.RevokedAtUtc, revokedAtUtc),
+                    .SetProperty(refreshToken => refreshToken.RevokedAtUtc, revokedAtUtc)
+                    .SetProperty(
+                        refreshToken => refreshToken.ReplacedByTokenId,
+                        replacedByTokenId),
                 cancellationToken);
 
     public Task<int> RevokeAllActiveAsync(
@@ -55,26 +58,45 @@ public sealed class RefreshTokenRepository(
                     .SetProperty(token => token.RevokedAtUtc, revokedAtUtc),
                 cancellationToken);
 
+    public Task<int> RevokeFamilyAsync(
+        Guid familyId,
+        Guid userId,
+        DateTime revokedAtUtc,
+        CancellationToken cancellationToken = default) =>
+        dbContext.RefreshTokens
+            .Where(token =>
+                token.FamilyId == familyId &&
+                token.UserId == userId &&
+                !token.IsRevoked)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(token => token.IsRevoked, true)
+                    .SetProperty(token => token.RevokedAtUtc, revokedAtUtc),
+                cancellationToken);
+
     public async Task<int> RevokeExcessActiveAsync(
         Guid userId,
         DateTime revokedAtUtc,
         CancellationToken cancellationToken = default)
     {
-        var excessIds = await dbContext.RefreshTokens
+        var excessFamilyIds = await dbContext.RefreshTokens
             .Where(token => token.UserId == userId && !token.IsRevoked)
             .OrderByDescending(token => token.CreatedAtUtc)
             .ThenByDescending(token => token.Id)
             .Skip(jwtOptions.Value.MaxConcurrentSessions)
-            .Select(token => token.Id)
+            .Select(token => token.FamilyId)
+            .Distinct()
             .ToArrayAsync(cancellationToken);
 
-        if (excessIds.Length == 0)
+        if (excessFamilyIds.Length == 0)
         {
             return 0;
         }
 
         return await dbContext.RefreshTokens
-            .Where(token => excessIds.Contains(token.Id))
+            .Where(token =>
+                excessFamilyIds.Contains(token.FamilyId) &&
+                !token.IsRevoked)
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(token => token.IsRevoked, true)
@@ -82,12 +104,18 @@ public sealed class RefreshTokenRepository(
                 cancellationToken);
     }
 
-    public Task<int> DeleteStaleAsync(
+    public async Task<int> DeleteStaleAsync(
         DateTime retentionCutoffUtc,
-        CancellationToken cancellationToken = default) =>
-        dbContext.RefreshTokens
-            .Where(token =>
-                token.ExpiresAtUtc <= retentionCutoffUtc ||
-                (token.IsRevoked && token.RevokedAtUtc <= retentionCutoffUtc))
+        CancellationToken cancellationToken = default)
+    {
+        var expired = await dbContext.RefreshTokens
+            .Where(token => token.ExpiresAtUtc <= retentionCutoffUtc)
             .ExecuteDeleteAsync(cancellationToken);
+        var revoked = await dbContext.RefreshTokens
+            .Where(token =>
+                token.IsRevoked &&
+                token.RevokedAtUtc <= retentionCutoffUtc)
+            .ExecuteDeleteAsync(cancellationToken);
+        return expired + revoked;
+    }
 }

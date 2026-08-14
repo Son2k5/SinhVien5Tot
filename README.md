@@ -83,19 +83,13 @@ SV5T/
 Yêu cầu: .NET SDK 9, Node.js/npm, MySQL local và Docker Desktop cho Redis.
 
 ```powershell
-# 0. Chỉ tạo .env ở thư mục gốc cho Docker Compose và thay toàn bộ placeholder
+# 0. Tạo các file cấu hình local (đều đã được .gitignore bảo vệ)
 Copy-Item .env.example .env
+Copy-Item api/.env.example api/.env
+Copy-Item frontend/.env.example frontend/.env
 
-# Backend tự nạp api/.env. Điền các giá trị còn trống trong file này.
-# User Secrets vẫn được hỗ trợ làm giá trị dự phòng khi một dòng .env để trống.
-dotnet user-secrets --project api/SV5T.Api.csproj set "ConnectionStrings:DefaultConnection" "<mysql-connection-string>"
-dotnet user-secrets --project api/SV5T.Api.csproj set "ConnectionStrings:Redis" "<redis-connection-string>"
-dotnet user-secrets --project api/SV5T.Api.csproj set "Jwt:Key" "<random-32-byte-minimum>"
-dotnet user-secrets --project api/SV5T.Api.csproj set "Otp:Pepper" "<separate-random-32-byte-minimum>"
-dotnet user-secrets --project api/SV5T.Api.csproj set "IdentifierHash:Key" "<separate-random-32-byte-minimum>"
-dotnet user-secrets --project api/SV5T.Api.csproj set "EmailSettings:Username" "<smtp-login>"
-dotnet user-secrets --project api/SV5T.Api.csproj set "EmailSettings:Password" "<smtp-key>"
-dotnet user-secrets --project api/SV5T.Api.csproj set "EmailSettings:FromAddress" "<verified-sender>"
+# Điền các dòng bí mật còn trống. REDIS_PASSWORD ở .env gốc phải trùng với
+# password trong ConnectionStrings__Redis của api/.env.
 
 # 1. Đảm bảo MySQL local đang chạy, sau đó khởi động Redis
 docker compose up -d
@@ -136,9 +130,11 @@ không expose entity trực tiếp qua controller.
 
 ## Cấu hình
 
-Secret không được commit. File `.env` ở thư mục gốc chỉ dành cho Docker Compose
-local. API đọc cấu hình local bằng .NET User Secrets và đọc environment variable
-ở môi trường triển khai. Production cần tối thiểu:
+Secret không được commit. File `.env` ở thư mục gốc dành cho Docker Compose,
+`api/.env` dành cho backend và `frontend/.env` chỉ chứa cấu hình công khai được
+đóng gói vào trình duyệt. API tự nạp `api/.env`; biến môi trường của tiến trình
+luôn được ưu tiên để production có thể inject giá trị từ secret manager.
+Production cần tối thiểu:
 
 ```text
 ConnectionStrings__DefaultConnection
@@ -164,14 +160,13 @@ EmailSettings__FromAddress
 
 - Tạo và xác minh sender/domain trong Brevo, sau đó lấy SMTP Login và tạo SMTP Key
   tại `SMTP & API > SMTP`.
-- Không tạo `api/.env`. Cấu hình local bằng `dotnet user-secrets --project
-  api/SV5T.Api.csproj set "EmailSettings:Username" "<smtp-login>"` và lệnh tương
-  tự cho `EmailSettings:Password`. Dùng cổng `587`, `StartTls=true`; SMTP Key
-  không phải API Key hay mật khẩu tài khoản Brevo.
-- Challenge đăng ký/đặt lại mật khẩu được lưu tạm trong Redis Hash với TTL; kiểm tra,
-  tăng số lần sai và consume OTP dùng Lua script nguyên tử. Email được ghi vào Redis
-  Streams, payload mã hóa bằng ASP.NET Core Data Protection; worker dùng consumer group,
-  `XAUTOCLAIM`, retry có trì hoãn và dead-letter stream để chịu được restart/nhiều instance.
+- Điền SMTP Login vào `EmailSettings__Username`, SMTP Key vào
+  `EmailSettings__Password` và sender đã xác minh vào `EmailSettings__FromAddress`
+  trong `api/.env`. Dùng cổng `587`, `StartTls=true`; SMTP Key không phải API Key
+  hay mật khẩu tài khoản Brevo.
+- Challenge và email outbox được lưu trong MySQL cùng transaction nghiệp vụ. Payload chứa
+  email/password hash/body được mã hóa bằng ASP.NET Core Data Protection. Worker claim bằng
+  lease có điều kiện, retry có jitter và chuyển message lỗi sang trạng thái dead-letter.
 - `EmailSettings__DailyRecipientLimit` mặc định là 300 để khớp gói Brevo Free.
   `EmailSettings__PasswordResetReserve=50` giữ lại 50 lượt cuối cho email đặt lại
   mật khẩu, không cho lưu lượng đăng ký chiếm hết quota.
@@ -188,18 +183,28 @@ EmailSettings__FromAddress
 
 - Refresh token được lưu trong bảng `refresh_tokens`; cột `Token` chỉ chứa SHA-256
   hash, không lưu token thô từ cookie.
-- Mỗi lần refresh sẽ thu hồi token cũ và tạo token mới trong cùng transaction.
-  Việc dùng lại token đã thu hồi sẽ thu hồi toàn bộ refresh token đang hoạt động
-  của người dùng.
+- Trạng thái idle nằm trực tiếp trên refresh token family trong bảng `refresh_tokens`;
+  `FamilyId` liên kết các token rotation và `LastUsedAtUtc` là nguồn sự thật của backend
+  cho idle timeout 120 phút (`Jwt__RefreshTokenIdleMinutes=120`). Mốc này chỉ được kiểm tra
+  và cập nhật khi refresh token thành công; các API dùng access token không đọc/ghi trạng thái idle.
+- Refresh token có lifetime tuyệt đối 7 ngày (`Jwt__RefreshTokenDays=7`). `Remember me`
+  chỉ quyết định cookie tồn tại qua lần đóng trình duyệt, không kéo dài lifetime phía server.
+- Mỗi lần refresh sẽ thu hồi token cũ, lưu `ReplacedByTokenId`, giữ nguyên `FamilyId` và
+  đặt `LastUsedAtUtc` của token mới bằng thời điểm hiện tại trong cùng transaction. Việc dùng lại token cũ sẽ
+  revoke toàn bộ token family.
+- Access token JWT stateless có hạn 15 phút, được kiểm tra chữ ký và thời hạn mà không truy vấn
+  database/Redis trên từng API. Logout hoặc idle timeout revoke toàn bộ refresh token trong family;
+  access token đã phát hành có thể còn hiệu lực tối đa 15 phút.
+- Frontend theo dõi hoạt động cục bộ, đồng bộ nhiều tab qua `localStorage`/storage event và chỉ gọi
+  `POST /api/auth/refresh` khi cần access token mới; không gửi heartbeat định kỳ.
 - Token đã thu hồi hoặc đã hết hạn được giữ lại 2 ngày để phát hiện reuse, sau đó
   background service dọn định kỳ mỗi 6 giờ.
 
 ### Redis
 
-- Redis local trong `compose.yaml` yêu cầu `REDIS_PASSWORD`, chỉ publish trên
-  `127.0.0.1`, bật AOF và dùng `noeviction`.
-- Redis phải từ phiên bản 6.2 trở lên vì email worker dùng `XAUTOCLAIM`. Redis là nơi
-  lưu challenge và hàng đợi email nên production phải bật persistence và backup phù hợp.
+- Redis local trong `compose.yaml` yêu cầu `REDIS_PASSWORD`, chỉ publish trên `127.0.0.1`,
+  bật AOF và dùng `noeviction`. Redis lưu throttle/quota, auth challenge có TTL,
+  cùng email queue dùng Redis Streams với consumer group/dead-letter.
 - API chạy trên máy dùng `localhost:6379`; API chạy trong cùng Docker network dùng
   hostname `redis`.
 - Production phải dùng mật khẩu riêng, TLS (`ssl=true`,
@@ -209,8 +214,22 @@ EmailSettings__FromAddress
 
 ## Kiểm tra trước khi merge
 
+### Operational hardening
+
+- Apply migration `OperationalHardening` sau khi backup và kiểm thử staging.
+- Production bắt buộc dùng absolute shared `DataProtection__KeysPath` và certificate PFX
+  qua `DataProtection__CertificatePath`/`DataProtection__CertificatePassword`.
+- Chạy một lần với `PiiEncryption__ReencryptOnStart=true` để mã hóa dữ liệu legacy, xác minh
+  log hoàn tất rồi trả lại `false`.
+- Frontend giữ access token trong memory; refresh token chỉ tồn tại trong cookie
+  `HttpOnly`, `Secure`, `SameSite=Strict` do backend phát hành.
+- Lịch backup và restore drill nằm tại `ops/backup.ps1` và `ops/RESTORE_RUNBOOK.md`.
+- Credential incident response nằm tại `ops/SECRET_ROTATION.md`; rotate bên ngoài repository
+  là bước bắt buộc trước production.
+
 ```powershell
 dotnet build SV5T.sln --no-restore
 powershell -ExecutionPolicy Bypass -File api/scripts/check-architecture.ps1
+powershell -ExecutionPolicy Bypass -File api/scripts/check-secrets.ps1
 npm.cmd --prefix frontend run build
 ```

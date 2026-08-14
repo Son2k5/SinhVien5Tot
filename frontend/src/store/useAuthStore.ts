@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import type { User } from '../types/auth';
-import { cookieStorage } from '../utils/cookieStorage';
 import { authService } from '../services/authService';
+import {
+  clearSessionActivity,
+  markSessionActivity,
+  type SessionEndReason,
+} from '../services/sessionInactivity';
 
 interface AuthState {
   user: User | null;
@@ -11,7 +15,7 @@ interface AuthState {
 
   // Actions
   setSession: (user: User, token: string, rememberMe?: boolean) => void;
-  clearSession: () => void;
+  clearSession: (reason?: SessionEndReason) => void;
   initSession: () => Promise<void>;
   updateUser: (updatedUser: Partial<User>) => void;
 }
@@ -30,7 +34,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (session.success && session.data) {
       const { token, user } = session.data;
-      cookieStorage.setUserSession(user);
+      authService.setAccessToken(token);
+      markSessionActivity();
       set({
         token,
         user,
@@ -51,8 +56,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Thiết lập phiên làm việc sau khi Đăng nhập/Đăng ký thành công
    */
   setSession: (user: User, token: string, rememberMe = false) => {
-    cookieStorage.setAuthToken(token, rememberMe);
-    cookieStorage.setUserSession(user, rememberMe);
+    void rememberMe;
+    authService.setAccessToken(token);
+    markSessionActivity();
 
     set({
       user,
@@ -65,8 +71,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   /**
    * Đăng xuất & Dọn dẹp phiên làm việc
    */
-  clearSession: () => {
-    cookieStorage.clearAllSession();
+  clearSession: (reason = 'expired') => {
+    authService.clearAccessToken();
+    clearSessionActivity(reason);
     set({
       user: null,
       token: null,
@@ -83,8 +90,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!currentUser) return;
 
     const newUserData = { ...currentUser, ...updatedFields };
-    cookieStorage.setUserSession(newUserData);
-
     set({ user: newUserData });
   },
 }));

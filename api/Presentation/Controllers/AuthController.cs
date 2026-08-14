@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.DTOs.Auth;
 using SV5T.Application.Interfaces.Services.Auth;
+using SV5T.Presentation.Security;
 
 namespace SV5T.Presentation.Controllers;
 
@@ -14,8 +14,10 @@ namespace SV5T.Presentation.Controllers;
 [Route("api/auth")]
 public sealed class AuthController(IAuthService authService) : ControllerBase
 {
+    private const string RefreshTokenCookieName = "refreshToken";
+    private const string RefreshTokenCookiePath = "/api/auth";
     [HttpPost("register")]
-    [EnableRateLimiting("auth-register")]
+    [EnableRateLimiting(AuthRateLimitPolicies.Register)]
     [ProducesResponseType<RegistrationStartedResponse>(StatusCodes.Status202Accepted)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
@@ -30,7 +32,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("verify-otp")]
-    [EnableRateLimiting("auth-otp")]
+    [EnableRateLimiting(AuthRateLimitPolicies.Otp)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
@@ -43,7 +45,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("resend-otp")]
-    [EnableRateLimiting("auth-email")]
+    [EnableRateLimiting(AuthRateLimitPolicies.Email)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
@@ -56,7 +58,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("login")]
-    [EnableRateLimiting("auth-login")]
+    [EnableRateLimiting(AuthRateLimitPolicies.Login)]
     [ProducesResponseType<AuthTokenResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
@@ -68,20 +70,24 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var tokens = await authService.LoginAsync(
             request, ipAddress, cancellationToken);
-        SetRefreshCookie(tokens.RefreshToken, tokens.RefreshTokenExpiresAtUtc);
+        SetRefreshCookie(
+            tokens.RefreshToken,
+            tokens.RefreshTokenExpiresAtUtc,
+            tokens.IsPersistent);
         return Ok(new AuthTokenResponse(
             tokens.AccessToken, tokens.AccessTokenExpiresAtUtc));
     }
 
+    [HttpPost("refresh")]
     [HttpPost("refresh-token")]
-    [EnableRateLimiting("auth-refresh")]
+    [EnableRateLimiting(AuthRateLimitPolicies.Refresh)]
     [ProducesResponseType<AuthTokenResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<AuthTokenResponse>> Refresh(
         CancellationToken cancellationToken)
     {
-        if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        if (!Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken))
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
@@ -89,15 +95,28 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
                 "invalid_session");
         }
 
-        var tokens = await authService.RefreshAsync(
-            refreshToken, cancellationToken);
-        SetRefreshCookie(tokens.RefreshToken, tokens.RefreshTokenExpiresAtUtc);
+        AuthTokens tokens;
+        try
+        {
+            tokens = await authService.RefreshAsync(
+                refreshToken, cancellationToken);
+        }
+        catch (UseCaseException exception)
+            when (exception.Kind == ApplicationErrorKind.Unauthorized)
+        {
+            DeleteRefreshCookie();
+            throw;
+        }
+        SetRefreshCookie(
+            tokens.RefreshToken,
+            tokens.RefreshTokenExpiresAtUtc,
+            tokens.IsPersistent);
         return Ok(new AuthTokenResponse(
             tokens.AccessToken, tokens.AccessTokenExpiresAtUtc));
     }
 
     [HttpPost("forgot-password")]
-    [EnableRateLimiting("auth-email")]
+    [EnableRateLimiting(AuthRateLimitPolicies.Email)]
     [ProducesResponseType<PasswordResetStartedResponse>(StatusCodes.Status202Accepted)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
@@ -112,7 +131,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("verify-reset-otp")]
-    [EnableRateLimiting("auth-otp")]
+    [EnableRateLimiting(AuthRateLimitPolicies.Otp)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
@@ -125,7 +144,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("reset-password")]
-    [EnableRateLimiting("auth-otp")]
+    [EnableRateLimiting(AuthRateLimitPolicies.Otp)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
@@ -140,55 +159,55 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
 
     [Authorize]
     [HttpPost("logout")]
-    [ProducesResponseType<MessageResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<MessageResponse>> Logout(
+    public async Task<IActionResult> Logout(
         CancellationToken cancellationToken)
     {
         var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        var jti = User.FindFirstValue(JwtRegisteredClaimNames.Jti);
-        var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
 
-        if (!Guid.TryParse(sub, out var userId) ||
-            string.IsNullOrWhiteSpace(jti) ||
-            !long.TryParse(exp, NumberStyles.Integer, CultureInfo.InvariantCulture, out var expUnix))
+        if (!Guid.TryParse(sub, out var userId))
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
                 "Access token không hợp lệ.");
         }
 
-        Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+        Request.Cookies.TryGetValue(
+            RefreshTokenCookieName,
+            out var refreshToken);
         await authService.LogoutAsync(
             userId,
-            jti,
-            DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime,
             refreshToken,
             cancellationToken);
         DeleteRefreshCookie();
-        return Ok(new MessageResponse("Đăng xuất thành công."));
+        return NoContent();
     }
 
-    private void SetRefreshCookie(string token, DateTime expiresAtUtc)
+    private void SetRefreshCookie(
+        string token,
+        DateTime expiresAtUtc,
+        bool isPersistent)
     {
-        Response.Cookies.Append("refreshToken", token, new CookieOptions
+        Response.Cookies.Append(RefreshTokenCookieName, token, new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
-            Path = "/api/auth",
-            Expires = expiresAtUtc
+            Path = RefreshTokenCookiePath,
+            Expires = isPersistent ? expiresAtUtc : null,
+            IsEssential = true
         });
     }
 
     private void DeleteRefreshCookie()
     {
-        Response.Cookies.Delete("refreshToken", new CookieOptions
+        Response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
-            Path = "/api/auth"
+            Path = RefreshTokenCookiePath
         });
     }
 }

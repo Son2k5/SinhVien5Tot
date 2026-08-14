@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using SV5T.Infrastructure.Configuration;
+using SV5T.Infrastructure.Security;
 
 namespace SV5T.Infrastructure.Persistence;
 
@@ -10,6 +12,7 @@ public sealed class ApplicationDbContextFactory
     public ApplicationDbContext CreateDbContext(string[] args)
     {
         var contentRoot = ResolveContentRoot();
+        DotEnvLoader.LoadBackendEnvironment(contentRoot);
         var environmentName =
             Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ??
             Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ??
@@ -39,7 +42,7 @@ public sealed class ApplicationDbContextFactory
                 new MySqlServerVersion(new Version(8, 4, 0)))
             .Options;
 
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(options, new DesignTimePiiProtector());
     }
 
     private static string ResolveContentRoot()
@@ -58,5 +61,11 @@ public sealed class ApplicationDbContextFactory
 
         throw new InvalidOperationException(
             "Could not locate the API configuration directory.");
+    }
+
+    private sealed class DesignTimePiiProtector : IPiiProtector
+    {
+        public string Protect(string plaintext) => plaintext;
+        public string Unprotect(string protectedValue) => protectedValue;
     }
 }

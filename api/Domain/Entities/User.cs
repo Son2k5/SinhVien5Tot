@@ -10,6 +10,8 @@ public sealed class User
 
     public string NormalizedEmail { get; set; } = string.Empty;
 
+    public string? DisplayName { get; set; }
+
     public string PasswordHash { get; set; } = string.Empty;
 
     public Role Role { get; set; } = Role.User;
@@ -23,6 +25,8 @@ public sealed class User
     public bool IsVerified { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    public int SecurityVersion { get; set; } = 1;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

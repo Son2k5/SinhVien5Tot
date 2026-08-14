@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using SV5T.Application.Interfaces.Services.Auth;
 using SV5T.Infrastructure.Options.Authentication;
 
-namespace SV5T.Infrastructure.Auth;
+namespace SV5T.Infrastructure.Security.Hashing;
 
 public sealed class Sha256Hasher(IOptions<IdentifierHashOptions> options)
     : ISha256Hasher

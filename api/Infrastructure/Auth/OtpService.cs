@@ -8,7 +8,7 @@ namespace SV5T.Infrastructure.Auth;
 
 public sealed class OtpService(IOptions<OtpOptions> options) : IOtpService
 {
-    public int ExpiryMinutes => Math.Max(1, options.Value.ExpirySeconds / 60);
+    public TimeSpan Expiry => TimeSpan.FromSeconds(options.Value.ExpirySeconds);
 
     public int MaxAttempts => options.Value.MaxAttempts;
 

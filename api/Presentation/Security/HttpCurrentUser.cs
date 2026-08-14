@@ -11,11 +11,12 @@ public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor)
 
     public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated == true;
 
-    public Guid? UserId => Guid.TryParse(
-        Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub),
-        out var userId)
-        ? userId
-        : null;
+    public Guid? UserId =>
+        Guid.TryParse(
+            Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub),
+            out var userId)
+            ? userId
+            : null;
 
     public bool IsInRole(string role) => Principal?.IsInRole(role) == true;
 }
