@@ -9,55 +9,87 @@ interface DashboardFallbackNoticeProps {
 export function DashboardFallbackNotice({ error, onRetry }: DashboardFallbackNoticeProps) {
   const message = error instanceof Error
     ? error.message
-    : 'Máy chủ welcome tạm thời chưa phản hồi.';
+    : 'Máy chủ tạm thời chưa phản hồi.';
 
   return (
-    <div className='sv2-fallback-notice' role='status'>
-      <span><RefreshCw size={16} /></span>
-      <p><strong>Đang hiển thị dữ liệu mẫu.</strong> {message}</p>
-      <button type='button' onClick={onRetry}>Kết nối lại</button>
+    <div
+      className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 flex items-center justify-between gap-4 shadow-sm"
+      role="status"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+          <RefreshCw className="w-4 h-4" />
+        </div>
+        <p className="text-xs sm:text-sm font-normal truncate">
+          <strong className="font-medium text-amber-950">Đang hiển thị dữ liệu mẫu.</strong> {message}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onRetry}
+        className="px-3.5 py-1.5 rounded-lg border border-amber-300 bg-white hover:bg-amber-100/50 text-amber-900 text-xs font-medium transition-colors shadow-sm flex-shrink-0 cursor-pointer"
+      >
+        Kết nối lại
+      </button>
     </div>
   );
 }
 
 export function HomeDashboardSkeleton() {
   return (
-    <div className='sv2-content' role='status' aria-live='polite' aria-busy='true'>
-      <SkeletonBlock className='h-[520px] rounded-[30px]' />
+    <div className="space-y-10 sm:space-y-14" role="status" aria-live="polite" aria-busy="true">
+      {/* Banner Skeleton */}
+      <SkeletonBlock className="h-64 sm:h-72 rounded-2xl" />
 
-      <section className='grid gap-4' aria-hidden='true'>
-        <div className='flex items-end justify-between gap-6'>
-          <div className='grid gap-2'><SkeletonBlock className='h-3 w-32 rounded' /><SkeletonBlock className='h-8 w-56 rounded-lg' /></div>
-          <SkeletonBlock className='hidden h-3 w-64 rounded md:block' />
+      {/* Features Skeleton */}
+      <section className="space-y-4" aria-hidden="true">
+        <div className="flex items-end justify-between gap-6">
+          <div className="space-y-2">
+            <SkeletonBlock className="h-3 w-32 rounded" />
+            <SkeletonBlock className="h-6 w-48 rounded-lg" />
+          </div>
+          <SkeletonBlock className="hidden sm:block h-8 w-36 rounded-lg" />
         </div>
-        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5'>
-          {Array.from({ length: 5 }, (_, index) => <SkeletonBlock key={index} className='h-48 rounded-[18px]' />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }, (_, index) => (
+            <SkeletonBlock key={index} className="h-28 rounded-2xl" />
+          ))}
         </div>
       </section>
 
-      <section className='grid gap-4' aria-hidden='true'>
-        <div className='grid gap-2'><SkeletonBlock className='h-3 w-28 rounded' /><SkeletonBlock className='h-8 w-52 rounded-lg' /></div>
-        <div className='grid gap-4 lg:grid-cols-[minmax(240px,0.65fr)_minmax(0,1.35fr)]'>
-          <SkeletonBlock className='h-[360px] rounded-[24px]' />
-          <div className='grid gap-3'>
-            {Array.from({ length: 5 }, (_, index) => <SkeletonBlock key={index} className='h-16 rounded-[14px]' />)}
+      {/* Criteria Skeleton */}
+      <section className="space-y-4" aria-hidden="true">
+        <div className="space-y-2">
+          <SkeletonBlock className="h-3 w-28 rounded" />
+          <SkeletonBlock className="h-6 w-48 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <SkeletonBlock className="lg:col-span-4 h-80 rounded-2xl" />
+          <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {Array.from({ length: 5 }, (_, index) => (
+              <SkeletonBlock key={index} className="h-36 rounded-2xl" />
+            ))}
           </div>
         </div>
       </section>
 
-      <section className='grid gap-4' aria-hidden='true'>
-        <div className='grid gap-2'><SkeletonBlock className='h-3 w-36 rounded' /><SkeletonBlock className='h-8 w-64 rounded-lg' /></div>
-        <div className='grid grid-cols-1 gap-5 md:grid-cols-3'>
-          {Array.from({ length: 3 }, (_, index) => <SkeletonBlock key={index} className='h-64 rounded-[20px]' />)}
+      {/* Activities Skeleton */}
+      <section className="space-y-4" aria-hidden="true">
+        <div className="space-y-2">
+          <SkeletonBlock className="h-3 w-36 rounded" />
+          <SkeletonBlock className="h-6 w-52 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <SkeletonBlock className="lg:col-span-7 h-96 rounded-2xl" />
+          <div className="lg:col-span-5 space-y-4">
+            <SkeletonBlock className="h-44 rounded-2xl" />
+            <SkeletonBlock className="h-44 rounded-2xl" />
+          </div>
         </div>
       </section>
 
-      <section className='grid gap-3' aria-hidden='true'>
-        <div className='grid gap-2'><SkeletonBlock className='h-3 w-32 rounded' /><SkeletonBlock className='h-8 w-56 rounded-lg' /></div>
-        {Array.from({ length: 4 }, (_, index) => <SkeletonBlock key={index} className='h-24 rounded-[16px]' />)}
-      </section>
-
-      <span className='sr-only'>Đang tải dữ liệu trang chủ...</span>
+      <span className="sr-only">Đang tải dữ liệu trang chủ...</span>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Camera, CheckCircle2, Info, LoaderCircle, RotateCcw, Save, ShieldCheck } from 'lucide-react';
-import { useMyProfile, useUpdateMyAvatar, useUpdateMyProfile } from '../../hooks/useUserProfile';
+import { useMyProfile, useUpdateMyAvatar, useUpdateMyProfile } from '../../hooks/profile/useUserProfile';
 import type { User } from '../../types/auth';
 import type { AddressType, UpdateUserProfilePayload, UserAddress, UserProfile } from '../../types/userProfile';
 
@@ -23,12 +23,27 @@ const emptyProfile = (email = ''): UpdateUserProfilePayload => ({
 
 function normalizeProfile(profile: UserProfile | null, email: string): UpdateUserProfilePayload {
   if (!profile) return emptyProfile(email);
+  const addresses = Array.isArray(profile.addresses) ? profile.addresses : [];
   const address = (type: AddressType) =>
-    profile.addresses.find((item) => item.addressType === type) ?? emptyAddress(type);
+    addresses.find((item) => item.addressType === type) ?? emptyAddress(type);
   return {
     ...profile,
+    fullName: profile.fullName ?? '',
+    birthDate: profile.birthDate ? String(profile.birthDate).slice(0, 10) : '',
+    gender: profile.gender ?? 'Other',
+    identityCardNumber: profile.identityCardNumber ?? '',
+    ethnicity: profile.ethnicity ?? '',
+    school: profile.school ?? '',
     major: profile.major ?? '',
+    academicYear: Number(profile.academicYear) || 1,
+    studentCode: profile.studentCode ?? '',
+    administrativeClass: profile.administrativeClass ?? '',
+    faculty: profile.faculty ?? '',
+    currentPosition: profile.currentPosition ?? '',
+    contactEmail: profile.contactEmail ?? email,
+    phoneNumber: profile.phoneNumber ?? '',
     unionPosition: profile.unionPosition ?? '',
+    politicalStatus: profile.politicalStatus ?? 'None',
     addresses: [address('Permanent'), address('Temporary')],
   };
 }

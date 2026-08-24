@@ -18,10 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\api\SV5T.Api.csproj" />
-    <ProjectReference Include="..\..\api\Application\SV5T.Application.csproj" />
-    <ProjectReference Include="..\..\api\Domain\SV5T.Domain.csproj" />
-    <ProjectReference Include="..\..\api\Infrastructure\SV5T.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\SV5T.Domain\SV5T.Domain.csproj" />
+    <ProjectReference Include="..\..\src\SV5T.Application\SV5T.Application.csproj" />
+    <ProjectReference Include="..\..\src\SV5T.Infrastructure\SV5T.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\SV5T.Api\SV5T.Api.csproj" />
   </ItemGroup>
 
 </Project>

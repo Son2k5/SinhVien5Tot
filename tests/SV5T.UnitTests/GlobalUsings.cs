@@ -1,0 +1,37 @@
+global using SV5T.Domain.Common;
+global using SV5T.Domain.Users;
+global using SV5T.Domain.Users.Enums;
+global using SV5T.Domain.Auth;
+global using SV5T.Domain.Auth.Enums;
+global using SV5T.Domain.Welcome;
+global using SV5T.Domain.Campaigns;
+global using SV5T.Domain.Criteria;
+global using SV5T.Domain.Submissions;
+global using SV5T.Domain.Awards;
+global using SV5T.Application.Common.Exceptions;
+global using SV5T.Application.Common.Interfaces;
+global using SV5T.Application.Common.Models;
+global using SV5T.Application.Auth.Dtos;
+global using SV5T.Application.Auth.Services;
+global using SV5T.Application.Auth.Validators;
+global using SV5T.Application.Auth.Templates;
+global using SV5T.Application.Users.Dtos;
+global using SV5T.Application.Users.Services;
+global using SV5T.Application.Users.Validators;
+global using SV5T.Application.Admin.Dtos;
+global using SV5T.Application.Admin.Queries;
+global using SV5T.Application.Admin.Validators;
+global using SV5T.Application.Welcome.Dtos;
+global using SV5T.Application.Welcome.Queries;
+global using SV5T.Infrastructure.Options;
+global using SV5T.Infrastructure.Persistence.Context;
+global using SV5T.Infrastructure.Persistence.Repositories;
+global using SV5T.Infrastructure.Persistence.UnitOfWork;
+global using SV5T.Infrastructure.Identity;
+global using SV5T.Infrastructure.Security.Hashing;
+global using SV5T.Infrastructure.Security.Pii;
+global using SV5T.Infrastructure.Storage;
+global using SV5T.Infrastructure.Email;
+global using SV5T.Api.Controllers;
+
+

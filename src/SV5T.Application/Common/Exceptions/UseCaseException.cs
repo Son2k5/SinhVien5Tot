@@ -1,0 +1,37 @@
+namespace SV5T.Application.Common.Exceptions;
+
+public enum ApplicationErrorKind
+{
+    Validation,
+    Unauthorized,
+    Forbidden,
+    NotFound,
+    Conflict,
+    RateLimited,
+    Unavailable,
+    Internal
+}
+
+public sealed class UseCaseException(
+    ApplicationErrorKind kind,
+    string publicMessage,
+    string? errorCode = null,
+    Exception? innerException = null)
+    : Exception(publicMessage, innerException)
+{
+    public ApplicationErrorKind Kind { get; } = kind;
+
+    public string PublicMessage { get; } = publicMessage;
+
+    public string ErrorCode { get; } = errorCode ?? kind switch
+    {
+        ApplicationErrorKind.Validation => "invalid_request",
+        ApplicationErrorKind.Unauthorized => "unauthorized",
+        ApplicationErrorKind.Forbidden => "forbidden",
+        ApplicationErrorKind.NotFound => "not_found",
+        ApplicationErrorKind.Conflict => "conflict",
+        ApplicationErrorKind.RateLimited => "rate_limited",
+        ApplicationErrorKind.Unavailable => "service_unavailable",
+        _ => "request_failed"
+    };
+}

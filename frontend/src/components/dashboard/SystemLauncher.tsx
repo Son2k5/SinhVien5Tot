@@ -69,49 +69,138 @@ export function SystemLauncher({
 }: SystemLauncherProps) {
   return (
     <>
-      <button
-        type='button'
-        aria-label='Đóng danh sách chức năng'
-        tabIndex={open ? 0 : -1}
-        className={'sv2-launcher-scrim' + (open ? ' is-open' : '')}
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        className={`fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm transition-opacity duration-200 ${
+          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
         onClick={onClose}
       />
-      <aside aria-label='Danh sách chức năng hệ thống' aria-hidden={!open} inert={!open} className={'sv2-launcher' + (open ? ' is-open' : '')}>
-        <div className='sv2-launcher__top'>
-          <div><span>Menu</span><h2>Chức năng hệ thống</h2></div>
-          <button type='button' className='sv2-icon-button' onClick={onClose} aria-label='Đóng'><X size={20} /></button>
+
+      {/* Drawer */}
+      <aside
+        aria-label="Danh sách chức năng hệ thống"
+        aria-hidden={!open}
+        className={`fixed top-0 bottom-0 left-0 z-50 w-full max-w-md bg-white border-r border-slate-200 shadow-2xl flex flex-col transition-transform duration-200 ease-out ${
+          open ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'
+        }`}
+      >
+        {/* Header */}
+        <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-blue-600 tracking-wider uppercase">Menu hệ thống</span>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">Chức năng hệ thống</h2>
+          </div>
+          <button
+            type="button"
+            className="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
+            <X className="w-4.5 h-4.5" />
+          </button>
         </div>
-        <div className='sv2-launcher__search'>
-          <Search size={18} />
-          <input ref={searchInputRef} type='search' value={searchValue} onChange={(event) => onSearchChange(event.target.value)} placeholder='Tìm kiếm nhanh...' aria-label='Tìm chức năng' />
-          <span>{filteredCount}</span>
+
+        {/* Search */}
+        <div className="p-4 sm:p-5 border-b border-slate-100">
+          <div className="relative flex items-center">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Tìm kiếm nhanh chức năng..."
+              aria-label="Tìm chức năng"
+              className="w-full h-10 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 font-medium placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+            <span className="absolute right-3 text-xs font-semibold text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+              {filteredCount}
+            </span>
+          </div>
         </div>
-        <div className='sv2-launcher__body'>
+
+        {/* Feature Groups */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6">
           {filteredCount === 0 ? (
-            <div className='sv2-empty-state'><Search size={25} /><strong>Không tìm thấy chức năng</strong><p>Thử một từ khóa khác nhé.</p></div>
-          ) : Object.entries(featureGroups).map(([group, features]) => (
-            <section key={group} className='sv2-launcher__group'>
-              <h3>{group}</h3>
-              <div>{features.map((feature) => {
-                const FeatureIcon = getIcon(feature.icon);
-                return feature.isAvailable ? (
-                  <Link key={feature.key} to={feature.route} onClick={onClose} className='sv2-launcher-item'>
-                    <span><FeatureIcon size={18} /></span>
-                    <span><strong>{feature.title}</strong><small>{feature.description}</small></span>
-                    <ChevronRight size={16} />
-                  </Link>
-                ) : (
-                  <button key={feature.key} type='button' disabled className='sv2-launcher-item is-disabled'>
-                    <span><FeatureIcon size={18} /></span>
-                    <span><strong>{feature.title}</strong><small>{feature.description}</small></span>
-                    <em>{feature.badge}</em>
-                  </button>
-                );
-              })}</div>
-            </section>
-          ))}
+            <div className="py-12 text-center">
+              <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-slate-800">Không tìm thấy chức năng</p>
+              <p className="text-xs text-slate-500 mt-0.5">Thử tìm bằng một từ khóa khác nhé.</p>
+            </div>
+          ) : (
+            Object.entries(featureGroups).map(([group, features]) => (
+              <div key={group} className="space-y-2.5">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
+                  {group}
+                </h3>
+                <div className="grid grid-cols-1 gap-2">
+                  {features.map((feature) => {
+                    const FeatureIcon = getIcon(feature.icon);
+                    return feature.isAvailable ? (
+                      <Link
+                        key={feature.key}
+                        to={feature.route}
+                        onClick={onClose}
+                        className="group flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200/80 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                          <div className="w-9 h-9 rounded-lg bg-white border border-slate-200/80 group-hover:border-blue-200 text-blue-600 flex items-center justify-center flex-shrink-0 transition-colors">
+                            <FeatureIcon className="w-4.5 h-4.5" />
+                          </div>
+                          <div className="truncate">
+                            <h4 className="text-xs font-semibold text-slate-900 group-hover:text-blue-600 truncate transition-colors">
+                              {feature.title}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 truncate font-normal">
+                              {feature.description}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                      </Link>
+                    ) : (
+                      <div
+                        key={feature.key}
+                        className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/30 opacity-60 cursor-not-allowed"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                          <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center flex-shrink-0">
+                            <FeatureIcon className="w-4.5 h-4.5" />
+                          </div>
+                          <div className="truncate">
+                            <h4 className="text-xs font-semibold text-slate-700 truncate">
+                              {feature.title}
+                            </h4>
+                            <p className="text-[11px] text-slate-400 truncate font-normal">
+                              {feature.description}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full flex-shrink-0">
+                          {feature.badge || 'Sắp mở'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
         </div>
-        <div className='sv2-launcher__footer'><button type='button' onClick={onLogout}><LogOut size={17} /> Đăng xuất</button></div>
+
+        {/* Footer */}
+        <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/40">
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-full h-10 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-100 flex items-center justify-center gap-2 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Đăng xuất tài khoản</span>
+          </button>
+        </div>
       </aside>
     </>
   );

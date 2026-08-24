@@ -2,21 +2,8 @@ using FluentValidation;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SV5T.Application.Common.Exceptions;
-using SV5T.Application.DTOs.Auth;
-using SV5T.Application.Interfaces.Persistence;
-using SV5T.Application.Interfaces.Repositories;
-using SV5T.Application.Interfaces.Services.Auth;
-using SV5T.Application.Interfaces.Services.Commons;
-using SV5T.Application.Interfaces.Services.Email;
-using SV5T.Application.Models.Auth;
-using SV5T.Application.Models.Email;
-using SV5T.Application.Services;
-using SV5T.Application.Validators;
-using SV5T.Domain.Entities;
-using SV5T.Domain.Enums;
-using SV5T.Infrastructure.Auth;
+using SV5T.Application.Common.Models;
 using SV5T.Infrastructure.Security.Hashing;
-using SV5T.Infrastructure.Options.Authentication;
 using Xunit;
 
 namespace SV5T.UnitTests.Application;
@@ -567,12 +554,31 @@ public sealed class AuthSecurityRegressionTests
             Task.FromResult(items.Any(user => user.Id != excludeUserId &&
                 user.Profile?.StudentCode == studentCode));
 
+        public Task AddProfileAsync(
+            UserProfile profile,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task AddAddressAsync(
+            UserAddress address,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public Task AddAsync(
             User user,
             CancellationToken cancellationToken = default)
         {
             items.Add(user);
             return Task.CompletedTask;
+        }
+
+        public Task<int> DeleteUnverifiedBeforeAsync(
+            DateTime cutoffUtc,
+            CancellationToken cancellationToken = default)
+        {
+            var deleted = items.RemoveAll(user =>
+                !user.IsVerified && user.CreatedAt <= cutoffUtc);
+            return Task.FromResult(deleted);
         }
     }
 
@@ -822,3 +828,5 @@ public sealed class AuthSecurityRegressionTests
             Task.FromResult(0);
     }
 }
+
+

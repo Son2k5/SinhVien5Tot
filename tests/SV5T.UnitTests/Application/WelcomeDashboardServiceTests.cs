@@ -1,9 +1,4 @@
 using SV5T.Application.Common.Exceptions;
-using SV5T.Application.Interfaces.Repositories;
-using SV5T.Application.Interfaces.Services.Commons;
-using SV5T.Application.Services;
-using SV5T.Domain.Entities;
-using SV5T.Domain.Enums;
 using Xunit;
 
 namespace SV5T.UnitTests.Application;
@@ -19,12 +14,14 @@ public sealed class WelcomeDashboardServiceTests
             Email = "student@ms.hanu.edu.vn",
             DisplayName = "Nguyễn Minh Anh",
             IsActive = true,
+            IsVerified = true,
             Profile = new UserProfile
             {
                 FullName = "Nguyễn Minh Anh",
                 Faculty = "Công nghệ thông tin"
             }
         };
+        user.DisplayName = user.Email;
         var service = new WelcomeDashboardService(
             new FakeCurrentUser(user.Id),
             new FakeUserRepository(user),
@@ -53,6 +50,26 @@ public sealed class WelcomeDashboardServiceTests
             () => service.GetAsync());
 
         Assert.Equal("invalid_session", exception.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Get_RejectsUnverifiedUser()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            IsActive = true,
+            IsVerified = false
+        };
+        var service = new WelcomeDashboardService(
+            new FakeCurrentUser(user.Id),
+            new FakeUserRepository(user),
+            new FakeContentRepository());
+
+        var exception = await Assert.ThrowsAsync<UseCaseException>(
+            () => service.GetAsync());
+
+        Assert.Equal(ApplicationErrorKind.NotFound, exception.Kind);
     }
 
     private static PortalContent Content(PortalContentType type) => new()
@@ -101,10 +118,25 @@ public sealed class WelcomeDashboardServiceTests
             Task.FromResult(users.Any(user => user.Id != excludeUserId &&
                 user.Profile?.StudentCode == studentCode));
 
+        public Task AddProfileAsync(
+            UserProfile profile,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task AddAddressAsync(
+            UserAddress address,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public Task AddAsync(
             User user,
             CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+
+        public Task<int> DeleteUnverifiedBeforeAsync(
+            DateTime cutoffUtc,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(0);
     }
 
     private sealed class FakeContentRepository(params PortalContent[] contents)
@@ -118,3 +150,5 @@ public sealed class WelcomeDashboardServiceTests
                 contents.Take(limit).ToArray());
     }
 }
+
+

@@ -1,4 +1,3 @@
-using SV5T.Application.Models.Auth;
 using Xunit;
 
 namespace SV5T.UnitTests.Application;
@@ -41,3 +40,5 @@ public sealed class TokenIdlePolicyTests
         Assert.Equal(startedAt.AddHours(5), lastActivity);
     }
 }
+
+

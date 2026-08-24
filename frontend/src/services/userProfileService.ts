@@ -13,9 +13,7 @@ export const userProfileService = {
       const response = await apiClient.get<UserProfile>('/users/me/profile');
       return response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError<{ code?: string }>(error) &&
-          error.response?.status === 404 &&
-          error.response.data?.code === 'profile_not_found') {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
         return null;
       }
       throw new Error(sanitizeApiError(error));

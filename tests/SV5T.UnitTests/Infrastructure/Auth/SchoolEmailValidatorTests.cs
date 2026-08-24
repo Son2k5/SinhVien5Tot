@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Options;
-using SV5T.Infrastructure.Auth;
-using SV5T.Infrastructure.Options.Integrations;
+using SV5T.Infrastructure.Options;
 using Xunit;
 
 namespace SV5T.UnitTests.Infrastructure.Auth;
@@ -33,3 +32,5 @@ public sealed class SchoolEmailValidatorTests
         Assert.False(validator.IsAllowed(email));
     }
 }
+
+

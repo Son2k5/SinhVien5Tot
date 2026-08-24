@@ -2,7 +2,7 @@ using MailKit.Security;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MimeKit;
-using SV5T.Application.Models.Email;
+using SV5T.Application.Common.Models;
 using SV5T.Infrastructure.Email;
 using SV5T.Infrastructure.Options;
 using Xunit;
@@ -155,3 +155,5 @@ public sealed class SmtpEmailSenderTests
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }
+
+

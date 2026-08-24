@@ -1,28 +1,5 @@
 import { SkeletonBlock } from './SkeletonBlock';
 
-export function FormSkeleton() {
-  return (
-    <div className='w-full max-w-md mx-auto space-y-6 p-4' role='status' aria-live='polite' aria-busy='true'>
-      <div className='space-y-2'>
-        <SkeletonBlock className='h-8 rounded-lg w-2/3' />
-        <SkeletonBlock className='h-4 rounded w-5/6 opacity-60' />
-      </div>
-      <div className='space-y-4 pt-4'>
-        <div className='space-y-2'>
-          <SkeletonBlock className='h-4 rounded w-1/4' />
-          <SkeletonBlock className='h-11 rounded-lg w-full opacity-60' />
-        </div>
-        <div className='space-y-2'>
-          <SkeletonBlock className='h-4 rounded w-1/4' />
-          <SkeletonBlock className='h-11 rounded-lg w-full opacity-60' />
-        </div>
-      </div>
-      <SkeletonBlock className='h-11 rounded-lg w-full mt-6' />
-      <SkeletonBlock className='h-4 rounded w-1/2 mx-auto mt-6 opacity-60' />
-      <span className='sr-only'>Đang tải biểu mẫu...</span>
-    </div>
-  );
-}
 
 export function DashboardSkeleton() {
   return (

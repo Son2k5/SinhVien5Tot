@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DashboardFooter } from '../components/dashboard/DashboardFooter';
@@ -7,12 +5,10 @@ import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { SystemLauncher } from '../components/dashboard/SystemLauncher';
 import { formatUserRole } from '../components/dashboard/home';
 import { UserProfileForm } from '../components/profile/UserProfileForm';
-import { mockSystemFeatures } from '../mocks/welcomeContent';
-import { welcomeService } from '../services/welcomeService';
+import { useWelcomeDashboard } from '../hooks/dashboard/useWelcomeDashboard';
+import { useLauncher } from '../hooks/dashboard/useLauncher';
 import type { User } from '../types/auth';
-import type { SystemFeature } from '../types/welcome';
 import './HomeView.css';
-import './HomeViewV2.css';
 import './UserProfileView.css';
 
 interface UserProfileViewProps {
@@ -21,67 +17,48 @@ interface UserProfileViewProps {
 }
 
 export function UserProfileView({ user, onLogout }: UserProfileViewProps) {
-  const [launcherOpen, setLauncherOpen] = useState(false);
-  const [featureSearch, setFeatureSearch] = useState('');
-  const launcherButtonRef = useRef<HTMLButtonElement>(null);
-  const launcherSearchRef = useRef<HTMLInputElement>(null);
-  const dashboardQuery = useQuery({
-    queryKey: ['welcome-dashboard', user.id],
-    queryFn: welcomeService.getDashboard,
-  });
-  const features = dashboardQuery.data?.features ?? mockSystemFeatures;
+  const {
+    displayName,
+    avatarUrl,
+    notifications,
+    features,
+  } = useWelcomeDashboard(user);
 
-  useEffect(() => {
-    if (!launcherOpen) return;
-    const trigger = launcherButtonRef.current;
-    requestAnimationFrame(() => launcherSearchRef.current?.focus());
-    const close = (event: KeyboardEvent) => event.key === 'Escape' && setLauncherOpen(false);
-    window.addEventListener('keydown', close);
-    return () => {
-      window.removeEventListener('keydown', close);
-      trigger?.focus();
-    };
-  }, [launcherOpen]);
-
-  const filteredFeatures = useMemo(() => {
-    const query = featureSearch.trim().toLocaleLowerCase('vi');
-    if (!query) return features;
-    return features.filter((feature) =>
-      `${feature.title} ${feature.description} ${feature.group}`
-        .toLocaleLowerCase('vi')
-        .includes(query));
-  }, [featureSearch, features]);
-
-  const featureGroups = useMemo(
-    () => filteredFeatures.reduce<Record<string, SystemFeature[]>>((groups, feature) => {
-      (groups[feature.group] ??= []).push(feature);
-      return groups;
-    }, {}),
-    [filteredFeatures],
-  );
+  const {
+    launcherOpen,
+    featureSearch,
+    filteredFeatures,
+    featureGroups,
+    launcherButtonRef,
+    launcherSearchRef,
+    openLauncher,
+    closeLauncher,
+    toggleLauncher,
+    setFeatureSearch,
+  } = useLauncher(features);
 
   return (
     <div className='sv-dashboard min-h-screen'>
-      <a href='#profile-content' className='sv2-skip-link'>Chuyển đến nội dung hồ sơ</a>
       <DashboardHeader
-        displayName={user.name}
+        displayName={displayName}
         role={formatUserRole(user.role)}
-        avatarUrl={user.avatarUrl}
-        notificationCount={dashboardQuery.data?.notifications.length ?? 0}
+        avatarUrl={avatarUrl}
+        notificationCount={notifications.length}
         launcherOpen={launcherOpen}
         menuButtonRef={launcherButtonRef}
-        onToggleLauncher={() => setLauncherOpen((open) => !open)}
-        onOpenLauncher={() => setLauncherOpen(true)}
+        onToggleLauncher={toggleLauncher}
+        onOpenLauncher={openLauncher}
         onLogout={onLogout}
       />
       <SystemLauncher
         open={launcherOpen}
         searchValue={featureSearch}
+
         featureGroups={featureGroups}
         filteredCount={filteredFeatures.length}
         searchInputRef={launcherSearchRef}
         onSearchChange={setFeatureSearch}
-        onClose={() => setLauncherOpen(false)}
+        onClose={closeLauncher}
         onLogout={onLogout}
       />
 

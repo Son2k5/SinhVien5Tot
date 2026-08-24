@@ -1,79 +1,48 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
-import { useAuthStore } from './store/useAuthStore';
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { useAuthSession } from './hooks/auth/useAuthSession';
 import { AuthPage } from './views/AuthPage';
 import { HomeView } from './views/HomeView';
 import { NewsDetailView } from './views/NewsDetailView';
 import { UserProfileView } from './views/UserProfileView';
 import { LandingPage } from './views/LandingPage';
+import { AdminDashboardView } from './views/admin/AdminDashboardView';
+import { AdminFeatureView } from './views/admin/AdminFeatureView';
+import { AdminLayout } from './components/admin/AdminLayout';
 import { DashboardSkeleton } from './components/common/SkeletonLoader';
-import { authService } from './services/authService';
-import {
-  SESSION_EXPIRED_EVENT,
-  startSessionInactivityMonitor,
-  type SessionEndReason,
-} from './services/sessionInactivity';
+import { canAccessAdmin, isAdmin, authenticatedHome } from './utils/authorization';
 
 export function App() {
-  const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading, initSession, setSession, clearSession } = useAuthStore();
-  const sessionEndPending = useRef(false);
-
-  const endExpiredSession = useCallback((reason: SessionEndReason) => {
-    if (sessionEndPending.current) return;
-    sessionEndPending.current = true;
-    clearSession(reason);
-    navigate(
-      reason === 'logout' ? '/login' : `/login?reason=${reason}`,
-      { replace: true },
-    );
-  }, [clearSession, navigate]);
-
-  useEffect(() => { void initSession(); }, [initSession]);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    sessionEndPending.current = false;
-    const stopMonitor = startSessionInactivityMonitor(
-      (reason) => endExpiredSession(reason),
-    );
-    const handleServerExpiry = (event: Event) => {
-      const reason = event instanceof CustomEvent
-        ? event.detail as SessionEndReason
-        : 'expired';
-      endExpiredSession(reason);
-    };
-    window.addEventListener(SESSION_EXPIRED_EVENT, handleServerExpiry);
-    return () => {
-      stopMonitor();
-      window.removeEventListener(SESSION_EXPIRED_EVENT, handleServerExpiry);
-    };
-  }, [endExpiredSession, isAuthenticated]);
+  const { user, isAuthenticated, isLoading, loginSuccess, logout } = useAuthSession();
 
   if (isLoading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6"><DashboardSkeleton /></div>;
 
-  const loginSuccess = (authenticatedUser: Parameters<typeof setSession>[0], token: string, rememberMe = false) => {
-    setSession(authenticatedUser, token, rememberMe);
-    navigate('/dashboard', { replace: true });
-  };
-
-  const logout = async () => {
-    try {
-      await authService.logout();
-    } finally {
-      clearSession('logout');
-      navigate('/login', { replace: true });
-    }
-  };
-
   return (
     <Routes>
-      <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <AuthPage view="login" onLoginSuccess={loginSuccess} />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <AuthPage view="register" onLoginSuccess={loginSuccess} />} />
-      <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <AuthPage view="forgot-password" onLoginSuccess={loginSuccess} />} />
-      <Route path="/dashboard" element={isAuthenticated && user ? <HomeView user={user} onLogout={logout} /> : <Navigate to="/login" replace />} />
+      <Route path="/" element={isAuthenticated ? <Navigate to={authenticatedHome(user)} replace /> : <LandingPage />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to={authenticatedHome(user)} replace /> : <AuthPage view="login" onLoginSuccess={loginSuccess} />} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to={authenticatedHome(user)} replace /> : <AuthPage view="register" onLoginSuccess={loginSuccess} />} />
+      <Route path="/forgot-password" element={isAuthenticated ? <Navigate to={authenticatedHome(user)} replace /> : <AuthPage view="forgot-password" onLoginSuccess={loginSuccess} />} />
+      <Route path="/dashboard" element={isAuthenticated && user ? (canAccessAdmin(user) ? <Navigate to="/admin" replace /> : <HomeView user={user} onLogout={logout} />) : <Navigate to="/login" replace />} />
       <Route path="/dashboard/profile" element={isAuthenticated && user ? <UserProfileView user={user} onLogout={logout} /> : <Navigate to="/login" replace />} />
+      <Route element={isAuthenticated && user && canAccessAdmin(user) ? <Outlet /> : <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}>
+        <Route path="/admin" element={<AdminLayout user={user!} onLogout={logout} />}>
+          <Route index element={<AdminDashboardView />} />
+          <Route path="campaigns" element={<AdminFeatureView section="campaigns" />} />
+          <Route path="campaigns/new" element={<AdminFeatureView section="campaign-create" />} />
+          <Route path="applications" element={<AdminFeatureView section="applications" />} />
+          <Route path="evidence" element={<AdminFeatureView section="evidence" />} />
+          <Route path="collectives" element={<AdminFeatureView section="collectives" />} />
+          <Route path="reports" element={<AdminFeatureView section="reports" />} />
+          <Route path="settings" element={<AdminFeatureView section="settings" />} />
+          <Route path="account" element={<AdminFeatureView section="account" />} />
+          <Route path="change-password" element={<AdminFeatureView section="change-password" />} />
+          <Route element={isAdmin(user) ? <Outlet /> : <Navigate to="/admin" replace />}>
+            <Route path="standards" element={<AdminFeatureView section="standards" />} />
+            <Route path="roles" element={<AdminFeatureView section="roles" />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Route>
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path='/news/:newsId' element={isAuthenticated ? <NewsDetailView /> : <Navigate to='/login' replace />} />
     </Routes>

@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 import { DashboardFooter } from '../components/dashboard/DashboardFooter';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { SystemLauncher } from '../components/dashboard/SystemLauncher';
 import {
-  CriteriaJourneySection,
-  CriteriaProgressSection,
+  FiveGoodJourneySection,
   CriterionDetailsDialog,
   AdminFeedbackSection,
   DashboardFallbackNotice,
@@ -14,18 +12,17 @@ import {
   MotivationBanner,
   NewsSection,
   SystemFeatureSection,
-  WelcomeHeroSection,
+  DashboardWelcomeBanner,
   YouthGallerySection,
   dashboardCriteria,
   formatUserRole,
 } from '../components/dashboard/home';
 import type { CriterionDefinition } from '../components/dashboard/home';
-import { createMockWelcomeDashboard, resolveCriteriaProgress, resolveNewsItems, resolveYouthGallery } from '../mocks/welcomeContent';
-import { welcomeService } from '../services/welcomeService';
+import { resolveCriteriaProgress, resolveNewsItems, resolveYouthGallery } from '../mocks/welcomeContent';
+import { useWelcomeDashboard } from '../hooks/dashboard/useWelcomeDashboard';
+import { useLauncher } from '../hooks/dashboard/useLauncher';
 import type { User } from '../types/auth';
-import type { SystemFeature } from '../types/welcome';
 import './HomeView.css';
-import './HomeViewV2.css';
 
 interface HomeViewProps {
   user: User;
@@ -33,55 +30,35 @@ interface HomeViewProps {
 }
 
 export function HomeView({ user, onLogout }: HomeViewProps) {
-  const [launcherOpen, setLauncherOpen] = useState(false);
-  const [featureSearch, setFeatureSearch] = useState('');
   const [selectedCriterion, setSelectedCriterion] = useState<CriterionDefinition | null>(null);
-  const launcherButtonRef = useRef<HTMLButtonElement>(null);
-  const launcherSearchRef = useRef<HTMLInputElement>(null);
-  const { data, error, isError, isFetching, isLoading, refetch } = useQuery({
-    queryKey: ['welcome-dashboard', user.id],
-    queryFn: welcomeService.getDashboard,
-  });
-  const dashboard = useMemo(
-    () => data ?? createMockWelcomeDashboard(user),
-    [data, user],
-  );
 
-  useEffect(() => {
-    if (!launcherOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    const triggerButton = launcherButtonRef.current;
-    document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => launcherSearchRef.current?.focus());
-    const close = (event: KeyboardEvent) => event.key === 'Escape' && setLauncherOpen(false);
-    window.addEventListener('keydown', close);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', close);
-      triggerButton?.focus();
-    };
-  }, [launcherOpen]);
+  const {
+    dashboard,
+    displayName,
+    avatarUrl,
+    notifications,
+    features,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useWelcomeDashboard(user);
 
-  const filteredFeatures = useMemo(() => {
-    const query = featureSearch.trim().toLocaleLowerCase('vi');
-    if (!query) return dashboard.features;
-    return dashboard.features.filter((feature) =>
-      (feature.title + ' ' + feature.description + ' ' + feature.group)
-        .toLocaleLowerCase('vi')
-        .includes(query));
-  }, [dashboard.features, featureSearch]);
-
-  const featureGroups = useMemo(
-    () => filteredFeatures.reduce<Record<string, SystemFeature[]>>((groups, feature) => {
-      (groups[feature.group] ??= []).push(feature);
-      return groups;
-    }, {}),
-    [filteredFeatures],
-  );
+  const {
+    launcherOpen,
+    featureSearch,
+    filteredFeatures,
+    featureGroups,
+    launcherButtonRef,
+    launcherSearchRef,
+    openLauncher,
+    closeLauncher,
+    toggleLauncher,
+    setFeatureSearch,
+  } = useLauncher(features, true);
 
   const closeCriterion = useCallback(() => setSelectedCriterion(null), []);
-  const displayName = dashboard.user.displayName || user.name || user.email.split('@')[0];
-  const avatarUrl = dashboard.user.avatarUrl || user.avatarUrl;
   const newsItems = resolveNewsItems(dashboard.news);
   const youthGallery = resolveYouthGallery(dashboard.youthGallery);
   const criteriaProgress = resolveCriteriaProgress(dashboard.criteriaProgress);
@@ -90,20 +67,26 @@ export function HomeView({ user, onLogout }: HomeViewProps) {
     : undefined;
 
   return (
-    <div className='sv-dashboard'>
-      <a href='#welcome-content' className='sv2-skip-link'>Chuyển đến nội dung chính</a>
+    <div className="min-h-screen bg-slate-50/50 text-slate-700 font-['Be_Vietnam_Pro',_ui-sans-serif,_system-ui,_sans-serif] [font-optical-sizing:auto] [-webkit-font-smoothing:antialiased] [text-rendering:optimizeLegibility] selection:bg-blue-100 selection:text-blue-700 flex flex-col">
+      <a 
+        href="#welcome-content" 
+        className="fixed z-[300] top-3 left-3 px-4 py-2 text-sm font-medium text-blue-600 border border-slate-200 rounded-lg bg-white shadow-md transition-transform duration-200 -translate-y-40 focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Chuyển đến nội dung chính
+      </a>
 
       <DashboardHeader
         displayName={displayName}
         role={formatUserRole(user.role)}
         avatarUrl={avatarUrl}
-        notificationCount={dashboard.notifications.length}
+        notificationCount={notifications.length}
         launcherOpen={launcherOpen}
         menuButtonRef={launcherButtonRef}
-        onToggleLauncher={() => setLauncherOpen((open) => !open)}
-        onOpenLauncher={() => setLauncherOpen(true)}
+        onToggleLauncher={toggleLauncher}
+        onOpenLauncher={openLauncher}
         onLogout={onLogout}
       />
+
       <SystemLauncher
         open={launcherOpen}
         searchValue={featureSearch}
@@ -111,23 +94,22 @@ export function HomeView({ user, onLogout }: HomeViewProps) {
         filteredCount={filteredFeatures.length}
         searchInputRef={launcherSearchRef}
         onSearchChange={setFeatureSearch}
-        onClose={() => setLauncherOpen(false)}
+        onClose={closeLauncher}
         onLogout={onLogout}
       />
 
-      <main id='welcome-content' tabIndex={-1} className='sv2-main'>
+      <main id="welcome-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 outline-none">
         {isLoading ? <HomeDashboardSkeleton /> : (
-          <div className='sv2-content'>
+          <div className="sv2-content space-y-10 sm:space-y-14">
             {isError && <DashboardFallbackNotice error={error} onRetry={() => void refetch()} />}
-            <WelcomeHeroSection
+            <DashboardWelcomeBanner
               displayName={displayName}
               isRefreshing={isFetching}
-              onOpenLauncher={() => setLauncherOpen(true)}
+              onOpenLauncher={openLauncher}
               onRefresh={() => void refetch()}
             />
-            <SystemFeatureSection features={dashboard.features} onOpenAll={() => setLauncherOpen(true)} />
-            <CriteriaJourneySection criteria={dashboardCriteria} progressItems={criteriaProgress} onSelect={setSelectedCriterion} />
-            <CriteriaProgressSection criteria={dashboardCriteria} progressItems={criteriaProgress} onSelect={setSelectedCriterion} />
+            <SystemFeatureSection features={dashboard.features} onOpenAll={openLauncher} />
+            <FiveGoodJourneySection criteria={dashboardCriteria} progressItems={criteriaProgress} onSelect={setSelectedCriterion} />
             <FeaturedActivitiesSection items={newsItems} />
             <NewsSection items={newsItems} />
             <YouthGallerySection items={youthGallery} />
@@ -136,6 +118,7 @@ export function HomeView({ user, onLogout }: HomeViewProps) {
           </div>
         )}
       </main>
+
       <DashboardFooter />
 
       {selectedCriterion && selectedProgress && (

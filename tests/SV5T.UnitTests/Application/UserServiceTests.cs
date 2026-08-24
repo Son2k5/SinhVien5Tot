@@ -1,14 +1,9 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using SV5T.Application.Common.Exceptions;
-using SV5T.Application.DTOs.Users;
-using SV5T.Application.Interfaces.Persistence;
-using SV5T.Application.Interfaces.Repositories;
-using SV5T.Application.Interfaces.Services.Commons;
-using SV5T.Application.Interfaces.Services.Media;
-using SV5T.Application.Services;
-using SV5T.Application.Validators;
-using SV5T.Domain.Entities;
-using SV5T.Domain.Enums;
+using SV5T.Application.Users.Commands.UpdateAvatar;
+using SV5T.Application.Users.Commands.UpdateProfile;
+using SV5T.Application.Users.Queries.GetMyProfile;
+using SV5T.Application.Users.Queries.GetUserById;
 using Xunit;
 
 namespace SV5T.UnitTests.Application;
@@ -44,6 +39,7 @@ public sealed class UserServiceTests
 
         Assert.Equal("Nguyen Van A", user.Profile!.FullName);
         Assert.Equal("SV001", user.Profile.StudentCode);
+        Assert.Equal(user.Profile.FullName, user.DisplayName);
         Assert.Equal(2, user.Addresses.Count);
         Assert.Equal("Da Nang", user.Addresses.Single(
             item => item.AddressType == AddressType.Temporary).ProvinceOrCity);
@@ -54,13 +50,42 @@ public sealed class UserServiceTests
     public async Task UpdateProfile_CreatesProfileWhenMissing()
     {
         var user = ActiveUser(withProfile: false);
-        var service = CreateService(user, out _, out _);
+        var service = CreateService(user, out var repository, out _);
+        var request = ValidRequest() with
+        {
+            Addresses =
+            [
+                new UpdateUserAddressRequest(
+                    AddressType.Permanent, "Ha Noi", "Cau Giay", "So 1")
+            ]
+        };
 
-        var result = await service.UpdateMyProfileAsync(user.Id, ValidRequest());
+        var result = await service.UpdateMyProfileAsync(user.Id, request);
 
         Assert.NotNull(user.Profile);
         Assert.Equal(user.Id, user.Profile!.UserId);
         Assert.Equal("SV001", result.StudentCode);
+        Assert.Single(repository.AddedProfiles);
+        Assert.Same(user.Profile, repository.AddedProfiles[0]);
+        Assert.Single(repository.AddedAddresses);
+        Assert.Same(user.Addresses.Single(), repository.AddedAddresses[0]);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_RemovesAddressesMissingFromReplacementPayload()
+    {
+        var user = ActiveUser(withProfile: true);
+        user.Addresses.Add(new UserAddress
+        {
+            UserId = user.Id,
+            AddressType = AddressType.Temporary
+        });
+        var service = CreateService(user, out _, out _);
+
+        var result = await service.UpdateMyProfileAsync(user.Id, ValidRequest());
+
+        Assert.Empty(user.Addresses);
+        Assert.Empty(result.Addresses);
     }
 
     [Fact]
@@ -122,14 +147,16 @@ public sealed class UserServiceTests
     private static UserService CreateService(
         User current,
         FakeUserRepository repository,
-        FakeAvatarStorage storage) =>
-        new(
-            new FakeCurrentUser(current.Id),
-            repository,
-            new FakeUnitOfWork(),
-            storage,
-            new UpdateUserProfileRequestValidator(),
-            NullLogger<UserService>.Instance);
+        FakeAvatarStorage storage)
+    {
+        var currentUser = new FakeCurrentUser(current.Id);
+        var unitOfWork = new FakeUnitOfWork();
+        return new UserService(
+            new GetUserByIdHandler(currentUser, repository),
+            new GetMyProfileHandler(currentUser, repository),
+            new UpdateProfileHandler(currentUser, repository, unitOfWork, new UpdateUserProfileRequestValidator()),
+            new UpdateAvatarHandler(currentUser, repository, unitOfWork, storage, NullLogger<UpdateAvatarHandler>.Instance));
+    }
 
     private static User ActiveUser(bool withProfile) =>
         new()
@@ -179,6 +206,10 @@ public sealed class UserServiceTests
 
     private sealed class FakeUserRepository(params User[] users) : IUserRepository
     {
+        public List<UserProfile> AddedProfiles { get; } = [];
+
+        public List<UserAddress> AddedAddresses { get; } = [];
+
         public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
             Task.FromResult(users.FirstOrDefault(user => user.Id == id));
         public Task<User?> GetByNormalizedEmailAsync(
@@ -194,8 +225,28 @@ public sealed class UserServiceTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(users.Any(user => user.Id != excludeUserId &&
                 user.Profile?.StudentCode == studentCode));
+        public Task AddProfileAsync(
+            UserProfile profile,
+            CancellationToken cancellationToken = default)
+        {
+            AddedProfiles.Add(profile);
+            return Task.CompletedTask;
+        }
+
+        public Task AddAddressAsync(
+            UserAddress address,
+            CancellationToken cancellationToken = default)
+        {
+            AddedAddresses.Add(address);
+            return Task.CompletedTask;
+        }
+
         public Task AddAsync(User user, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+        public Task<int> DeleteUnverifiedBeforeAsync(
+            DateTime cutoffUtc,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(0);
     }
 
     private sealed class FakeUnitOfWork : IUnitOfWork
@@ -226,3 +277,5 @@ public sealed class UserServiceTests
         }
     }
 }
+
+

@@ -164,9 +164,9 @@ EmailSettings__FromAddress
   `EmailSettings__Password` và sender đã xác minh vào `EmailSettings__FromAddress`
   trong `api/.env`. Dùng cổng `587`, `StartTls=true`; SMTP Key không phải API Key
   hay mật khẩu tài khoản Brevo.
-- Challenge và email outbox được lưu trong MySQL cùng transaction nghiệp vụ. Payload chứa
-  email/password hash/body được mã hóa bằng ASP.NET Core Data Protection. Worker claim bằng
-  lease có điều kiện, retry có jitter và chuyển message lỗi sang trạng thái dead-letter.
+- Challenge OTP có TTL và email outbox được lưu trong Redis; payload chứa
+  email/password hash/body được mã hóa bằng ASP.NET Core Data Protection. Worker dùng
+  Redis Streams consumer group, retry có jitter và chuyển message lỗi sang dead-letter.
 - `EmailSettings__DailyRecipientLimit` mặc định là 300 để khớp gói Brevo Free.
   `EmailSettings__PasswordResetReserve=50` giữ lại 50 lượt cuối cho email đặt lại
   mật khẩu, không cho lưu lượng đăng ký chiếm hết quota.
@@ -209,7 +209,7 @@ EmailSettings__FromAddress
   hostname `redis`.
 - Production phải dùng mật khẩu riêng, TLS (`ssl=true`,
   `Redis__RequireTls=true`) và không publish cổng Redis ra Internet.
-- Thay đổi `Redis__KeyPrefix` sẽ làm access-token blacklist, challenge và email đang chờ
+- Thay đổi `Redis__KeyPrefix` sẽ làm throttle/quota, challenge và email đang chờ
   dưới prefix cũ không còn được ứng dụng nhìn thấy.
 
 ## Kiểm tra trước khi merge

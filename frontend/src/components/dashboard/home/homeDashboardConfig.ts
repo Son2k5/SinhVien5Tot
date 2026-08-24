@@ -79,40 +79,51 @@ export const dashboardCriteria: CriterionDefinition[] = [
   },
 ];
 
+const todayFormatter = new Intl.DateTimeFormat('vi-VN', {
+  weekday: 'long',
+  day: '2-digit',
+  month: 'long',
+});
+
+const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
+const eventTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+const calendarDayFormatter = new Intl.DateTimeFormat('vi-VN', { day: '2-digit' });
+const calendarMonthFormatter = new Intl.DateTimeFormat('vi-VN', { month: 'short' });
+
 export function formatToday(): string {
-  return new Intl.DateTimeFormat('vi-VN', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-  }).format(new Date());
+  return todayFormatter.format(new Date());
 }
 
-export function formatUserRole(role?: string): string {
-  if (!role || role.toLocaleLowerCase() === 'student') return 'Sinh viên';
-  if (role.toLocaleLowerCase() === 'admin') return 'Quản trị viên';
-  return role;
+export function formatUserRole(role?: string | number | null): string {
+  if (role === null || role === undefined) return 'Sinh viên';
+  const roleStr = String(role).trim().toLocaleLowerCase('en-US');
+  if (roleStr === 'admin' || roleStr === '3') return 'Quản trị viên';
+  if (roleStr === 'mentor' || roleStr === '2') return 'Cán bộ xét duyệt';
+  return 'Sinh viên';
 }
 
 export function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(value));
+  return dateFormatter.format(new Date(value));
 }
 
 export function formatEventTime(value: string): string {
-  return new Intl.DateTimeFormat('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+  return eventTimeFormatter.format(new Date(value));
 }
 
 export function getEventCalendar(value: string): { day: string; month: string } {
   const date = new Date(value);
   return {
-    day: new Intl.DateTimeFormat('vi-VN', { day: '2-digit' }).format(date),
-    month: new Intl.DateTimeFormat('vi-VN', { month: 'short' }).format(date).replace('thg', 'TH'),
+    day: calendarDayFormatter.format(date),
+    month: calendarMonthFormatter.format(date).replace('thg', 'TH'),
   };
 }
 

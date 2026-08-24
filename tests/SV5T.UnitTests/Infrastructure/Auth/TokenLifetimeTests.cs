@@ -1,7 +1,5 @@
 using Microsoft.Extensions.Options;
-using SV5T.Infrastructure.Auth;
 using SV5T.Infrastructure.Security.Hashing;
-using SV5T.Infrastructure.Options.Authentication;
 using Xunit;
 
 namespace SV5T.UnitTests.Infrastructure.Auth;
@@ -67,3 +65,5 @@ public sealed class TokenLifetimeTests
         Assert.Equal(TimeSpan.FromHours(2), factory.IdleTimeout);
     }
 }
+
+

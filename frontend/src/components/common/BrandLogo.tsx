@@ -1,5 +1,5 @@
 import type { SVGProps } from 'react';
-import brandMark from '../../assets/homePage/Layer 2.png';
+import brandMark from '../../assets/home-page/layer-2.png';
 import {
   Activity, ArrowLeft, ArrowRight, Award, BellRing, BookOpen, Check, ChevronDown,
   Clock3, Cloud, Eye, EyeOff, FileCheck2, Heart, Home, Image as ImageIcon,
@@ -11,12 +11,12 @@ import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa6';
 
 export function BrandLogo({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="brand-logo" aria-label="Sinh Viên 5 Tốt">
-      <span className="brand-logo__mark" aria-hidden="true">
+    <span className={`brand-logo inline-flex items-center gap-[11px]`} aria-label="Sinh Viên 5 Tốt">
+      <span className={`brand-logo__mark grid w-[46px] h-[46px] overflow-hidden rounded-full bg-white shadow-[0_6px_18px_rgba(18,91,153,.12)] [&_img]:w-full [&_img]:h-full [&_img]:object-contain [&_img]:transform-[scale(.96)] max-[580px]:w-[39px] max-[580px]:h-[39px]`} aria-hidden="true">
         <img src={brandMark} alt="" />
       </span>
       {!compact && (
-        <span className="brand-logo__copy">
+        <span className={`brand-logo__copy grid gap-[2px] [&_strong]:font-['Be_Vietnam_Pro',_sans-serif] [&_strong]:text-[15px] [&_strong]:leading-[1.1] [&_strong]:tracking-[-.2px] [&_small]:text-[#8190a8] [&_small]:text-[8px] [&_small]:font-bold [&_small]:tracking-[.65px] [&_small]:uppercase max-[580px]:[&_small]:hidden`}>
           <strong>Sinh Viên 5 Tốt</strong>
           <small>Rèn luyện · Cống hiến · Trưởng thành</small>
         </span>

@@ -1,9 +1,9 @@
 import type { User } from '../types/auth';
 import type { CriterionProgress, PortalContent, PortalContentSource, SystemFeature, WelcomeDashboard, YouthGalleryItem } from '../types/welcome';
-import welcomeHero from '../assets/welcome-hero-v2.jpg';
-import campusActivity from '../assets/homePage/Artboard 1.png';
+import welcomeHero from '../assets/welcome-hero.jpg';
+import campusActivity from '../assets/home-page/artboard-1.png';
 import studentActivity from '../assets/hero.png';
-import youthUnionCommunity from '../assets/homePage/youth-union-community-2026.jpg';
+import youthUnionCommunity from '../assets/home-page/youth-union-community-2026.jpg';
 
 export interface WelcomeNewsItem extends PortalContent {
   imageUrl: string;
@@ -172,6 +172,63 @@ export const mockNews: WelcomeNewsItem[] = [
     content: [
       'Lễ tuyên dương là dịp ghi nhận những sinh viên có thành tích nổi bật trên cả năm tiêu chí.',
       'Các câu chuyện truyền cảm hứng sẽ được giới thiệu xuyên suốt chương trình.',
+    ],
+  },
+  {
+    id: 'mock-club-fair',
+    type: 'News',
+    source: 'YouthUnion',
+    title: 'Ngày hội câu lạc bộ: Tìm cộng đồng dành cho bạn',
+    summary: 'Khám phá các câu lạc bộ học thuật, nghệ thuật, thể thao và hoạt động xã hội ngay trong khuôn viên trường.',
+    route: '/news/mock-club-fair',
+    icon: 'users',
+    isFeatured: false,
+    publishedAtUtc: '2026-08-01T08:30:00Z',
+    imageUrl: campusActivity,
+    category: 'Cộng đồng',
+    eventStartAtUtc: '2026-09-15T08:00:00+07:00',
+    location: 'Quảng trường sinh viên',
+    content: [
+      'Ngày hội quy tụ các câu lạc bộ và đội nhóm đang hoạt động tại trường, mang đến không gian trải nghiệm cởi mở cho sinh viên.',
+      'Bạn có thể gặp gỡ thành viên, thử sức với hoạt động mẫu và đăng ký đồng hành cùng cộng đồng phù hợp với sở thích.',
+    ],
+  },
+  {
+    id: 'mock-campus-run',
+    type: 'News',
+    source: 'University',
+    title: 'Campus Run 2026: Chạy cùng nhau, khỏe mỗi ngày',
+    summary: 'Đường chạy trẻ trung kết nối sinh viên và lan tỏa thói quen vận động tích cực trong toàn trường.',
+    route: '/news/mock-campus-run',
+    icon: 'activity',
+    isFeatured: false,
+    publishedAtUtc: '2026-07-30T07:00:00Z',
+    imageUrl: studentActivity,
+    category: 'Thể thao',
+    eventStartAtUtc: '2026-09-20T06:00:00+07:00',
+    location: 'Sân vận động trường',
+    content: [
+      'Campus Run mở nhiều cự ly phù hợp cho cả người mới bắt đầu lẫn sinh viên đã duy trì thói quen chạy bộ.',
+      'Hoàn thành đường chạy cũng là cơ hội tích lũy trải nghiệm cho tiêu chí Thể lực tốt trong hành trình Sinh viên 5 tốt.',
+    ],
+  },
+  {
+    id: 'mock-book-exchange',
+    type: 'News',
+    source: 'Faculty',
+    title: 'Trạm sách sẻ chia: Trao một cuốn, nhận nhiều cảm hứng',
+    summary: 'Mang sách cũ đến trao đổi và cùng xây dựng một góc đọc mở dành cho cộng đồng sinh viên.',
+    route: '/news/mock-book-exchange',
+    icon: 'graduation-cap',
+    isFeatured: false,
+    publishedAtUtc: '2026-07-27T09:00:00Z',
+    imageUrl: youthUnionCommunity,
+    category: 'Học tập',
+    eventStartAtUtc: '2026-09-24T09:00:00+07:00',
+    location: 'Sảnh thư viện trung tâm',
+    content: [
+      'Mỗi cuốn sách được trao đi sẽ tiếp tục hành trình mới và góp phần tạo nên văn hóa đọc gần gũi trong sinh viên.',
+      'Chương trình tiếp nhận sách giáo trình, kỹ năng, văn học và ngoại ngữ còn trong tình trạng sử dụng tốt.',
     ],
   },
 ];
