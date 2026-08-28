@@ -3,7 +3,7 @@ using SV5T.Application.Common.Models;
 using SV5T.Domain.Auth.Enums;
 using SV5T.Domain.Users;
 
-namespace SV5T.Application.Common.Interfaces;
+namespace SV5T.Application.Common.Abstractions;
 
 public interface IJwtService
 {

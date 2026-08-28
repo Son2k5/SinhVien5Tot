@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Infrastructure.Options;
 
 namespace SV5T.Infrastructure.Security.Hashing;

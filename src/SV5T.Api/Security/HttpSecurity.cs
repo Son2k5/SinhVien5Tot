@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 
 namespace SV5T.Api.Security;
 

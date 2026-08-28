@@ -1,4 +1,4 @@
-namespace SV5T.Application.Common.Interfaces;
+namespace SV5T.Application.Common.Abstractions;
 
 public interface ICommandHandler<in TCommand, TResult>
 {

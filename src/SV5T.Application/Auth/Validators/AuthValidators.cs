@@ -1,6 +1,6 @@
 using FluentValidation;
 using SV5T.Application.Auth.Dtos;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 
 namespace SV5T.Application.Auth.Validators;
 

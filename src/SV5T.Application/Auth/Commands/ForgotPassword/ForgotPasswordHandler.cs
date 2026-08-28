@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using SV5T.Application.Auth.Dtos;
 using SV5T.Application.Auth.Support;
 using SV5T.Application.Auth.Templates;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Models;
 using SV5T.Domain.Auth;
 using SV5T.Domain.Auth.Enums;

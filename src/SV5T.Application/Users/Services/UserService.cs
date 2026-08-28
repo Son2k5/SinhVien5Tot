@@ -1,7 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Users.Commands.UpdateAvatar;
 using SV5T.Application.Users.Commands.UpdateProfile;
 using SV5T.Application.Users.Dtos;

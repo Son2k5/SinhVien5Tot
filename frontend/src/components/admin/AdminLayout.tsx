@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   BarChart3, Bell, BookOpenCheck, ChevronDown, ChevronLeft, ChevronRight,
   ClipboardCheck, FileCheck2, FilePlus2, Files, Gauge, LogOut, Medal, Menu,

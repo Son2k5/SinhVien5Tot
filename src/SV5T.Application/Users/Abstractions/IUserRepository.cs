@@ -1,4 +1,6 @@
-namespace SV5T.Domain.Users;
+using SV5T.Domain.Users;
+
+namespace SV5T.Application.Users.Abstractions;
 
 public interface IUserRepository
 {

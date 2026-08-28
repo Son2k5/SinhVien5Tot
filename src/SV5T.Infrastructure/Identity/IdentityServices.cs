@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SV5T.Application.Auth.Dtos;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Domain.Users;
 using SV5T.Infrastructure.Options;
 

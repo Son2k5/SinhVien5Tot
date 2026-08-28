@@ -1,4 +1,4 @@
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Domain.Auth;
 
 namespace SV5T.Application.Auth.Commands.Logout;

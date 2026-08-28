@@ -1,6 +1,6 @@
 using SV5T.Application.Common.Models;
 
-namespace SV5T.Application.Common.Interfaces;
+namespace SV5T.Application.Common.Abstractions;
 
 public interface IEmailSender
 {

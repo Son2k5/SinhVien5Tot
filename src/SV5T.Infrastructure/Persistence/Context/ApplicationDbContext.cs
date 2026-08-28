@@ -5,6 +5,12 @@ using Microsoft.Extensions.Configuration;
 using SV5T.Domain.Auth;
 using SV5T.Domain.Users;
 using SV5T.Domain.Welcome;
+using SV5T.Domain.Campaigns;
+using SV5T.Domain.Criteria;
+using SV5T.Domain.Evidences;
+using SV5T.Domain.Standards;
+using SV5T.Domain.Submissions;
+using SubmissionApplication = SV5T.Domain.Submissions.Application;
 using SV5T.Infrastructure.Configuration;
 using SV5T.Infrastructure.Security.Pii;
 
@@ -24,6 +30,14 @@ public sealed class ApplicationDbContext(
     public DbSet<PortalContent> PortalContents => Set<PortalContent>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    public DbSet<StandardSet> StandardSets => Set<StandardSet>();
+    public DbSet<Criterion> Criteria => Set<Criterion>();
+    public DbSet<EvidenceTypeTemplate> EvidenceTypeTemplates => Set<EvidenceTypeTemplate>();
+    public DbSet<Campaign> Campaigns => Set<Campaign>();
+    public DbSet<SubmissionApplication> Applications => Set<SubmissionApplication>();
+    public DbSet<Evidence> Evidences => Set<Evidence>();
+    public DbSet<ReviewLog> ReviewLogs => Set<ReviewLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

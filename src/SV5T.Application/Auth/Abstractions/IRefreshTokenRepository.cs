@@ -1,4 +1,6 @@
-namespace SV5T.Domain.Auth;
+using SV5T.Domain.Auth;
+
+namespace SV5T.Application.Auth.Abstractions;
 
 public interface IRefreshTokenRepository
 {

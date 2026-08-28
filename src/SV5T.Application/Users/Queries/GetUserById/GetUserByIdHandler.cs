@@ -1,4 +1,4 @@
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Users.Dtos;
 using SV5T.Domain.Users;
 

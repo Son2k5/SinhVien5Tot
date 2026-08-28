@@ -1,6 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SV5T.Domain.Auth;
+using SV5T.Domain.Campaigns;
+using SV5T.Domain.Criteria;
+using SV5T.Domain.Evidences;
+using SV5T.Domain.Standards;
+using SV5T.Domain.Submissions;
+using SubmissionApplication = SV5T.Domain.Submissions.Application;
 using SV5T.Domain.Users;
 using SV5T.Domain.Welcome;
 
@@ -220,3 +226,193 @@ public sealed class PortalContentConfiguration : IEntityTypeConfiguration<Portal
     ];
 }
 
+public sealed class StandardSetConfiguration : IEntityTypeConfiguration<StandardSet>
+{
+    public void Configure(EntityTypeBuilder<StandardSet> builder)
+    {
+        builder.ToTable("standard_sets");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.AcademicYear).HasMaxLength(20).IsRequired();
+        builder.HasIndex(x => new
+        {
+            x.AcademicYear,
+            x.Level,
+            x.AwardType,
+            x.Version
+        }).IsUnique();
+
+        builder.HasOne(x => x.PreviousVersion)
+            .WithMany(x => x.LaterVersions)
+            .HasForeignKey(x => x.PreviousVersionId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class CriterionConfiguration : IEntityTypeConfiguration<Criterion>
+{
+    public void Configure(EntityTypeBuilder<Criterion> builder)
+    {
+        builder.ToTable("criteria");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Code).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Title).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.DefinitionJson).HasColumnType("longtext");
+        builder.Property(x => x.ReviewGuidance).HasColumnType("longtext");
+
+        builder.HasIndex(x => new
+        {
+            x.StandardSetId,
+            x.ParentCriterionId,
+            x.DisplayOrder
+        });
+
+        builder.HasOne(x => x.StandardSet)
+            .WithMany(x => x.Criteria)
+            .HasForeignKey(x => x.StandardSetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.ParentCriterion)
+            .WithMany(x => x.Children)
+            .HasForeignKey(x => x.ParentCriterionId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class EvidenceTypeTemplateConfiguration : IEntityTypeConfiguration<EvidenceTypeTemplate>
+{
+    public void Configure(EntityTypeBuilder<EvidenceTypeTemplate> builder)
+    {
+        builder.ToTable("evidence_type_templates");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Code).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Name).HasMaxLength(250).IsRequired();
+        builder.Property(x => x.FieldSchemaJson).HasColumnType("longtext");
+        builder.Property(x => x.AttachmentPolicyJson).HasColumnType("longtext");
+
+        builder.HasIndex(x => new { x.Code, x.Version }).IsUnique();
+    }
+}
+
+public sealed class CampaignConfiguration : IEntityTypeConfiguration<Campaign>
+{
+    public void Configure(EntityTypeBuilder<Campaign> builder)
+    {
+        builder.ToTable("campaigns");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Name).HasMaxLength(250).IsRequired();
+        builder.Property(x => x.SchoolYear).HasMaxLength(20).IsRequired();
+        builder.Property(x => x.CollectiveEligibilityRuleJson).HasColumnType("longtext");
+
+        builder.HasIndex(x => new
+        {
+            x.SchoolYear,
+            x.Level,
+            x.AwardType,
+            x.Status
+        });
+
+        builder.HasOne(x => x.StandardSet)
+            .WithMany()
+            .HasForeignKey(x => x.StandardSetId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.PrerequisiteCampaign)
+            .WithMany(x => x.DependentCampaigns)
+            .HasForeignKey(x => x.PrerequisiteCampaignId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class ApplicationConfiguration : IEntityTypeConfiguration<SubmissionApplication>
+{
+    public void Configure(EntityTypeBuilder<SubmissionApplication> builder)
+    {
+        builder.ToTable("applications");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.ApplicationCode).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.ApplicantSnapshotJson).HasColumnType("longtext");
+        builder.Property(x => x.SubmissionDataJson).HasColumnType("longtext");
+        builder.Property(x => x.RowVersion).IsRowVersion();
+
+        builder.HasIndex(x => x.ApplicationCode).IsUnique();
+        builder.HasIndex(x => new
+        {
+            x.CampaignId,
+            x.Status,
+            x.AssignedReviewerId
+        });
+
+        builder.HasOne(x => x.Campaign)
+            .WithMany(x => x.Applications)
+            .HasForeignKey(x => x.CampaignId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.StandardSet)
+            .WithMany()
+            .HasForeignKey(x => x.StandardSetId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.SourceApplication)
+            .WithMany(x => x.NextLevelApplications)
+            .HasForeignKey(x => x.SourceApplicationId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
+{
+    public void Configure(EntityTypeBuilder<Evidence> builder)
+    {
+        builder.ToTable("evidences");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.DataJson).HasColumnType("longtext");
+        builder.Property(x => x.AttachmentsJson).HasColumnType("longtext");
+        builder.Property(x => x.RowVersion).IsRowVersion();
+
+        builder.HasIndex(x => new
+        {
+            x.ApplicationId,
+            x.CriterionId,
+            x.Status
+        });
+
+        builder.HasOne(x => x.Application)
+            .WithMany(x => x.Evidences)
+            .HasForeignKey(x => x.ApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.Criterion)
+            .WithMany()
+            .HasForeignKey(x => x.CriterionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.EvidenceTypeTemplate)
+            .WithMany()
+            .HasForeignKey(x => x.EvidenceTypeTemplateId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class ReviewLogConfiguration : IEntityTypeConfiguration<ReviewLog>
+{
+    public void Configure(EntityTypeBuilder<ReviewLog> builder)
+    {
+        builder.ToTable("review_logs");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Note).HasColumnType("longtext");
+        builder.Property(x => x.MetadataJson).HasColumnType("longtext");
+        builder.HasIndex(x => new { x.ApplicationId, x.CreatedAt });
+
+        builder.HasOne(x => x.Application)
+            .WithMany(x => x.ReviewLogs)
+            .HasForeignKey(x => x.ApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}

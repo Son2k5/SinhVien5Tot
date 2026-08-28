@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
 using SV5T.Application.Common.Exceptions;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Infrastructure.Persistence.Context;
 
 namespace SV5T.Infrastructure.Persistence.UnitOfWork;

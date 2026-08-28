@@ -1,4 +1,6 @@
-namespace SV5T.Domain.Campaigns;
+using SV5T.Domain.Campaigns;
+
+namespace SV5T.Application.Campaigns.Abstractions;
 
 public interface ICampaignRepository
 {

@@ -1,5 +1,5 @@
 using System.Net;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 
 namespace SV5T.Application.Auth.Templates;
 

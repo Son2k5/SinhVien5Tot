@@ -1,7 +1,7 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using SV5T.Application.Common.Exceptions;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 
 namespace SV5T.Infrastructure.Storage;
 

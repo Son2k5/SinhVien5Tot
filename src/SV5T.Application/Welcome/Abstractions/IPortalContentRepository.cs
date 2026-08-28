@@ -1,4 +1,6 @@
-namespace SV5T.Domain.Welcome;
+using SV5T.Domain.Welcome;
+
+namespace SV5T.Application.Welcome.Abstractions;
 
 public interface IPortalContentRepository
 {

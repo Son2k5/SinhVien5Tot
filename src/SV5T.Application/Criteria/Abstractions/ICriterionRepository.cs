@@ -1,4 +1,6 @@
-namespace SV5T.Domain.Criteria;
+using SV5T.Domain.Criteria;
+
+namespace SV5T.Application.Criteria.Abstractions;
 
 public interface ICriterionRepository
 {

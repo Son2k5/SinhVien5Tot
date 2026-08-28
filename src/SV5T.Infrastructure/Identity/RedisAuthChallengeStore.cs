@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using SV5T.Application.Common.Exceptions;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Models;
 using SV5T.Domain.Auth.Enums;
 using SV5T.Infrastructure.Options;

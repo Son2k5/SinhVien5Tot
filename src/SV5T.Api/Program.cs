@@ -9,7 +9,7 @@ using Microsoft.OpenApi;
 using SV5T.Api.Middlewares;
 using SV5T.Api.Security;
 using SV5T.Application;
-using SV5T.Application.Common.Interfaces;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Infrastructure;
 using SV5T.Infrastructure.Configuration;
 
