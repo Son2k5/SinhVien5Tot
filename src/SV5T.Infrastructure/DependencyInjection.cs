@@ -10,7 +10,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+using SV5T.Application.Campaigns.Abstractions;
 using SV5T.Application.Common.Abstractions;
+using SV5T.Application.Criteria.Abstractions;
+using SV5T.Application.Evidences.Abstractions;
+using SV5T.Application.Standards.Abstractions;
 using SV5T.Domain.Auth;
 using SV5T.Domain.Users;
 using SV5T.Domain.Welcome;
@@ -19,6 +23,7 @@ using SV5T.Infrastructure.Health;
 using SV5T.Infrastructure.Identity;
 using SV5T.Infrastructure.Options;
 using SV5T.Infrastructure.Persistence.Context;
+using SV5T.Infrastructure.Persistence.Repositories.Admin;
 using SV5T.Infrastructure.Persistence.Repositories.Auth;
 using SV5T.Infrastructure.Persistence.Repositories.Users;
 using SV5T.Infrastructure.Persistence.Repositories.Welcome;
@@ -202,6 +207,13 @@ public static class DependencyInjection
         services.AddScoped<IPortalContentRepository, PortalContentRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Admin & Management Repositories
+        services.AddScoped<StandardSetRepository>();
+        services.AddScoped<IStandardSetRepository, CachedStandardSetRepository>();
+        services.AddScoped<ICriterionRepository, CriterionRepository>();
+        services.AddScoped<ICampaignRepository, CampaignRepository>();
+        services.AddScoped<IEvidenceRepository, EvidenceRepository>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IOtpService, OtpService>();
         services.AddSingleton<ISha256Hasher, Sha256Hasher>();

@@ -15,6 +15,13 @@ public sealed class UnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork
         {
             return await dbContext.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new UseCaseException(
+                ApplicationErrorKind.Conflict,
+                "Dữ liệu đã bị thay đổi bởi thao tác khác trong lúc bạn đang thực hiện. Vui lòng tải lại trang và thử lại.",
+                "concurrency_conflict");
+        }
         catch (DbUpdateException exception) when (IsStudentCodeConflict(exception))
         {
             throw new UseCaseException(

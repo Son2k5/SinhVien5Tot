@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Admin.Queries;
+using SV5T.Application.Admin.Services;
 using SV5T.Application.Admin.Validators;
 using SV5T.Application.Auth.Commands.ForgotPassword;
 using SV5T.Application.Auth.Commands.Login;
@@ -51,23 +52,17 @@ public static class DependencyInjection
         services.AddScoped<GetCurrentUserHandler>();
         services.AddScoped<IAuthService, AuthService>();
 
-        // Admin & Welcome
+        // Admin Services & Management
+        services.AddScoped<IAdminStandardService, AdminStandardService>();
+        services.AddScoped<IAdminCampaignService, AdminCampaignService>();
+        services.AddScoped<IAdminEvidenceReviewService, AdminEvidenceReviewService>();
         services.AddScoped<AdminDashboardService>();
         services.AddScoped<IAdminDashboardService>(sp => sp.GetRequiredService<AdminDashboardService>());
         services.AddScoped<WelcomeDashboardService>();
         services.AddScoped<IWelcomeDashboardService>(sp => sp.GetRequiredService<WelcomeDashboardService>());
 
         // Validators
-        services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
-        services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
-        services.AddScoped<IValidator<VerifyOtpRequest>, VerifyOtpRequestValidator>();
-        services.AddScoped<IValidator<ResendOtpRequest>, ResendOtpRequestValidator>();
-        services.AddScoped<IValidator<ForgotPasswordRequest>, ForgotPasswordRequestValidator>();
-        services.AddScoped<IValidator<VerifyResetOtpRequest>, VerifyResetOtpRequestValidator>();
-        services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordRequestValidator>();
-        services.AddScoped<IValidator<UpdateUserProfileRequest>, UpdateUserProfileRequestValidator>();
-        services.AddScoped<IValidator<UpdateUserAddressRequest>, UpdateUserAddressRequestValidator>();
-        services.AddScoped<IValidator<AdminDashboardFilterRequest>, AdminDashboardFilterRequestValidator>();
+        services.AddValidatorsFromAssemblyContaining<AdminStandardService>();
 
         return services;
     }
