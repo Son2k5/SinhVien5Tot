@@ -7,7 +7,7 @@ import type { User } from '../../types/auth';
 /**
  * Lấy dữ liệu Welcome Dashboard từ server.
  * Fallback về mock data khi chưa có dữ liệu thực.
- * Được dùng chung bởi HomeView và UserProfileView (khử trùng lặp).
+ * Được dùng chung bởi HomePage và UserProfilePage (khử trùng lặp).
  */
 export function useWelcomeDashboard(user: User) {
   const query = useQuery({

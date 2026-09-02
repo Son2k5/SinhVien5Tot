@@ -3,7 +3,7 @@ import type { SystemFeature } from '../../types/welcome';
 
 /**
  * Quản lý trạng thái System Launcher (bảng điều hướng tính năng).
- * Được dùng chung bởi HomeView và UserProfileView (khử trùng lặp).
+ * Được dùng chung bởi HomePage và UserProfilePage (khử trùng lặp).
  *
  * Bao gồm:
  * - State mở/đóng launcher

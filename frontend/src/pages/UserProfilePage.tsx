@@ -8,15 +8,15 @@ import { UserProfileForm } from '../components/profile/UserProfileForm';
 import { useWelcomeDashboard } from '../hooks/dashboard/useWelcomeDashboard';
 import { useLauncher } from '../hooks/dashboard/useLauncher';
 import type { User } from '../types/auth';
-import './HomeView.css';
-import './UserProfileView.css';
+import './HomePage.css';
+import './UserProfilePage.css';
 
-interface UserProfileViewProps {
+interface UserProfilePageProps {
   user: User;
   onLogout: () => void;
 }
 
-export function UserProfileView({ user, onLogout }: UserProfileViewProps) {
+export function UserProfilePage({ user, onLogout }: UserProfilePageProps) {
   const {
     displayName,
     avatarUrl,

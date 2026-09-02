@@ -27,7 +27,7 @@ type SortKey = 'registered' | 'awarded' | 'rate';
 
 /**
  * Quản lý toàn bộ dữ liệu và state cho trang Admin Dashboard.
- * Trích xuất từ AdminDashboardView.tsx.
+ * Trích xuất từ AdminDashboardPage.tsx.
  *
  * Bao gồm:
  * - Filters state (campaign, schoolYear, level, department, from, to)

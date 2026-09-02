@@ -26,7 +26,7 @@ function formatTime(value: string): string {
   return timeFormatter.format(new Date(value));
 }
 
-export function NewsDetailView() {
+export function NewsDetailPage() {
   const { newsId = '' } = useParams();
   const { data, isLoading } = useQuery({
     queryKey: ['welcome-dashboard', 'news-detail'],

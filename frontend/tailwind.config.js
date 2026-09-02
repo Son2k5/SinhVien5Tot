@@ -19,7 +19,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Be Vietnam Pro', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Lexend', 'Be Vietnam Pro', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         fadeIn: {

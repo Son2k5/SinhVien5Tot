@@ -22,14 +22,14 @@ import { resolveCriteriaProgress, resolveNewsItems, resolveYouthGallery } from '
 import { useWelcomeDashboard } from '../hooks/dashboard/useWelcomeDashboard';
 import { useLauncher } from '../hooks/dashboard/useLauncher';
 import type { User } from '../types/auth';
-import './HomeView.css';
+import './HomePage.css';
 
-interface HomeViewProps {
+interface HomePageProps {
   user: User;
   onLogout: () => void;
 }
 
-export function HomeView({ user, onLogout }: HomeViewProps) {
+export function HomePage({ user, onLogout }: HomePageProps) {
   const [selectedCriterion, setSelectedCriterion] = useState<CriterionDefinition | null>(null);
 
   const {
