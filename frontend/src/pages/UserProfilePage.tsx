@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DashboardFooter } from '../components/dashboard/DashboardFooter';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
@@ -53,7 +53,6 @@ export function UserProfilePage({ user, onLogout }: UserProfilePageProps) {
       <SystemLauncher
         open={launcherOpen}
         searchValue={featureSearch}
-
         featureGroups={featureGroups}
         filteredCount={filteredFeatures.length}
         searchInputRef={launcherSearchRef}
@@ -63,33 +62,32 @@ export function UserProfilePage({ user, onLogout }: UserProfilePageProps) {
       />
 
       <main id='profile-content' tabIndex={-1} className='profile-page'>
-        <header className='profile-page-heading'>
-          <div className='profile-page-heading__copy'>
-            <div className='profile-page-heading__eyebrow'><Sparkles size={14} /> Không gian hồ sơ cá nhân</div>
-            <h1>Cập nhật <span>thông tin cá nhân</span></h1>
-            <p>Hoàn thiện một lần, sử dụng xuyên suốt hành trình xét duyệt danh hiệu Sinh viên 5 Tốt.</p>
-            <div className='profile-page-heading__steps' aria-label='Hồ sơ gồm 5 nhóm thông tin'>
-              <span><b>01</b> Định danh</span>
-              <i aria-hidden='true' />
-              <span><b>02</b> Học tập</span>
-              <i aria-hidden='true' />
-              <span><b>03</b> Đoàn thể</span>
-              <i aria-hidden='true' />
-              <span><b>04</b> Liên hệ</span>
-              <i aria-hidden='true' />
-              <span><b>05</b> Địa chỉ</span>
-            </div>
+        {/* Banner - Pure Tailwind CSS with Font Inter */}
+        <header className="mb-6 rounded-xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 font-inter">
+          <div className="min-w-0 space-y-1">
+            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-slate-500 font-medium mb-1">
+              <Link to="/dashboard" className="hover:text-blue-600 transition-colors">
+                Trang tổng quan
+              </Link>
+              <span className="text-slate-300" aria-hidden="true">/</span>
+              <span className="text-slate-700">Thông tin cá nhân</span>
+            </nav>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Cập nhật thông tin cá nhân
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed max-w-2xl">
+              Hoàn thiện thông tin cá nhân phục vụ quá trình xét duyệt danh hiệu Sinh viên 5 Tốt.
+            </p>
           </div>
-          <div className='profile-page-heading__visual'>
-            <div className='profile-heading-orbit' aria-hidden='true'>
-              <span className='profile-heading-orbit__ring profile-heading-orbit__ring--outer' />
-              <span className='profile-heading-orbit__ring profile-heading-orbit__ring--inner' />
-              <span className='profile-heading-orbit__dot profile-heading-orbit__dot--one'><CheckCircle2 size={15} /></span>
-              <span className='profile-heading-orbit__dot profile-heading-orbit__dot--two'><ShieldCheck size={14} /></span>
-              <span className='profile-heading-orbit__core'><UserRound size={35} /></span>
-            </div>
-            <div className='profile-heading-status'><ShieldCheck size={16} /><span><strong>Hồ sơ được bảo vệ</strong><small>Dữ liệu xác thực an toàn</small></span></div>
-            <Link to='/dashboard'><ArrowLeft size={17} /> Về trang tổng quan</Link>
+
+          <div className="shrink-0 pt-1 sm:pt-0">
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-slate-200 bg-white text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-[0.98] transition-all shadow-2xs"
+            >
+              <ArrowLeft size={16} className="text-slate-500" />
+              <span>Về trang tổng quan</span>
+            </Link>
           </div>
         </header>
         <UserProfileForm user={user} />

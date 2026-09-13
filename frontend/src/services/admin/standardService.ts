@@ -43,7 +43,7 @@ export const standardService = {
     return response.data;
   },
 
-  // ================= Standard operations =================
+  // Standard operations
 
   async getStandards(standardSetId: string): Promise<StandardResponse[]> {
     const response = await apiClient.get<StandardResponse[]>(

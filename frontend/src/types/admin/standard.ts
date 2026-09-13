@@ -79,9 +79,7 @@ export const CRITERION_EVALUATION_TYPE_LABELS: Record<CriterionEvaluationType, s
   [CriterionEvaluationType.AccumulatedNumeric]: 'Điểm tích luỹ tổng',
 };
 
-// ==========================================
 // 1. Criterion Types (Tiêu chí con)
-// ==========================================
 
 export interface CriterionResponse {
   id: string;
@@ -127,9 +125,7 @@ export interface UpdateCriterionRequest {
   reviewGuidance?: string | null;
 }
 
-// ==========================================
 // 2. Standard Types (Tiêu chuẩn lớn)
-// ==========================================
 
 export interface StandardResponse {
   id: string;
@@ -164,9 +160,7 @@ export interface UpdateStandardRequest {
   minimumSatisfied?: number | null;
 }
 
-// ==========================================
 // 3. Standard Set Types (Bộ tiêu chuẩn)
-// ==========================================
 
 export interface StandardSetResponse {
   id: string;

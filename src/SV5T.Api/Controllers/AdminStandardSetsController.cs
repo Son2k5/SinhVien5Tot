@@ -102,7 +102,7 @@ public sealed class AdminStandardSetsController(ISender sender)
         CancellationToken cancellationToken) =>
         Ok(await sender.Send(new UnpublishStandardSetCommand(id), cancellationToken));
 
-    // ================= Standard Sub-resources (Tiêu chuẩn lớn) =================
+    // Standard Sub-resources (Tiêu chuẩn lớn)
 
     [HttpGet("{id:guid}/standards")]
     [ProducesResponseType<IReadOnlyList<StandardResponse>>(StatusCodes.Status200OK)]

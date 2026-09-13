@@ -8,9 +8,7 @@ using SV5T.Domain.Submissions.Enums;
 
 namespace SV5T.Application.Admin.Dtos;
 
-// ==========================================
 // 1. Standard Set DTOs
-// ==========================================
 
 public sealed record CreateStandardSetRequest(
     string Name,
@@ -38,9 +36,7 @@ public sealed record StandardSetResponse(
     DateTime? PublishedAt,
     IReadOnlyList<StandardResponse>? Standards);
 
-// ==========================================
 // 2. Standard DTOs (Tiêu chuẩn lớn)
-// ==========================================
 
 public sealed record CreateStandardRequest(
     StandardGroupCode? GroupCode,
@@ -72,9 +68,7 @@ public sealed record StandardResponse(
     int? MinimumSatisfied,
     IReadOnlyList<CriterionResponse>? Criteria);
 
-// ==========================================
 // 3. Criterion DTOs (Tiêu chí con)
-// ==========================================
 
 public sealed record CreateCriterionRequest(
     Guid? ParentCriterionId,
@@ -117,9 +111,7 @@ public sealed record CriterionResponse(
     string DefinitionJson,
     string? ReviewGuidance);
 
-// ==========================================
 // 4. Campaign DTOs (3 Cấp: School, City, Central)
-// ==========================================
 
 public sealed record CreateCampaignRequest(
     string Name,
@@ -193,9 +185,7 @@ public sealed record CampaignDetailResponse(
     int TotalApplications,
     DateTime CreatedAt);
 
-// ==========================================
 // 5. Evidence Review DTOs
-// ==========================================
 
 public sealed record ReviewEvidenceRequest(
     EvidenceStatus Decision,
@@ -223,9 +213,7 @@ public sealed record EvidenceResponse(
     string RowVersion,
     DateTime CreatedAt);
 
-// ==========================================
 // 6. Common Pagination DTO
-// ==========================================
 
 public sealed record PagedResponse<T>(
     IReadOnlyList<T> Items,

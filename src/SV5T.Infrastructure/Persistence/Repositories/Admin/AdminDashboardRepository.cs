@@ -369,12 +369,60 @@ public sealed class AdminDashboardRepository(ApplicationDbContext dbContext) : I
         return new CollectiveSummaryResponse(row?.TotalUnits ?? 0, row?.QualifiedUnits ?? 0);
     }
 
-    private sealed record SummaryQueryResult(int TotalRegistered, int TotalSubmitted, int TotalPendingReview, int TotalAwarded);
-    private sealed record StatusCountQueryResult(int StatusCode, int Count);
-    private sealed record GroupRateQueryResult(int GroupCodeInt, int TotalCount, int ApprovedCount);
-    private sealed record LevelFunnelQueryResult(int LevelInt, int Submitted, int Approved);
-    private sealed record DepartmentRankingQueryResult(string DepartmentName, int Registered, int Awarded);
-    private sealed record UrgentItemQueryResult(string ApplicationId, string StudentName, int DaysPending, DateTime DeadlineAtUtc);
-    private sealed record RecentActivityQueryResult(string ReviewerName, int ActionCode, string Target, DateTime CreatedAtUtc);
-    private sealed record CollectiveQueryResult(int TotalUnits, int QualifiedUnits);
+    private sealed class SummaryQueryResult
+    {
+        public int TotalRegistered { get; set; }
+        public int TotalSubmitted { get; set; }
+        public int TotalPendingReview { get; set; }
+        public int TotalAwarded { get; set; }
+    }
+
+    private sealed class StatusCountQueryResult
+    {
+        public int StatusCode { get; set; }
+        public int Count { get; set; }
+    }
+
+    private sealed class GroupRateQueryResult
+    {
+        public int GroupCodeInt { get; set; }
+        public int TotalCount { get; set; }
+        public int ApprovedCount { get; set; }
+    }
+
+    private sealed class LevelFunnelQueryResult
+    {
+        public int LevelInt { get; set; }
+        public int Submitted { get; set; }
+        public int Approved { get; set; }
+    }
+
+    private sealed class DepartmentRankingQueryResult
+    {
+        public string DepartmentName { get; set; } = string.Empty;
+        public int Registered { get; set; }
+        public int Awarded { get; set; }
+    }
+
+    private sealed class UrgentItemQueryResult
+    {
+        public string ApplicationId { get; set; } = string.Empty;
+        public string StudentName { get; set; } = string.Empty;
+        public int DaysPending { get; set; }
+        public DateTime DeadlineAtUtc { get; set; }
+    }
+
+    private sealed class RecentActivityQueryResult
+    {
+        public string ReviewerName { get; set; } = string.Empty;
+        public int ActionCode { get; set; }
+        public string Target { get; set; } = string.Empty;
+        public DateTime CreatedAtUtc { get; set; }
+    }
+
+    private sealed class CollectiveQueryResult
+    {
+        public int TotalUnits { get; set; }
+        public int QualifiedUnits { get; set; }
+    }
 }
