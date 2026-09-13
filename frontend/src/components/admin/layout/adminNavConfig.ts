@@ -9,6 +9,7 @@ import {
   Medal,
   Settings,
   UserCog,
+  Users,
 } from 'lucide-react';
 import type { User } from '../../../types/auth';
 import { isAdmin, normalizeRole } from '../../../utils/authorization';
@@ -59,6 +60,7 @@ export const menuGroups: MenuGroup[] = [
   {
     label: 'Hệ thống',
     items: [
+      { label: 'Quản lý sinh viên', to: '/admin/students', icon: Users },
       { label: 'Người dùng & Phân quyền', to: '/admin/roles', icon: UserCog, adminOnly: true },
       { label: 'Cài đặt hệ thống', to: '/admin/settings', icon: Settings },
     ],
@@ -73,6 +75,7 @@ export const pageTitles: Record<string, string> = {
   '/admin/standards': 'Cấu hình tiêu chuẩn',
   '/admin/collectives': 'Danh hiệu tập thể',
   '/admin/reports': 'Báo cáo & Thống kê',
+  '/admin/students': 'Quản lý sinh viên',
   '/admin/roles': 'Người dùng & Phân quyền',
   '/admin/settings': 'Cài đặt hệ thống',
   '/admin/account': 'Thông tin tài khoản',
@@ -94,6 +97,9 @@ export function getPageInfo(pathname: string): { section: string; title: string 
   }
   if (pathname.startsWith('/admin/standards/')) {
     return { section: 'Tiêu chuẩn', title: 'Chi tiết tiêu chuẩn' };
+  }
+  if (pathname.startsWith('/admin/students/')) {
+    return { section: 'Sinh viên', title: 'Chi tiết sinh viên' };
   }
   return { section: 'Quản trị', title: 'SV5T Portal' };
 }

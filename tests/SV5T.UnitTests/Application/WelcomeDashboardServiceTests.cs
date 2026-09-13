@@ -98,6 +98,27 @@ public sealed class WelcomeDashboardServiceTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(users.FirstOrDefault(user => user.Id == id));
 
+        public Task<SV5T.Application.Users.Dtos.UserSummaryResponse?> GetSummaryByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            var user = users.FirstOrDefault(u => u.Id == id);
+            if (user == null) return Task.FromResult<SV5T.Application.Users.Dtos.UserSummaryResponse?>(null);
+            return Task.FromResult<SV5T.Application.Users.Dtos.UserSummaryResponse?>(new SV5T.Application.Users.Dtos.UserSummaryResponse(
+                user.Id,
+                user.Email,
+                user.DisplayName,
+                user.Role,
+                user.AvatarUrl,
+                user.IsVerified,
+                user.IsActive,
+                user.SecurityVersion,
+                user.CreatedAt,
+                user.UpdatedAt,
+                user.Profile?.FullName,
+                user.Profile?.Faculty));
+        }
+
         public Task<User?> GetByNormalizedEmailAsync(
             string normalizedEmail,
             bool tracking = false,

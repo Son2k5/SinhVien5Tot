@@ -35,7 +35,7 @@ export function CollectiveUnitsCard({ collective }: CollectiveUnitsCardProps) {
 
         <div className="mt-4 h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500"
+            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-[width] duration-500"
             style={{ width: `${percentage}%` }}
           />
         </div>

@@ -34,13 +34,61 @@ public sealed class UpdateStandardSetRequestValidator : AbstractValidator<Update
     }
 }
 
+public sealed class CreateStandardRequestValidator : AbstractValidator<CreateStandardRequest>
+{
+    public CreateStandardRequestValidator()
+    {
+        RuleFor(x => x.Code)
+            .MaximumLength(50).WithMessage("Mã tiêu chuẩn không được quá 50 ký tự.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Code));
+
+        RuleFor(x => x.Title)
+            .NotEmpty().WithMessage("Tên tiêu chuẩn không được để trống.")
+            .MaximumLength(500).WithMessage("Tên tiêu chuẩn không được quá 500 ký tự.");
+
+        RuleFor(x => x.Operator).IsInEnum().WithMessage("Toán tử không hợp lệ.");
+
+        RuleFor(x => x.DisplayOrder)
+            .GreaterThanOrEqualTo(0).WithMessage("Thứ tự hiển thị phải lớn hơn hoặc bằng 0.");
+
+        RuleFor(x => x.MinimumSatisfied)
+            .GreaterThan(0)
+            .When(x => x.MinimumSatisfied.HasValue)
+            .WithMessage("Số lượng tối thiểu đạt phải lớn hơn 0.");
+    }
+}
+
+public sealed class UpdateStandardRequestValidator : AbstractValidator<UpdateStandardRequest>
+{
+    public UpdateStandardRequestValidator()
+    {
+        RuleFor(x => x.Code)
+            .MaximumLength(50).WithMessage("Mã tiêu chuẩn không được quá 50 ký tự.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Code));
+
+        RuleFor(x => x.Title)
+            .NotEmpty().WithMessage("Tên tiêu chuẩn không được để trống.")
+            .MaximumLength(500).WithMessage("Tên tiêu chuẩn không được quá 500 ký tự.");
+
+        RuleFor(x => x.Operator).IsInEnum().WithMessage("Toán tử không hợp lệ.");
+
+        RuleFor(x => x.DisplayOrder)
+            .GreaterThanOrEqualTo(0).WithMessage("Thứ tự hiển thị phải lớn hơn hoặc bằng 0.");
+
+        RuleFor(x => x.MinimumSatisfied)
+            .GreaterThan(0)
+            .When(x => x.MinimumSatisfied.HasValue)
+            .WithMessage("Số lượng tối thiểu đạt phải lớn hơn 0.");
+    }
+}
+
 public sealed class CreateCriterionRequestValidator : AbstractValidator<CreateCriterionRequest>
 {
     public CreateCriterionRequestValidator()
     {
         RuleFor(x => x.Code)
-            .NotEmpty().WithMessage("Mã tiêu chí không được để trống.")
-            .MaximumLength(50).WithMessage("Mã tiêu chí không được quá 50 ký tự.");
+            .MaximumLength(50).WithMessage("Mã tiêu chí không được quá 50 ký tự.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Code));
 
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Tên tiêu chí không được để trống.")
@@ -88,8 +136,8 @@ public sealed class UpdateCriterionRequestValidator : AbstractValidator<UpdateCr
     public UpdateCriterionRequestValidator()
     {
         RuleFor(x => x.Code)
-            .NotEmpty().WithMessage("Mã tiêu chí không được để trống.")
-            .MaximumLength(50).WithMessage("Mã tiêu chí không được quá 50 ký tự.");
+            .MaximumLength(50).WithMessage("Mã tiêu chí không được quá 50 ký tự.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Code));
 
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Tên tiêu chí không được để trống.")

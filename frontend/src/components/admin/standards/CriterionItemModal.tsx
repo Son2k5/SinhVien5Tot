@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import {
   CriterionEvaluationType,
   CriterionOperator,
@@ -190,18 +190,28 @@ function criterionItemFormReducer(
   }
 }
 
+const EMPTY_GROUPS: StandardResponse[] = [];
+const EMPTY_CRITERIA: CriterionResponse[] = [];
+
 export function CriterionItemModal({
   isOpen,
   criterion,
   parentGroup,
   requirementKind = 'mandatory',
-  existingGroups = [],
-  allCriteria = [],
+  existingGroups = EMPTY_GROUPS,
+  allCriteria = EMPTY_CRITERIA,
   isLoading = false,
   onClose,
   onSubmit,
 }: CriterionItemModalProps) {
   const isEdit = Boolean(criterion);
+  const onCloseRef = useRef(onClose);
+  const isLoadingRef = useRef(isLoading);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    isLoadingRef.current = isLoading;
+  });
 
   const [state, dispatch] = useReducer(
     criterionItemFormReducer,
@@ -258,13 +268,13 @@ export function CriterionItemModal({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isLoading) {
-        onClose();
+      if (e.key === 'Escape' && !isLoadingRef.current) {
+        onCloseRef.current();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isLoading, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -323,6 +333,8 @@ export function CriterionItemModal({
         const updateReq: UpdateCriterionRequest = {
           title: title.trim(),
           description: description.trim() || undefined,
+          type: CriterionType.Requirement,
+          operator: CriterionOperator.All,
           displayOrder,
           evaluationType,
           definitionJson,
@@ -335,6 +347,7 @@ export function CriterionItemModal({
           title: title.trim(),
           description: description.trim() || undefined,
           type: CriterionType.Requirement,
+          operator: CriterionOperator.All,
           displayOrder,
           evaluationType,
           definitionJson,
@@ -347,7 +360,7 @@ export function CriterionItemModal({
     } catch (err: unknown) {
       dispatch({
         type: 'SET_FORM_ERROR',
-        formError: sanitizeApiError(err, 'Lưu tiêu chí thất bại. Vui lòng thử lại.'),
+        formError: sanitizeApiError(err),
       });
     }
   };

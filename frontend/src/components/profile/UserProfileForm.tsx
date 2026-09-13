@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Camera, CheckCircle2, Info, LoaderCircle, RotateCcw, Save, ShieldCheck } from 'lucide-react';
 import { useMyProfile, useUpdateMyAvatar, useUpdateMyProfile } from '../../hooks/profile/useUserProfile';
 import type { User } from '../../types/auth';
@@ -150,7 +150,6 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
   const [sameAddress, setSameAddress] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
   const [avatarError, setAvatarError] = useState('');
-  const previewObjectUrl = useRef<string | null>(null);
   const maxBirthDate = useMemo(() => {
     const date = new Date();
     date.setFullYear(date.getFullYear() - 16);
@@ -162,12 +161,8 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
   }, [profileQuery.data, profileQuery.isSuccess, user.email]);
 
   useEffect(() => {
-    if (!previewObjectUrl.current) setAvatarPreview(user.avatarUrl);
+    setAvatarPreview(user.avatarUrl);
   }, [user.avatarUrl]);
-
-  useEffect(() => () => {
-    if (previewObjectUrl.current) URL.revokeObjectURL(previewObjectUrl.current);
-  }, []);
 
   const permanentAddress = form.addresses.find((address) => address.addressType === 'Permanent') ?? emptyAddress('Permanent');
   const temporaryAddress = form.addresses.find((address) => address.addressType === 'Temporary') ?? emptyAddress('Temporary');
@@ -212,9 +207,13 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
       return;
     }
     setAvatarError('');
-    if (previewObjectUrl.current) URL.revokeObjectURL(previewObjectUrl.current);
-    previewObjectUrl.current = URL.createObjectURL(file);
-    setAvatarPreview(previewObjectUrl.current);
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setAvatarPreview(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
     updateAvatar.mutate(file);
   };
 

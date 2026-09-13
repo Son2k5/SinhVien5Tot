@@ -1,9 +1,9 @@
 using FluentValidation;
 using SV5T.Application.Admin.Dtos;
+using SV5T.Application.Campaigns.Abstractions;
 using SV5T.Application.Common;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
-using SV5T.Application.Criteria.Abstractions;
 using SV5T.Application.Standards.Abstractions;
 using SV5T.Domain.Awards.Enums;
 using SV5T.Domain.Criteria;
@@ -19,10 +19,6 @@ public interface IAdminStandardService
 
     Task<StandardSetResponse?> GetByIdAsync(
         Guid id,
-        CancellationToken cancellationToken = default);
-
-    Task<IReadOnlyList<CriterionResponse>> GetCriteriaAsync(
-        Guid standardSetId,
         CancellationToken cancellationToken = default);
 
     Task<StandardSetResponse> CreateAsync(
@@ -42,39 +38,61 @@ public interface IAdminStandardService
         Guid standardSetId,
         CancellationToken cancellationToken = default);
 
-    Task<CriterionResponse> AddCriterionAsync(
+    Task<StandardSetResponse> UnpublishAsync(
         Guid standardSetId,
-        CreateCriterionRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<CriterionResponse> UpdateCriterionAsync(
+    Task<IReadOnlyList<StandardResponse>> GetStandardsAsync(
         Guid standardSetId,
-        Guid criterionId,
-        UpdateCriterionRequest request,
         CancellationToken cancellationToken = default);
 
-    Task DeleteCriterionAsync(
+    Task<StandardResponse> AddStandardAsync(
         Guid standardSetId,
-        Guid criterionId,
+        CreateStandardRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<StandardResponse> UpdateStandardAsync(
+        Guid standardSetId,
+        Guid standardId,
+        UpdateStandardRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteStandardAsync(
+        Guid standardSetId,
+        Guid standardId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<StandardResponse>> InitDefaultStandardsAsync(
+        Guid standardSetId,
         CancellationToken cancellationToken = default);
 }
 
 public sealed class AdminStandardService(
     IStandardSetRepository standardSetRepository,
-    ICriterionRepository criterionRepository,
+    IStandardRepository standardRepository,
+    ICampaignRepository campaignRepository,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
     IValidator<CreateStandardSetRequest> createStandardSetValidator,
     IValidator<UpdateStandardSetRequest> updateStandardSetValidator,
-    IValidator<CreateCriterionRequest> createCriterionValidator,
-    IValidator<UpdateCriterionRequest> updateCriterionValidator)
+    IValidator<CreateStandardRequest> createStandardValidator,
+    IValidator<UpdateStandardRequest> updateStandardValidator)
     : IAdminStandardService
 {
+    private static readonly (StandardGroupCode GroupCode, string Code, string Title, string Description, int DisplayOrder)[] DefaultIndividualStandards =
+    [
+        (StandardGroupCode.Ethics, "TC_DAODUC", "Đạo đức tốt", "Đánh giá về tư tưởng chính trị, đạo đức, lối sống và ý thức chấp hành pháp luật, nội quy nhà trường.", 1),
+        (StandardGroupCode.Study, "TC_HOCTAP", "Học tập tốt", "Đánh giá về kết quả học tập, nghiên cứu khoa học và tinh thần học hỏi sáng tạo.", 2),
+        (StandardGroupCode.Fitness, "TC_THELUC", "Thể lực tốt", "Đánh giá về rèn luyện thể chất, thể dục thể thao và chứng nhận thể lực.", 3),
+        (StandardGroupCode.Volunteer, "TC_TINHNGUYEN", "Tình nguyện tốt", "Đánh giá về việc tham gia các hoạt động tình nguyện vì cộng đồng, an sinh xã hội.", 4),
+        (StandardGroupCode.Integration, "TC_HOINHAP", "Hội nhập tốt", "Đánh giá về trình độ ngoại ngữ, kỹ năng mềm và các hoạt động giao lưu quốc tế.", 5)
+    ];
+
     public async Task<IReadOnlyList<StandardSetResponse>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
         var standardSets = await standardSetRepository.GetAllAsync(cancellationToken);
-        return standardSets.Select(x => MapToResponse(x, includeCriteria: false)).ToList();
+        return standardSets.Select(x => MapToSetResponse(x, includeStandards: false)).ToList();
     }
 
     public async Task<StandardSetResponse?> GetByIdAsync(
@@ -83,18 +101,11 @@ public sealed class AdminStandardService(
     {
         var standardSet = await standardSetRepository.GetByIdAsync(
             id,
+            includeStandards: true,
             includeCriteria: true,
             cancellationToken: cancellationToken);
 
-        return standardSet is null ? null : MapToResponse(standardSet, includeCriteria: true);
-    }
-
-    public async Task<IReadOnlyList<CriterionResponse>> GetCriteriaAsync(
-        Guid standardSetId,
-        CancellationToken cancellationToken = default)
-    {
-        var criteria = await criterionRepository.GetByStandardSetIdAsync(standardSetId, cancellationToken);
-        return criteria.Select(MapToResponse).ToList();
+        return standardSet is null ? null : MapToSetResponse(standardSet, includeStandards: true);
     }
 
     public async Task<StandardSetResponse> CreateAsync(
@@ -135,6 +146,7 @@ public sealed class AdminStandardService(
         {
             var source = await standardSetRepository.GetByIdAsync(
                 request.TemplateStandardSetId.Value,
+                includeStandards: true,
                 includeCriteria: true,
                 cancellationToken: cancellationToken)
                 ?? throw new UseCaseException(
@@ -151,7 +163,24 @@ public sealed class AdminStandardService(
             }
 
             standardSet.PreviousVersionId = source.Id;
-            standardSet.Criteria = CloneCriteria(source.Criteria, standardSet.Id, actorId);
+            standardSet.Standards = CloneStandards(source.Standards, standardSet.Id, actorId);
+        }
+        else if (request.AwardType == AwardType.Individual)
+        {
+            // Tự động tạo 5 tiêu chuẩn chuẩn cho danh hiệu cá nhân
+            var now = DateTime.UtcNow;
+            standardSet.Standards = DefaultIndividualStandards.Select(def => new Standard
+            {
+                StandardSetId = standardSet.Id,
+                GroupCode = def.GroupCode,
+                Code = def.Code,
+                Title = def.Title,
+                Description = def.Description,
+                DisplayOrder = def.DisplayOrder,
+                Operator = CriterionOperator.All,
+                CreatedAt = now,
+                CreatedBy = actorId.ToString()
+            }).ToList();
         }
 
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
@@ -160,7 +189,7 @@ public sealed class AdminStandardService(
             await unitOfWork.SaveChangesAsync(ct);
         }, cancellationToken);
 
-        return MapToResponse(standardSet, includeCriteria: true);
+        return MapToSetResponse(standardSet, includeStandards: true);
     }
 
     public async Task<StandardSetResponse> UpdateAsync(
@@ -174,6 +203,7 @@ public sealed class AdminStandardService(
 
         var standardSet = await standardSetRepository.GetByIdAsync(
             standardSetId,
+            includeStandards: true,
             includeCriteria: true,
             tracking: true,
             cancellationToken: cancellationToken)
@@ -215,7 +245,7 @@ public sealed class AdminStandardService(
         await standardSetRepository.UpdateAsync(standardSet, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return MapToResponse(standardSet, includeCriteria: true);
+        return MapToSetResponse(standardSet, includeStandards: true);
     }
 
     public async Task DeleteAsync(
@@ -224,6 +254,7 @@ public sealed class AdminStandardService(
     {
         var standardSet = await standardSetRepository.GetByIdAsync(
             standardSetId,
+            includeStandards: true,
             includeCriteria: true,
             tracking: true,
             cancellationToken: cancellationToken)
@@ -250,6 +281,7 @@ public sealed class AdminStandardService(
     {
         var standardSet = await standardSetRepository.GetByIdAsync(
             standardSetId,
+            includeStandards: true,
             includeCriteria: true,
             tracking: true,
             cancellationToken: cancellationToken)
@@ -277,15 +309,11 @@ public sealed class AdminStandardService(
                 StandardGroupCode.Integration
             };
 
-            if (requiredGroups.Any(group =>
-                !standardSet.Criteria.Any(x =>
-                    x.Type == CriterionType.Group &&
-                    x.ParentCriterionId == null &&
-                    x.GroupCode == group)))
+            if (requiredGroups.Any(group => !standardSet.Standards.Any(x => x.GroupCode == group)))
             {
                 throw new UseCaseException(
                     ApplicationErrorKind.Validation,
-                    "Bộ tiêu chuẩn cá nhân phải có đầy đủ 5 nhóm tiêu chuẩn gốc (Đạo đức, Học tập, Thể lực, Tình nguyện, Hội nhập).",
+                    "Bộ tiêu chuẩn cá nhân phải có đầy đủ 5 tiêu chuẩn gốc (Đạo đức, Học tập, Thể lực, Tình nguyện, Hội nhập).",
                     "missing_standard_groups");
             }
         }
@@ -301,15 +329,79 @@ public sealed class AdminStandardService(
         await standardSetRepository.UpdateAsync(standardSet, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return MapToResponse(standardSet, includeCriteria: true);
+        return MapToSetResponse(standardSet, includeStandards: true);
     }
 
-    public async Task<CriterionResponse> AddCriterionAsync(
+    public async Task<StandardSetResponse> UnpublishAsync(
         Guid standardSetId,
-        CreateCriterionRequest request,
         CancellationToken cancellationToken = default)
     {
-        await ValidationExecutor.ValidateAsync(createCriterionValidator, request, cancellationToken);
+        var standardSet = await standardSetRepository.GetByIdAsync(
+            standardSetId,
+            includeStandards: true,
+            includeCriteria: true,
+            tracking: true,
+            cancellationToken: cancellationToken)
+            ?? throw new UseCaseException(
+                ApplicationErrorKind.NotFound,
+                "Không tìm thấy bộ tiêu chuẩn.",
+                "standard_set_not_found");
+
+        if (standardSet.Status != StandardSetStatus.Published)
+        {
+            throw new UseCaseException(
+                ApplicationErrorKind.Conflict,
+                "Chỉ có thể hoàn lại bộ tiêu chuẩn đang ở trạng thái Đã công bố (Published).",
+                "standard_set_not_published");
+        }
+
+        // Check if any campaign is currently using this standard set
+        var allCampaigns = await campaignRepository.GetAllAsync(cancellationToken: cancellationToken);
+        var usingCampaign = allCampaigns.FirstOrDefault(c => c.StandardSetId == standardSetId);
+        if (usingCampaign is not null)
+        {
+            throw new UseCaseException(
+                ApplicationErrorKind.Conflict,
+                $"Không thể hủy công bố vì bộ tiêu chuẩn đang được sử dụng bởi chiến dịch '{usingCampaign.Name}'. Vui lòng gỡ hoặc chỉnh sửa chiến dịch trước.",
+                "standard_set_in_use");
+        }
+
+        var actorId = RequireAdminUserId();
+        var now = DateTime.UtcNow;
+
+        standardSet.Status = StandardSetStatus.Draft;
+        standardSet.PublishedAt = null;
+        standardSet.UpdatedAt = now;
+        standardSet.UpdatedBy = actorId.ToString();
+
+        await standardSetRepository.UpdateAsync(standardSet, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return MapToSetResponse(standardSet, includeStandards: true);
+    }
+
+    // ==========================================
+    // Standard Management Operations
+    // ==========================================
+
+    public async Task<IReadOnlyList<StandardResponse>> GetStandardsAsync(
+        Guid standardSetId,
+        CancellationToken cancellationToken = default)
+    {
+        var standards = await standardRepository.GetByStandardSetIdAsync(
+            standardSetId,
+            includeCriteria: true,
+            cancellationToken: cancellationToken);
+
+        return standards.Select(MapToStandardResponse).ToList();
+    }
+
+    public async Task<StandardResponse> AddStandardAsync(
+        Guid standardSetId,
+        CreateStandardRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await ValidationExecutor.ValidateAsync(createStandardValidator, request, cancellationToken);
 
         var standardSet = await standardSetRepository.GetByIdAsync(
             standardSetId,
@@ -324,72 +416,65 @@ public sealed class AdminStandardService(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Không thể thêm tiêu chí vào bộ tiêu chuẩn đã công bố (Published).",
+                "Không thể thêm tiêu chuẩn vào bộ tiêu chuẩn đã công bố (Published).",
                 "standard_set_not_editable");
         }
 
-        var codeExists = await criterionRepository.ExistsCodeInStandardSetAsync(
+        string finalCode = request.Code?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(finalCode))
+        {
+            finalCode = request.GroupCode switch
+            {
+                StandardGroupCode.Ethics => "TC_DAODUC",
+                StandardGroupCode.Study => "TC_HOCTAP",
+                StandardGroupCode.Fitness => "TC_THELUC",
+                StandardGroupCode.Volunteer => "TC_TINHNGUYEN",
+                StandardGroupCode.Integration => "TC_HOINHAP",
+                _ => $"TC_STD_{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}"
+            };
+        }
+
+        var codeExists = await standardRepository.ExistsCodeInStandardSetAsync(
             standardSetId,
-            request.Code.Trim(),
+            finalCode,
             cancellationToken: cancellationToken);
 
         if (codeExists)
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Mã tiêu chí '{request.Code.Trim()}' đã tồn tại trong bộ tiêu chuẩn này.",
-                "criterion_code_duplicate");
-        }
-
-        if (request.ParentCriterionId.HasValue)
-        {
-            var parent = await criterionRepository.GetByIdAsync(
-                request.ParentCriterionId.Value,
-                cancellationToken: cancellationToken);
-
-            if (parent is null || parent.StandardSetId != standardSetId || parent.Type != CriterionType.Group)
-            {
-                throw new UseCaseException(
-                    ApplicationErrorKind.Validation,
-                    "Tiêu chí cha không hợp lệ hoặc không thuộc loại Nhóm (Group).",
-                    "invalid_parent_criterion");
-            }
+                $"Mã tiêu chuẩn '{finalCode}' đã tồn tại trong bộ tiêu chuẩn này.",
+                "standard_code_duplicate");
         }
 
         var actorId = RequireAdminUserId();
-
-        var criterion = new Criterion
+        var standard = new Standard
         {
             StandardSetId = standardSetId,
-            ParentCriterionId = request.ParentCriterionId,
-            Type = request.Type,
             GroupCode = request.GroupCode,
-            Code = request.Code.Trim(),
+            Code = finalCode,
             Title = request.Title.Trim(),
             Description = request.Description?.Trim(),
             DisplayOrder = request.DisplayOrder,
             Operator = request.Operator,
             MinimumSatisfied = request.MinimumSatisfied,
-            EvaluationType = request.EvaluationType,
-            DefinitionJson = request.DefinitionJson,
-            ReviewGuidance = request.ReviewGuidance?.Trim(),
             CreatedAt = DateTime.UtcNow,
             CreatedBy = actorId.ToString()
         };
 
-        await criterionRepository.AddAsync(criterion, cancellationToken);
+        await standardRepository.AddAsync(standard, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return MapToResponse(criterion);
+        return MapToStandardResponse(standard);
     }
 
-    public async Task<CriterionResponse> UpdateCriterionAsync(
+    public async Task<StandardResponse> UpdateStandardAsync(
         Guid standardSetId,
-        Guid criterionId,
-        UpdateCriterionRequest request,
+        Guid standardId,
+        UpdateStandardRequest request,
         CancellationToken cancellationToken = default)
     {
-        await ValidationExecutor.ValidateAsync(updateCriterionValidator, request, cancellationToken);
+        await ValidationExecutor.ValidateAsync(updateStandardValidator, request, cancellationToken);
 
         var standardSet = await standardSetRepository.GetByIdAsync(
             standardSetId,
@@ -404,90 +489,67 @@ public sealed class AdminStandardService(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Không thể chỉnh sửa tiêu chí của bộ tiêu chuẩn đã công bố (Published).",
+                "Không thể chỉnh sửa tiêu chuẩn của bộ tiêu chuẩn đã công bố (Published).",
                 "standard_set_not_editable");
         }
 
-        var criterion = await criterionRepository.GetByIdAsync(
-            criterionId,
+        var standard = await standardRepository.GetByIdAsync(
+            standardId,
+            includeCriteria: true,
             tracking: true,
             cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Không tìm thấy tiêu chí.",
-                "criterion_not_found");
+                "Không tìm thấy tiêu chuẩn.",
+                "standard_not_found");
 
-        if (criterion.StandardSetId != standardSetId)
+        if (standard.StandardSetId != standardSetId)
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Tiêu chí không thuộc bộ tiêu chuẩn được chỉ định.",
-                "invalid_criterion_scope");
+                "Tiêu chuẩn không thuộc bộ tiêu chuẩn được chỉ định.",
+                "invalid_standard_scope");
         }
 
-        var codeExists = await criterionRepository.ExistsCodeInStandardSetAsync(
-            standardSetId,
-            request.Code.Trim(),
-            excludeId: criterionId,
-            cancellationToken: cancellationToken);
-
-        if (codeExists)
+        if (!string.IsNullOrWhiteSpace(request.Code) &&
+            !string.Equals(standard.Code, request.Code.Trim(), StringComparison.OrdinalIgnoreCase))
         {
-            throw new UseCaseException(
-                ApplicationErrorKind.Conflict,
-                $"Mã tiêu chí '{request.Code.Trim()}' đã được sử dụng bởi tiêu chí khác.",
-                "criterion_code_duplicate");
-        }
-
-        if (request.ParentCriterionId.HasValue)
-        {
-            if (request.ParentCriterionId.Value == criterionId)
-            {
-                throw new UseCaseException(
-                    ApplicationErrorKind.Validation,
-                    "Tiêu chí không thể tự làm cha của chính mình.",
-                    "self_referencing_criterion");
-            }
-
-            var parent = await criterionRepository.GetByIdAsync(
-                request.ParentCriterionId.Value,
+            var codeExists = await standardRepository.ExistsCodeInStandardSetAsync(
+                standardSetId,
+                request.Code.Trim(),
+                excludeId: standardId,
                 cancellationToken: cancellationToken);
 
-            if (parent is null || parent.StandardSetId != standardSetId || parent.Type != CriterionType.Group)
+            if (codeExists)
             {
                 throw new UseCaseException(
-                    ApplicationErrorKind.Validation,
-                    "Tiêu chí cha không hợp lệ hoặc không thuộc loại Nhóm (Group).",
-                    "invalid_parent_criterion");
+                    ApplicationErrorKind.Conflict,
+                    $"Mã tiêu chuẩn '{request.Code.Trim()}' đã tồn tại trong bộ tiêu chuẩn này.",
+                    "standard_code_duplicate");
             }
+
+            standard.Code = request.Code.Trim();
         }
 
         var actorId = RequireAdminUserId();
+        standard.GroupCode = request.GroupCode;
+        standard.Title = request.Title.Trim();
+        standard.Description = request.Description?.Trim();
+        standard.DisplayOrder = request.DisplayOrder;
+        standard.Operator = request.Operator;
+        standard.MinimumSatisfied = request.MinimumSatisfied;
+        standard.UpdatedAt = DateTime.UtcNow;
+        standard.UpdatedBy = actorId.ToString();
 
-        criterion.ParentCriterionId = request.ParentCriterionId;
-        criterion.Type = request.Type;
-        criterion.GroupCode = request.GroupCode;
-        criterion.Code = request.Code.Trim();
-        criterion.Title = request.Title.Trim();
-        criterion.Description = request.Description?.Trim();
-        criterion.DisplayOrder = request.DisplayOrder;
-        criterion.Operator = request.Operator;
-        criterion.MinimumSatisfied = request.MinimumSatisfied;
-        criterion.EvaluationType = request.EvaluationType;
-        criterion.DefinitionJson = request.DefinitionJson;
-        criterion.ReviewGuidance = request.ReviewGuidance?.Trim();
-        criterion.UpdatedAt = DateTime.UtcNow;
-        criterion.UpdatedBy = actorId.ToString();
-
-        await criterionRepository.UpdateAsync(criterion, cancellationToken);
+        await standardRepository.UpdateAsync(standard, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return MapToResponse(criterion);
+        return MapToStandardResponse(standard);
     }
 
-    public async Task DeleteCriterionAsync(
+    public async Task DeleteStandardAsync(
         Guid standardSetId,
-        Guid criterionId,
+        Guid standardId,
         CancellationToken cancellationToken = default)
     {
         var standardSet = await standardSetRepository.GetByIdAsync(
@@ -503,97 +565,163 @@ public sealed class AdminStandardService(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Không thể xóa tiêu chí của bộ tiêu chuẩn đã công bố (Published).",
+                "Không thể xóa tiêu chuẩn của bộ tiêu chuẩn đã công bố (Published).",
                 "standard_set_not_editable");
         }
 
-        var criterion = await criterionRepository.GetByIdAsync(
-            criterionId,
+        var standard = await standardRepository.GetByIdAsync(
+            standardId,
             tracking: true,
             cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Không tìm thấy tiêu chí.",
-                "criterion_not_found");
+                "Không tìm thấy tiêu chuẩn.",
+                "standard_not_found");
 
-        if (criterion.StandardSetId != standardSetId)
+        if (standard.StandardSetId != standardSetId)
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Tiêu chí không thuộc bộ tiêu chuẩn được chỉ định.",
-                "invalid_criterion_scope");
+                "Tiêu chuẩn không thuộc bộ tiêu chuẩn được chỉ định.",
+                "invalid_standard_scope");
         }
 
-        // Lấy tất cả tiêu chí của StandardSet để xóa đệ quy cây con nếu có
-        var allCriteria = await criterionRepository.GetByStandardSetIdAsync(standardSetId, cancellationToken);
-        var toDeleteIds = new HashSet<Guid> { criterionId };
-
-        void CollectDescendantIds(Guid parentId)
-        {
-            foreach (var child in allCriteria.Where(x => x.ParentCriterionId == parentId))
-            {
-                if (toDeleteIds.Add(child.Id))
-                {
-                    CollectDescendantIds(child.Id);
-                }
-            }
-        }
-
-        CollectDescendantIds(criterionId);
-        var criteriaToDelete = allCriteria.Where(x => toDeleteIds.Contains(x.Id)).ToList();
-
-        await criterionRepository.RemoveRangeAsync(criteriaToDelete, cancellationToken);
+        await standardRepository.RemoveAsync(standard, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    private static List<Criterion> CloneCriteria(
-        IEnumerable<Criterion> sourceCriteria,
+    public async Task<IReadOnlyList<StandardResponse>> InitDefaultStandardsAsync(
+        Guid standardSetId,
+        CancellationToken cancellationToken = default)
+    {
+        var standardSet = await standardSetRepository.GetByIdAsync(
+            standardSetId,
+            includeStandards: true,
+            tracking: true,
+            cancellationToken: cancellationToken)
+            ?? throw new UseCaseException(
+                ApplicationErrorKind.NotFound,
+                "Không tìm thấy bộ tiêu chuẩn.",
+                "standard_set_not_found");
+
+        if (standardSet.Status != StandardSetStatus.Draft)
+        {
+            throw new UseCaseException(
+                ApplicationErrorKind.Conflict,
+                "Không thể khởi tạo tiêu chuẩn cho bộ tiêu chuẩn đã công bố.",
+                "standard_set_not_editable");
+        }
+
+        var existingGroupCodes = standardSet.Standards
+            .Where(s => s.GroupCode.HasValue)
+            .Select(s => s.GroupCode!.Value)
+            .ToHashSet();
+
+        var actorId = RequireAdminUserId();
+        var now = DateTime.UtcNow;
+        var createdList = new List<Standard>();
+
+        foreach (var def in DefaultIndividualStandards)
+        {
+            if (!existingGroupCodes.Contains(def.GroupCode))
+            {
+                var std = new Standard
+                {
+                    StandardSetId = standardSetId,
+                    GroupCode = def.GroupCode,
+                    Code = def.Code,
+                    Title = def.Title,
+                    Description = def.Description,
+                    DisplayOrder = def.DisplayOrder,
+                    Operator = CriterionOperator.All,
+                    CreatedAt = now,
+                    CreatedBy = actorId.ToString()
+                };
+
+                await standardRepository.AddAsync(std, cancellationToken);
+                createdList.Add(std);
+            }
+        }
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var allStandards = await standardRepository.GetByStandardSetIdAsync(
+            standardSetId,
+            includeCriteria: true,
+            cancellationToken: cancellationToken);
+
+        return allStandards.Select(MapToStandardResponse).ToList();
+    }
+
+    // ==========================================
+    // Helper Methods & Mappings
+    // ==========================================
+
+    private static List<Standard> CloneStandards(
+        IEnumerable<Standard> sourceStandards,
         Guid newStandardSetId,
         Guid actorId)
     {
-        var idMap = sourceCriteria.ToDictionary(x => x.Id, _ => Guid.NewGuid());
         var now = DateTime.UtcNow;
+        var result = new List<Standard>();
 
-        return sourceCriteria.Select(x =>
+        foreach (var sourceStd in sourceStandards)
         {
-            Guid? mappedParentId = null;
-
-            if (x.ParentCriterionId.HasValue)
+            var newStdId = Guid.NewGuid();
+            var std = new Standard
             {
-                if (!idMap.TryGetValue(x.ParentCriterionId.Value, out var parentNewId))
-                {
-                    throw new UseCaseException(
-                        ApplicationErrorKind.Conflict,
-                        "Dữ liệu cây tiêu chí của bộ mẫu không hợp lệ (tiêu chí cha không tồn tại trong bộ mẫu).",
-                        "invalid_template_criteria_tree");
-                }
-
-                mappedParentId = parentNewId;
-            }
-
-            return new Criterion
-            {
-                Id = idMap[x.Id],
+                Id = newStdId,
                 StandardSetId = newStandardSetId,
-                ParentCriterionId = mappedParentId,
-                Type = x.Type,
-                GroupCode = x.GroupCode,
-                Code = x.Code,
-                Title = x.Title,
-                Description = x.Description,
-                DisplayOrder = x.DisplayOrder,
-                Operator = x.Operator,
-                MinimumSatisfied = x.MinimumSatisfied,
-                EvaluationType = x.EvaluationType,
-                DefinitionJson = x.DefinitionJson,
-                ReviewGuidance = x.ReviewGuidance,
+                GroupCode = sourceStd.GroupCode,
+                Code = sourceStd.Code,
+                Title = sourceStd.Title,
+                Description = sourceStd.Description,
+                DisplayOrder = sourceStd.DisplayOrder,
+                Operator = sourceStd.Operator,
+                MinimumSatisfied = sourceStd.MinimumSatisfied,
                 CreatedAt = now,
                 CreatedBy = actorId.ToString()
             };
-        }).ToList();
+
+            var idMap = sourceStd.Criteria.ToDictionary(x => x.Id, _ => Guid.NewGuid());
+            std.Criteria = sourceStd.Criteria.Select(x =>
+            {
+                Guid? mappedParentId = null;
+                if (x.ParentCriterionId.HasValue)
+                {
+                    if (idMap.TryGetValue(x.ParentCriterionId.Value, out var parentNewId))
+                    {
+                        mappedParentId = parentNewId;
+                    }
+                }
+
+                return new Criterion
+                {
+                    Id = idMap[x.Id],
+                    StandardId = newStdId,
+                    ParentCriterionId = mappedParentId,
+                    Type = x.Type,
+                    Code = x.Code,
+                    Title = x.Title,
+                    Description = x.Description,
+                    DisplayOrder = x.DisplayOrder,
+                    Operator = x.Operator,
+                    MinimumSatisfied = x.MinimumSatisfied,
+                    EvaluationType = x.EvaluationType,
+                    DefinitionJson = x.DefinitionJson,
+                    ReviewGuidance = x.ReviewGuidance,
+                    CreatedAt = now,
+                    CreatedBy = actorId.ToString()
+                };
+            }).ToList();
+
+            result.Add(std);
+        }
+
+        return result;
     }
 
-    public static StandardSetResponse MapToResponse(StandardSet standardSet, bool includeCriteria) =>
+    public static StandardSetResponse MapToSetResponse(StandardSet standardSet, bool includeStandards) =>
         new(
             standardSet.Id,
             standardSet.AcademicYear,
@@ -604,15 +732,27 @@ public sealed class AdminStandardService(
             standardSet.PreviousVersionId,
             standardSet.CreatedAt,
             standardSet.PublishedAt,
-            includeCriteria ? standardSet.Criteria.OrderBy(x => x.DisplayOrder).Select(MapToResponse).ToList() : null);
+            includeStandards ? standardSet.Standards.OrderBy(x => x.DisplayOrder).Select(MapToStandardResponse).ToList() : null);
 
-    public static CriterionResponse MapToResponse(Criterion criterion) =>
+    public static StandardResponse MapToStandardResponse(Standard standard) =>
+        new(
+            standard.Id,
+            standard.StandardSetId,
+            standard.GroupCode,
+            standard.Code,
+            standard.Title,
+            standard.Description,
+            standard.DisplayOrder,
+            standard.Operator,
+            standard.MinimumSatisfied,
+            standard.Criteria?.OrderBy(x => x.DisplayOrder).Select(MapToCriterionResponse).ToList());
+
+    public static CriterionResponse MapToCriterionResponse(Criterion criterion) =>
         new(
             criterion.Id,
-            criterion.StandardSetId,
+            criterion.StandardId,
             criterion.ParentCriterionId,
             criterion.Type,
-            criterion.GroupCode,
             criterion.Code,
             criterion.Title,
             criterion.Description,

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
+using SV5T.Domain.Admin;
 using SV5T.Domain.Auth;
 using SV5T.Domain.Users;
 using SV5T.Domain.Welcome;
@@ -32,12 +33,14 @@ public sealed class ApplicationDbContext(
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<StandardSet> StandardSets => Set<StandardSet>();
+    public DbSet<Standard> Standards => Set<Standard>();
     public DbSet<Criterion> Criteria => Set<Criterion>();
     public DbSet<EvidenceTypeTemplate> EvidenceTypeTemplates => Set<EvidenceTypeTemplate>();
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<SubmissionApplication> Applications => Set<SubmissionApplication>();
     public DbSet<Evidence> Evidences => Set<Evidence>();
     public DbSet<ReviewLog> ReviewLogs => Set<ReviewLog>();
+    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

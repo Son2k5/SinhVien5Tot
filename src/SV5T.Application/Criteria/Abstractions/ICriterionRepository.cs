@@ -9,12 +9,16 @@ public interface ICriterionRepository
         bool tracking = false,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Criterion>> GetByStandardIdAsync(
+        Guid standardId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Criterion>> GetByStandardSetIdAsync(
         Guid standardSetId,
         CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsCodeInStandardSetAsync(
-        Guid standardSetId,
+    Task<bool> ExistsCodeInStandardAsync(
+        Guid standardId,
         string code,
         Guid? excludeId = null,
         CancellationToken cancellationToken = default);

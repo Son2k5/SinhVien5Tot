@@ -63,7 +63,7 @@ export function FiveGoodJourneySection({ criteria, progressItems, onSelect }: Cr
                     cx="50"
                     cy="50"
                     r="40"
-                    className="stroke-blue-600 transition-all duration-700 ease-out"
+                    className="stroke-blue-600 transition-[stroke-dashoffset] duration-700 ease-out"
                     strokeWidth="8"
                     strokeDasharray={2 * Math.PI * 40}
                     strokeDashoffset={2 * Math.PI * 40 * (1 - averageProgress / 100)}

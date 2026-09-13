@@ -23,7 +23,7 @@ public sealed class StandardSet : Entity<Guid>, IAuditableEntity
     public ICollection<StandardSet> LaterVersions { get; set; } = [];
 
     public DateTime? PublishedAt { get; set; }
-    public ICollection<Criterion> Criteria { get; set; } = [];
+    public ICollection<Standard> Standards { get; set; } = [];
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string? CreatedBy { get; set; }

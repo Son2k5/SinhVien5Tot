@@ -17,6 +17,7 @@ public sealed class ResetPasswordHandler(
     IUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher,
     IOtpService otpService,
+    IAuthRedisStore throttleStore,
     IValidator<ResetPasswordRequest> resetPasswordValidator) : ICommandHandler<ResetPasswordCommand>
 {
     public async Task HandleAsync(ResetPasswordCommand command, CancellationToken cancellationToken = default)
@@ -73,6 +74,8 @@ public sealed class ResetPasswordHandler(
                 await refreshTokenRepository.RevokeAllActiveAsync(
                     user.Id, transNow, transactionCancellationToken);
                 await unitOfWork.SaveChangesAsync(transactionCancellationToken);
+                await throttleStore.SetUserSecurityVersionAsync(
+                    user.Id, user.SecurityVersion);
             },
             cancellationToken);
     }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AlertTriangle, Info, Loader2, X } from 'lucide-react';
 
 export interface AdminConfirmDialogProps {
@@ -24,16 +24,24 @@ export function AdminConfirmDialog({
   onConfirm,
   onClose,
 }: AdminConfirmDialogProps) {
+  const onCloseRef = useRef(onClose);
+  const isLoadingRef = useRef(isLoading);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    isLoadingRef.current = isLoading;
+  });
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isLoading) {
-        onClose();
+      if (e.key === 'Escape' && !isLoadingRef.current) {
+        onCloseRef.current();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isLoading, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

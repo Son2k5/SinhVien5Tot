@@ -25,7 +25,7 @@ export function ApprovalFunnelCard({ funnel }: ApprovalFunnelCardProps) {
           return (
             <div key={item.label} className="relative flex items-center justify-between">
               <div
-                className="min-h-9 px-3 flex items-center justify-between text-white rounded-xl bg-gradient-to-r from-blue-500 to-sky-400 text-xs font-semibold shadow-xs transition-all hover:brightness-105"
+                className="min-h-9 px-3 flex items-center justify-between text-white rounded-xl bg-gradient-to-r from-blue-500 to-sky-400 text-xs font-semibold shadow-xs transition-[filter,width] hover:brightness-105"
                 style={{ width: `${Math.max(item.width, 35)}%` }}
               >
                 <span className="truncate pr-2">{item.label}</span>

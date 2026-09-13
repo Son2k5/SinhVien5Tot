@@ -23,15 +23,11 @@ import { CampaignFormModal } from '../../components/admin/CampaignFormModal';
 import { CampaignStatusModal } from '../../components/admin/CampaignStatusModal';
 import {
   AlertCircle,
-  BookOpen,
-  Calendar,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Edit2,
   Eye,
   Files,
-  Link2,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -39,6 +35,15 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+
+const formatDate = (isoString?: string) => {
+  if (!isoString) return '—';
+  return new Date(isoString).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
 
 export function CampaignListPage() {
   const navigate = useNavigate();
@@ -159,15 +164,6 @@ export function CampaignListPage() {
     setDeletingCampaign(null);
   };
 
-  const formatDate = (isoString?: string) => {
-    if (!isoString) return '—';
-    return new Date(isoString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
   return (
     <div className="w-full max-w-7xl mx-auto space-y-3.5 pb-12 animate-in fade-in duration-300">
       {/* Page Header */}
@@ -179,7 +175,7 @@ export function CampaignListPage() {
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="h-8.5 px-3 rounded-lg font-medium text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-xs inline-flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+            className="h-8.5 px-3 rounded-lg font-medium text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-xs inline-flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95"
           >
             <Plus size={14} />
             <span>Tạo chiến dịch</span>
@@ -201,7 +197,8 @@ export function CampaignListPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo tên chiến dịch, năm học..."
-              className="w-full h-8.5 pl-8 pr-7 text-xs border border-slate-200 rounded-lg bg-slate-50/60 text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-100 outline-none transition-all"
+              aria-label="Tìm theo tên chiến dịch, năm học"
+              className="w-full h-8.5 pl-8 pr-7 text-xs border border-slate-200 rounded-lg bg-slate-50/60 text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-100 outline-none transition-colors"
             />
             {searchQuery && (
               <button
@@ -296,7 +293,7 @@ export function CampaignListPage() {
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="h-8.5 px-2.5 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-lg inline-flex items-center gap-1 transition-all cursor-pointer"
+                  className="h-8.5 px-2.5 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
                   title="Xóa toàn bộ bộ lọc"
                 >
                   <RotateCcw size={11} />
@@ -307,7 +304,7 @@ export function CampaignListPage() {
               <button
                 type="button"
                 onClick={() => void refetch()}
-                className="h-8.5 px-2.5 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-lg inline-flex items-center gap-1 transition-all cursor-pointer"
+                className="h-8.5 px-2.5 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
                 title="Làm mới danh sách"
               >
                 <RefreshCw size={11} className={isPending ? 'animate-spin' : ''} />

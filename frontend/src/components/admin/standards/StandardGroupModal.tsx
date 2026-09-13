@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import {
   CriterionOperator,
   StandardGroupCode,
@@ -26,6 +26,8 @@ export interface StandardGroupModalProps {
   ) => Promise<void> | void;
 }
 
+const EMPTY_GROUPS: StandardResponse[] = [];
+
 const DEFAULT_GROUP_INFO: Record<StandardGroupCode, { title: string; desc: string }> = {
   [StandardGroupCode.Ethics]: {
     title: 'Đạo đức tốt',
@@ -49,56 +51,110 @@ const DEFAULT_GROUP_INFO: Record<StandardGroupCode, { title: string; desc: strin
   },
 };
 
+interface StandardGroupState {
+  groupCode: StandardGroupCode;
+  title: string;
+  description: string;
+  formError: string | null;
+  fieldErrors: Record<string, string>;
+}
+
+type StandardGroupAction =
+  | { type: 'RESET'; standardGroup?: StandardResponse | null; existingGroups: StandardResponse[] }
+  | { type: 'SET_FIELD'; field: keyof StandardGroupState; value: unknown }
+  | { type: 'CHANGE_GROUP_CODE'; groupCode: StandardGroupCode; isEdit: boolean }
+  | { type: 'SET_ERRORS'; fieldErrors: Record<string, string>; formError?: string | null }
+  | { type: 'SET_FORM_ERROR'; formError: string | null };
+
+function getInitialGroupState(
+  standardGroup?: StandardResponse | null,
+  existingGroups: StandardResponse[] = EMPTY_GROUPS,
+): StandardGroupState {
+  if (standardGroup) {
+    return {
+      groupCode: standardGroup.groupCode ?? StandardGroupCode.Ethics,
+      title: standardGroup.title,
+      description: standardGroup.description ?? '',
+      formError: null,
+      fieldErrors: {},
+    };
+  }
+  const usedCodes = new Set(
+    existingGroups.flatMap((g) => (g.groupCode ? [g.groupCode] : [])),
+  );
+  const availableGroup =
+    (Object.values(StandardGroupCode) as StandardGroupCode[]).find((c) => !usedCodes.has(c)) ??
+    StandardGroupCode.Ethics;
+
+  const info = DEFAULT_GROUP_INFO[availableGroup];
+  return {
+    groupCode: availableGroup,
+    title: info.title,
+    description: info.desc,
+    formError: null,
+    fieldErrors: {},
+  };
+}
+
+function standardGroupReducer(
+  state: StandardGroupState,
+  action: StandardGroupAction,
+): StandardGroupState {
+  switch (action.type) {
+    case 'RESET':
+      return getInitialGroupState(action.standardGroup, action.existingGroups);
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value };
+    case 'CHANGE_GROUP_CODE': {
+      if (action.isEdit) {
+        return { ...state, groupCode: action.groupCode };
+      }
+      const info = DEFAULT_GROUP_INFO[action.groupCode];
+      return {
+        ...state,
+        groupCode: action.groupCode,
+        title: info.title,
+        description: info.desc,
+      };
+    }
+    case 'SET_ERRORS':
+      return {
+        ...state,
+        fieldErrors: action.fieldErrors,
+        formError: action.formError ?? state.formError,
+      };
+    case 'SET_FORM_ERROR':
+      return { ...state, formError: action.formError };
+    default:
+      return state;
+  }
+}
+
 export function StandardGroupModal({
   isOpen,
   standardGroup,
-  existingGroups = [],
+  existingGroups = EMPTY_GROUPS,
   isLoading = false,
   onClose,
   onSubmit,
 }: StandardGroupModalProps) {
   const isEdit = Boolean(standardGroup);
 
-  const [groupCode, setGroupCode] = useState<StandardGroupCode>(StandardGroupCode.Ethics);
-  const [title, setTitle] = useState('Đạo đức tốt');
-  const [description, setDescription] = useState('');
-  const [displayOrder, setDisplayOrder] = useState(1);
+  const [state, dispatch] = useReducer(
+    standardGroupReducer,
+    { standardGroup, existingGroups },
+    (init) => getInitialGroupState(init.standardGroup, init.existingGroups),
+  );
 
-  const [formError, setFormError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const { groupCode, title, description, formError, fieldErrors } = state;
 
   useEffect(() => {
     if (!isOpen) return;
-
-    if (standardGroup) {
-      setGroupCode(standardGroup.groupCode ?? StandardGroupCode.Ethics);
-      setTitle(standardGroup.title);
-      setDescription(standardGroup.description ?? '');
-      setDisplayOrder(standardGroup.displayOrder);
-    } else {
-      const usedCodes = new Set(existingGroups.map((g) => g.groupCode).filter(Boolean));
-      const availableGroup =
-        (Object.values(StandardGroupCode) as StandardGroupCode[]).find((c) => !usedCodes.has(c)) ??
-        StandardGroupCode.Ethics;
-
-      const info = DEFAULT_GROUP_INFO[availableGroup];
-      setGroupCode(availableGroup);
-      setTitle(info.title);
-      setDescription(info.desc);
-      setDisplayOrder(existingGroups.length + 1);
-    }
-
-    setFormError(null);
-    setFieldErrors({});
+    dispatch({ type: 'RESET', standardGroup, existingGroups });
   }, [isOpen, standardGroup, existingGroups]);
 
   const handleGroupCodeChange = (newGroup: StandardGroupCode) => {
-    setGroupCode(newGroup);
-    if (!isEdit) {
-      const info = DEFAULT_GROUP_INFO[newGroup];
-      setTitle(info.title);
-      setDescription(info.desc);
-    }
+    dispatch({ type: 'CHANGE_GROUP_CODE', groupCode: newGroup, isEdit });
   };
 
   if (!isOpen) return null;
@@ -112,16 +168,16 @@ export function StandardGroupModal({
       errors.title = 'Tên tiêu chuẩn không được vượt quá 500 ký tự.';
     }
 
-    setFieldErrors(errors);
+    dispatch({ type: 'SET_ERRORS', fieldErrors: errors });
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
+    dispatch({ type: 'SET_FORM_ERROR', formError: null });
 
     if (!validate()) {
-      setFormError('Vui lòng kiểm tra lại thông tin.');
+      dispatch({ type: 'SET_FORM_ERROR', formError: 'Vui lòng kiểm tra lại thông tin.' });
       return;
     }
 
@@ -130,7 +186,7 @@ export function StandardGroupModal({
       code: undefined, // Backend auto-generates unique code
       title: title.trim(),
       description: description.trim() || null,
-      displayOrder: Number(displayOrder) || 1,
+      displayOrder: standardGroup?.displayOrder ?? existingGroups.length + 1,
       operator: CriterionOperator.All,
       minimumSatisfied: null,
     };
@@ -139,7 +195,7 @@ export function StandardGroupModal({
       await onSubmit(payload);
       onClose();
     } catch (err: unknown) {
-      setFormError(sanitizeApiError(err));
+      dispatch({ type: 'SET_FORM_ERROR', formError: sanitizeApiError(err) });
     }
   };
 
@@ -148,6 +204,7 @@ export function StandardGroupModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="standard-group-modal-title"
     >
       <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-5 relative">
         <button
@@ -155,12 +212,13 @@ export function StandardGroupModal({
           onClick={onClose}
           disabled={isLoading}
           className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          aria-label="Đóng"
         >
           <X size={18} />
         </button>
 
         <div className="space-y-1">
-          <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+          <h3 id="standard-group-modal-title" className="text-base font-semibold text-slate-800 flex items-center gap-2">
             <FolderTree size={18} className="text-blue-600" />
             <span>{isEdit ? 'Chỉnh sửa tiêu chuẩn lớn' : 'Thêm tiêu chuẩn lớn mới'}</span>
           </h3>
@@ -178,10 +236,11 @@ export function StandardGroupModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-xs font-medium text-slate-700 block mb-1.5">
+            <label htmlFor="standard-group-code-select" className="text-xs font-medium text-slate-700 block mb-1.5">
               Chọn nhóm Tiêu chuẩn SV5T <span className="text-rose-500">*</span>
             </label>
             <select
+              id="standard-group-code-select"
               value={groupCode}
               onChange={(e) => handleGroupCodeChange(e.target.value as StandardGroupCode)}
               className="w-full h-9 px-3 text-xs font-medium border border-slate-200 rounded-lg bg-slate-50 text-slate-800 focus:border-blue-500 outline-none cursor-pointer"
@@ -195,13 +254,14 @@ export function StandardGroupModal({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-slate-700 block mb-1">
+            <label htmlFor="standard-group-title-input" className="text-xs font-medium text-slate-700 block mb-1">
               Tên Tiêu chuẩn lớn <span className="text-rose-500">*</span>
             </label>
             <input
+              id="standard-group-title-input"
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'title', value: e.target.value })}
               placeholder="VD: Đạo đức tốt, Học tập tốt..."
               className={`w-full h-9 px-3 text-xs font-medium border rounded-lg bg-slate-50 text-slate-800 focus:outline-none ${
                 fieldErrors.title
@@ -215,12 +275,13 @@ export function StandardGroupModal({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-slate-700 block mb-1">
+            <label htmlFor="standard-group-desc-input" className="text-xs font-medium text-slate-700 block mb-1">
               Mô tả định hướng
             </label>
             <textarea
+              id="standard-group-desc-input"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
               rows={3}
               placeholder="Mô tả tóm tắt ý nghĩa và yêu cầu chung của tiêu chuẩn này..."
               className="w-full p-2.5 text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-800 focus:border-blue-500 outline-none resize-none font-normal"

@@ -91,9 +91,10 @@ public sealed class UsersController(
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<UserDto>> UpdateMyAvatar(
-        [FromForm] IFormFile? avatar,
+        [FromForm] UpdateMyAvatarForm form,
         CancellationToken cancellationToken)
     {
+        var avatar = form.Avatar;
         if (avatar is null || avatar.Length == 0 || avatar.Length > MaxAvatarBytes)
         {
             throw new UseCaseException(
@@ -123,5 +124,11 @@ public sealed class UsersController(
             ApplicationErrorKind.Unauthorized,
             "Phiên đăng nhập không hợp lệ.",
             "invalid_session");
+    }
+
+    public sealed class UpdateMyAvatarForm
+    {
+        [FromForm(Name = "avatar")]
+        public IFormFile? Avatar { get; set; }
     }
 }

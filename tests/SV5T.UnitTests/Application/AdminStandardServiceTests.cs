@@ -1,7 +1,15 @@
+using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Admin.Services;
-using SV5T.Application.Criteria.Abstractions;
+using SV5T.Application.Admin.Validators;
+using SV5T.Application.Campaigns.Abstractions;
+using SV5T.Application.Common.Abstractions;
+using SV5T.Application.Common.Exceptions;
+using SV5T.Application.Common.Models;
 using SV5T.Application.Standards.Abstractions;
 using SV5T.Domain.Awards.Enums;
+using SV5T.Domain.Campaigns;
+using SV5T.Domain.Campaigns.Enums;
+using SV5T.Domain.Criteria;
 using SV5T.Domain.Standards;
 using SV5T.Domain.Standards.Enums;
 using Xunit;
@@ -10,24 +18,26 @@ namespace SV5T.UnitTests.Application;
 
 public sealed class AdminStandardServiceTests
 {
-    private readonly FakeStandardSetRepository _standardRepo = new();
-    private readonly FakeCriterionRepository _criterionRepo = new();
+    private readonly FakeStandardSetRepository _standardSetRepo = new();
+    private readonly FakeStandardRepository _standardRepo = new();
+    private readonly FakeCampaignRepository _campaignRepo = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly FakeCurrentUser _currentUser = new(Guid.NewGuid());
 
     private AdminStandardService CreateService() =>
         new(
+            _standardSetRepo,
             _standardRepo,
-            _criterionRepo,
+            _campaignRepo,
             _unitOfWork,
             _currentUser,
             new CreateStandardSetRequestValidator(),
             new UpdateStandardSetRequestValidator(),
-            new CreateCriterionRequestValidator(),
-            new UpdateCriterionRequestValidator());
+            new CreateStandardRequestValidator(),
+            new UpdateStandardRequestValidator());
 
     [Fact]
-    public async Task CreateAsync_WithoutTemplate_CreatesDraftStandardSet()
+    public async Task CreateAsync_WithoutTemplateIndividual_CreatesDraftStandardSetWith5DefaultStandards()
     {
         var service = CreateService();
         var request = new CreateStandardSetRequest("2026-2027", AwardLevel.School, AwardType.Individual, null);
@@ -38,37 +48,39 @@ public sealed class AdminStandardServiceTests
         Assert.Equal(StandardSetStatus.Draft, result.Status);
         Assert.Equal(1, result.Version);
         Assert.Null(result.PreviousVersionId);
+        Assert.NotNull(result.Standards);
+        Assert.Equal(5, result.Standards.Count);
     }
 
     [Fact]
-    public async Task CreateAsync_WithTemplate_ClonesCriteriaTreeRecursively()
+    public async Task CreateAsync_WithTemplate_ClonesStandardsAndCriteriaTreeRecursively()
     {
+        var sourceStandardSetId = Guid.NewGuid();
         var sourceStandardId = Guid.NewGuid();
         var parentCriterionId = Guid.NewGuid();
         var childCriterionId = Guid.NewGuid();
 
-        var sourceStandard = new StandardSet
+        var sourceStandard = new Standard
         {
             Id = sourceStandardId,
-            AcademicYear = "2025-2026",
-            Level = AwardLevel.School,
-            AwardType = AwardType.Individual,
-            Status = StandardSetStatus.Published,
+            StandardSetId = sourceStandardSetId,
+            GroupCode = StandardGroupCode.Ethics,
+            Code = "TC_DAO_DUC",
+            Title = "Đạo đức tốt",
             Criteria =
             [
                 new Criterion
                 {
                     Id = parentCriterionId,
-                    StandardSetId = sourceStandardId,
+                    StandardId = sourceStandardId,
                     Type = CriterionType.Group,
-                    GroupCode = StandardGroupCode.Ethics,
-                    Code = "TC_DAO_DUC",
-                    Title = "Đạo đức tốt"
+                    Code = "TC_DAO_DUC_GRP",
+                    Title = "Nhóm đạo đức"
                 },
                 new Criterion
                 {
                     Id = childCriterionId,
-                    StandardSetId = sourceStandardId,
+                    StandardId = sourceStandardId,
                     ParentCriterionId = parentCriterionId,
                     Type = CriterionType.Requirement,
                     Code = "TC_DRL",
@@ -78,20 +90,34 @@ public sealed class AdminStandardServiceTests
             ]
         };
 
-        _standardRepo.Items.Add(sourceStandard);
+        var sourceStandardSet = new StandardSet
+        {
+            Id = sourceStandardSetId,
+            AcademicYear = "2025-2026",
+            Level = AwardLevel.School,
+            AwardType = AwardType.Individual,
+            Status = StandardSetStatus.Published,
+            Standards = [sourceStandard]
+        };
+
+        _standardSetRepo.Items.Add(sourceStandardSet);
 
         var service = CreateService();
-        var request = new CreateStandardSetRequest("2026-2027", AwardLevel.School, AwardType.Individual, sourceStandardId);
+        var request = new CreateStandardSetRequest("2026-2027", AwardLevel.School, AwardType.Individual, sourceStandardSetId);
 
         var result = await service.CreateAsync(request);
 
         Assert.Equal("2026-2027", result.AcademicYear);
-        Assert.Equal(sourceStandardId, result.PreviousVersionId);
-        Assert.NotNull(result.Criteria);
-        Assert.Equal(2, result.Criteria.Count);
+        Assert.Equal(sourceStandardSetId, result.PreviousVersionId);
+        Assert.NotNull(result.Standards);
+        Assert.Single(result.Standards);
 
-        var clonedParent = result.Criteria.Single(x => x.Code == "TC_DAO_DUC");
-        var clonedChild = result.Criteria.Single(x => x.Code == "TC_DRL");
+        var clonedStandard = result.Standards[0];
+        Assert.NotEqual(sourceStandardId, clonedStandard.Id);
+        Assert.Equal(2, clonedStandard.Criteria!.Count);
+
+        var clonedParent = clonedStandard.Criteria.Single(x => x.Code == "TC_DAO_DUC_GRP");
+        var clonedChild = clonedStandard.Criteria.Single(x => x.Code == "TC_DRL");
 
         Assert.NotEqual(parentCriterionId, clonedParent.Id);
         Assert.NotEqual(childCriterionId, clonedChild.Id);
@@ -101,20 +127,19 @@ public sealed class AdminStandardServiceTests
     [Fact]
     public async Task PublishAsync_MissingRequiredGroups_ThrowsValidationException()
     {
-        var standardId = Guid.NewGuid();
-        var standard = new StandardSet
+        var standardSetId = Guid.NewGuid();
+        var standardSet = new StandardSet
         {
-            Id = standardId,
+            Id = standardSetId,
             AcademicYear = "2026-2027",
             Level = AwardLevel.School,
             AwardType = AwardType.Individual,
             Status = StandardSetStatus.Draft,
-            Criteria =
+            Standards =
             [
-                new Criterion
+                new Standard
                 {
-                    StandardSetId = standardId,
-                    Type = CriterionType.Group,
+                    StandardSetId = standardSetId,
                     GroupCode = StandardGroupCode.Ethics,
                     Code = "TC_DAO_DUC",
                     Title = "Đạo đức tốt"
@@ -123,64 +148,20 @@ public sealed class AdminStandardServiceTests
             ]
         };
 
-        _standardRepo.Items.Add(standard);
+        _standardSetRepo.Items.Add(standardSet);
 
         var service = CreateService();
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.PublishAsync(standardId));
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.PublishAsync(standardSetId));
 
         Assert.Equal(ApplicationErrorKind.Validation, ex.Kind);
         Assert.Equal("missing_standard_groups", ex.ErrorCode);
-    }
-
-    [Fact]
-    public async Task AddCriterionAsync_DuplicateCode_ThrowsConflictException()
-    {
-        var standardId = Guid.NewGuid();
-        var standard = new StandardSet
-        {
-            Id = standardId,
-            AcademicYear = "2026-2027",
-            Level = AwardLevel.School,
-            AwardType = AwardType.Individual,
-            Status = StandardSetStatus.Draft
-        };
-
-        _standardRepo.Items.Add(standard);
-        _criterionRepo.Items.Add(new Criterion
-        {
-            StandardSetId = standardId,
-            Code = "TC01",
-            Title = "Tiêu chí 1",
-            Type = CriterionType.Requirement,
-            DefinitionJson = "{}"
-        });
-
-        var service = CreateService();
-        var request = new CreateCriterionRequest(
-            null,
-            CriterionType.Requirement,
-            null,
-            "TC01",
-            "Tiêu chí trùng",
-            null,
-            1,
-            CriterionOperator.All,
-            null,
-            CriterionEvaluationType.Manual,
-            "{}",
-            null);
-
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.AddCriterionAsync(standardId, request));
-
-        Assert.Equal(ApplicationErrorKind.Conflict, ex.Kind);
-        Assert.Equal("criterion_code_duplicate", ex.ErrorCode);
     }
 
     private sealed class FakeStandardSetRepository : IStandardSetRepository
     {
         public List<StandardSet> Items { get; } = [];
 
-        public Task<StandardSet?> GetByIdAsync(Guid id, bool includeCriteria = false, bool tracking = false, CancellationToken cancellationToken = default) =>
+        public Task<StandardSet?> GetByIdAsync(Guid id, bool includeStandards = false, bool includeCriteria = false, bool tracking = false, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.FirstOrDefault(x => x.Id == id));
 
         public Task<IReadOnlyList<StandardSet>> GetAllAsync(CancellationToken cancellationToken = default) =>
@@ -205,40 +186,124 @@ public sealed class AdminStandardServiceTests
         }
     }
 
-    private sealed class FakeCriterionRepository : ICriterionRepository
+    private sealed class FakeStandardRepository : IStandardRepository
     {
-        public List<Criterion> Items { get; } = [];
+        public List<Standard> Items { get; } = [];
 
-        public Task<Criterion?> GetByIdAsync(Guid id, bool tracking = false, CancellationToken cancellationToken = default) =>
+        public Task<Standard?> GetByIdAsync(Guid id, bool includeCriteria = false, bool tracking = false, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.FirstOrDefault(x => x.Id == id));
 
-        public Task<IReadOnlyList<Criterion>> GetByStandardSetIdAsync(Guid standardSetId, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<Criterion>>(Items.Where(x => x.StandardSetId == standardSetId).ToList());
+        public Task<IReadOnlyList<Standard>> GetByStandardSetIdAsync(Guid standardSetId, bool includeCriteria = false, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Standard>>(Items.Where(x => x.StandardSetId == standardSetId).ToList());
 
         public Task<bool> ExistsCodeInStandardSetAsync(Guid standardSetId, string code, Guid? excludeId = null, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.Any(x => x.StandardSetId == standardSetId && x.Code == code && x.Id != excludeId));
 
-        public Task AddAsync(Criterion criterion, CancellationToken cancellationToken = default)
+        public Task AddAsync(Standard standard, CancellationToken cancellationToken = default)
         {
-            Items.Add(criterion);
+            Items.Add(standard);
             return Task.CompletedTask;
         }
 
-        public Task UpdateAsync(Criterion criterion, CancellationToken cancellationToken = default) =>
+        public Task UpdateAsync(Standard standard, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
-        public Task RemoveAsync(Criterion criterion, CancellationToken cancellationToken = default)
+        public Task RemoveAsync(Standard standard, CancellationToken cancellationToken = default)
         {
-            Items.Remove(criterion);
+            Items.Remove(standard);
             return Task.CompletedTask;
         }
 
-        public Task RemoveRangeAsync(IEnumerable<Criterion> criteria, CancellationToken cancellationToken = default)
+        public Task RemoveRangeAsync(IEnumerable<Standard> standards, CancellationToken cancellationToken = default)
         {
-            foreach (var c in criteria.ToList())
-            {
-                Items.Remove(c);
-            }
+            foreach (var item in standards.ToList()) Items.Remove(item);
+            return Task.CompletedTask;
+        }
+    }
+
+    [Fact]
+    public async Task UnpublishAsync_WhenPublishedAndNotInUse_RevertsToDraft()
+    {
+        var service = CreateService();
+        var set = new StandardSet
+        {
+            Id = Guid.NewGuid(),
+            AcademicYear = "2026-2027",
+            Level = AwardLevel.School,
+            AwardType = AwardType.Individual,
+            Status = StandardSetStatus.Published,
+            PublishedAt = DateTime.UtcNow,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _standardSetRepo.AddAsync(set);
+
+        var result = await service.UnpublishAsync(set.Id);
+
+        Assert.Equal(StandardSetStatus.Draft, result.Status);
+        Assert.Null(result.PublishedAt);
+    }
+
+    [Fact]
+    public async Task UnpublishAsync_WhenInUseByCampaign_ThrowsConflict()
+    {
+        var service = CreateService();
+        var standardSetId = Guid.NewGuid();
+        var set = new StandardSet
+        {
+            Id = standardSetId,
+            AcademicYear = "2026-2027",
+            Level = AwardLevel.School,
+            AwardType = AwardType.Individual,
+            Status = StandardSetStatus.Published,
+            PublishedAt = DateTime.UtcNow,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _standardSetRepo.AddAsync(set);
+
+        _campaignRepo.Items.Add(new Campaign
+        {
+            Id = Guid.NewGuid(),
+            Name = "Chiến dịch 2026",
+            StandardSetId = standardSetId,
+            SchoolYear = "2026-2027",
+            Level = AwardLevel.School,
+            AwardType = AwardType.Individual
+        });
+
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.UnpublishAsync(standardSetId));
+        Assert.Equal(ApplicationErrorKind.Conflict, ex.Kind);
+    }
+
+    private sealed class FakeCampaignRepository : ICampaignRepository
+    {
+        public List<Campaign> Items { get; } = [];
+
+        public Task<Campaign?> GetByIdAsync(Guid id, bool includeDetails = false, bool tracking = false, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.FirstOrDefault(x => x.Id == id));
+
+        public Task<IReadOnlyList<Campaign>> GetAllAsync(AwardLevel? level = null, CampaignStatus? status = null, string? schoolYear = null, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Campaign>>(Items);
+
+        public Task<PagedResult<Campaign>> GetPagedAsync(AwardLevel? level, CampaignStatus? status, string? schoolYear, int pageIndex, int pageSize, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new PagedResult<Campaign>(Items, Items.Count, pageIndex, pageSize));
+
+        public Task<bool> ExistsByNameAndSchoolYearAsync(string name, string schoolYear, Guid? excludeId = null, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.Any(x => x.Name == name && x.SchoolYear == schoolYear && x.Id != excludeId));
+
+        public Task AddAsync(Campaign campaign, CancellationToken cancellationToken = default)
+        {
+            Items.Add(campaign);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(Campaign campaign, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task RemoveAsync(Campaign campaign, CancellationToken cancellationToken = default)
+        {
+            Items.Remove(campaign);
             return Task.CompletedTask;
         }
     }

@@ -33,17 +33,50 @@ public sealed record StandardSetResponse(
     Guid? PreviousVersionId,
     DateTime CreatedAt,
     DateTime? PublishedAt,
+    IReadOnlyList<StandardResponse>? Standards);
+
+// ==========================================
+// 2. Standard DTOs (Tiêu chuẩn lớn)
+// ==========================================
+
+public sealed record CreateStandardRequest(
+    StandardGroupCode? GroupCode,
+    string? Code,
+    string Title,
+    string? Description,
+    int DisplayOrder,
+    CriterionOperator Operator,
+    int? MinimumSatisfied);
+
+public sealed record UpdateStandardRequest(
+    StandardGroupCode? GroupCode,
+    string? Code,
+    string Title,
+    string? Description,
+    int DisplayOrder,
+    CriterionOperator Operator,
+    int? MinimumSatisfied);
+
+public sealed record StandardResponse(
+    Guid Id,
+    Guid StandardSetId,
+    StandardGroupCode? GroupCode,
+    string Code,
+    string Title,
+    string? Description,
+    int DisplayOrder,
+    CriterionOperator Operator,
+    int? MinimumSatisfied,
     IReadOnlyList<CriterionResponse>? Criteria);
 
 // ==========================================
-// 2. Criterion DTOs
+// 3. Criterion DTOs (Tiêu chí con)
 // ==========================================
 
 public sealed record CreateCriterionRequest(
     Guid? ParentCriterionId,
     CriterionType Type,
-    StandardGroupCode? GroupCode,
-    string Code,
+    string? Code,
     string Title,
     string? Description,
     int DisplayOrder,
@@ -56,8 +89,7 @@ public sealed record CreateCriterionRequest(
 public sealed record UpdateCriterionRequest(
     Guid? ParentCriterionId,
     CriterionType Type,
-    StandardGroupCode? GroupCode,
-    string Code,
+    string? Code,
     string Title,
     string? Description,
     int DisplayOrder,
@@ -69,10 +101,9 @@ public sealed record UpdateCriterionRequest(
 
 public sealed record CriterionResponse(
     Guid Id,
-    Guid StandardSetId,
+    Guid StandardId,
     Guid? ParentCriterionId,
     CriterionType Type,
-    StandardGroupCode? GroupCode,
     string Code,
     string Title,
     string? Description,
@@ -84,7 +115,7 @@ public sealed record CriterionResponse(
     string? ReviewGuidance);
 
 // ==========================================
-// 3. Campaign DTOs (3 Cấp: School, City, Central)
+// 4. Campaign DTOs (3 Cấp: School, City, Central)
 // ==========================================
 
 public sealed record CreateCampaignRequest(
@@ -157,7 +188,7 @@ public sealed record CampaignDetailResponse(
     DateTime CreatedAt);
 
 // ==========================================
-// 4. Evidence Review DTOs
+// 5. Evidence Review DTOs
 // ==========================================
 
 public sealed record ReviewEvidenceRequest(
@@ -187,7 +218,7 @@ public sealed record EvidenceResponse(
     DateTime CreatedAt);
 
 // ==========================================
-// 5. Common Pagination DTO
+// 6. Common Pagination DTO
 // ==========================================
 
 public sealed record PagedResponse<T>(

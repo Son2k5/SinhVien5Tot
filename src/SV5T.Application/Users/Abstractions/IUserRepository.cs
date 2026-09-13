@@ -1,3 +1,4 @@
+using SV5T.Application.Users.Dtos;
 using SV5T.Domain.Users;
 
 namespace SV5T.Application.Users.Abstractions;
@@ -5,6 +6,7 @@ namespace SV5T.Application.Users.Abstractions;
 public interface IUserRepository
 {
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<UserSummaryResponse?> GetSummaryByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<User?> GetByNormalizedEmailAsync(
         string normalizedEmail,
         bool tracking = false,

@@ -17,6 +17,7 @@ public sealed class VerifyOtpHandler(
     IAuthChallengeStore challengeStore,
     IUnitOfWork unitOfWork,
     IOtpService otpService,
+    IAuthRedisStore throttleStore,
     IValidator<VerifyOtpRequest> verifyOtpValidator) : ICommandHandler<VerifyOtpCommand>
 {
     public async Task HandleAsync(VerifyOtpCommand command, CancellationToken cancellationToken = default)
@@ -86,6 +87,8 @@ public sealed class VerifyOtpHandler(
                     user.UpdatedAt = now;
                 }
                 await unitOfWork.SaveChangesAsync(transactionCancellationToken);
+                await throttleStore.SetUserSecurityVersionAsync(
+                    user.Id, user.SecurityVersion);
             },
             cancellationToken);
 

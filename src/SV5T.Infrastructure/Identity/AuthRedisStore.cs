@@ -177,6 +177,41 @@ public sealed class AuthRedisStore(
     private static bool IsBlocked(RedisValue value, int maximum) =>
         value.TryParse(out int attempts) && attempts >= maximum;
 
+    private string UserSecurityVersionKey(Guid userId) => Key($"auth:user-sv:{userId:D}");
+
+    public async Task SetUserSecurityVersionAsync(Guid userId, int securityVersion, TimeSpan? expiry = null)
+    {
+        var key = UserSecurityVersionKey(userId);
+        var ttl = expiry ?? TimeSpan.FromDays(1);
+        try
+        {
+            await db.StringSetAsync(key, securityVersion, ttl);
+        }
+        catch (RedisException exception)
+        {
+            LogFallback(exception, "setting user security version");
+        }
+    }
+
+    public async Task<int?> GetUserSecurityVersionAsync(Guid userId)
+    {
+        var key = UserSecurityVersionKey(userId);
+        try
+        {
+            var value = await db.StringGetAsync(key);
+            if (value.TryParse(out int sv))
+            {
+                return sv;
+            }
+            return null;
+        }
+        catch (RedisException exception)
+        {
+            LogFallback(exception, "getting user security version");
+            return null;
+        }
+    }
+
     private void LogFallback(Exception exception, string operation) =>
         logger.LogWarning(
             exception,

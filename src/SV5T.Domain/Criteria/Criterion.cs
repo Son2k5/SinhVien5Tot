@@ -10,16 +10,15 @@ public sealed class Criterion : Entity<Guid>, IAuditableEntity
         Id = Guid.NewGuid();
     }
 
-    public Guid StandardSetId { get; set; }
-    public StandardSet StandardSet { get; set; } = null!;
+    public Guid StandardId { get; set; }
+    public Standard Standard { get; set; } = null!;
 
-    // null: tiêu chuẩn gốc; có giá trị: tiêu chí hoặc nhóm con.
+    // null: tiêu chí cấp 1 thuộc Standard; có giá trị: tiêu chí hoặc nhóm con.
     public Guid? ParentCriterionId { get; set; }
     public Criterion? ParentCriterion { get; set; }
     public ICollection<Criterion> Children { get; set; } = [];
 
     public CriterionType Type { get; set; }
-    public StandardGroupCode? GroupCode { get; set; }
 
     public string Code { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

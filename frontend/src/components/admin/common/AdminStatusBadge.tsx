@@ -155,16 +155,18 @@ export function AwardTypeBadge({ awardType }: { awardType: AwardType }) {
   );
 }
 
-export function StandardGroupBadge({ groupCode }: { groupCode: StandardGroupCode }) {
-  const colors: Record<StandardGroupCode, { bg: string; text: string; border: string }> = {
-    [StandardGroupCode.Ethics]: { bg: '#eefbf6', text: '#0b7952', border: '#b9f0dc' },
-    [StandardGroupCode.Study]: { bg: '#edf6ff', text: '#1367bf', border: '#b8dcfe' },
-    [StandardGroupCode.Fitness]: { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa' },
-    [StandardGroupCode.Volunteer]: { bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8' },
-    [StandardGroupCode.Integration]: { bg: '#f5f3ff', text: '#6d28d9', border: '#ddd6fe' },
-  };
+const STANDARD_GROUP_COLORS: Record<StandardGroupCode, { bg: string; text: string; border: string }> = {
+  [StandardGroupCode.Ethics]: { bg: '#eefbf6', text: '#0b7952', border: '#b9f0dc' },
+  [StandardGroupCode.Study]: { bg: '#edf6ff', text: '#1367bf', border: '#b8dcfe' },
+  [StandardGroupCode.Fitness]: { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa' },
+  [StandardGroupCode.Volunteer]: { bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8' },
+  [StandardGroupCode.Integration]: { bg: '#f5f3ff', text: '#6d28d9', border: '#ddd6fe' },
+};
 
-  const style = colors[groupCode] ?? { bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' };
+const DEFAULT_STANDARD_GROUP_STYLE = { bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' };
+
+export function StandardGroupBadge({ groupCode }: { groupCode: StandardGroupCode }) {
+  const style = STANDARD_GROUP_COLORS[groupCode] ?? DEFAULT_STANDARD_GROUP_STYLE;
 
   return (
     <span

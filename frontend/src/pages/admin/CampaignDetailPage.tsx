@@ -273,7 +273,7 @@ export function CampaignDetailPage() {
         {/* Progress Bar */}
         <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
           <div
-            className="h-full rounded-full bg-blue-600 transition-all duration-500"
+            className="h-full rounded-full bg-blue-600 transition-[width] duration-500"
             style={{ width: `${progressPercent}%` }}
           />
         </div>

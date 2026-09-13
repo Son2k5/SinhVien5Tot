@@ -19,7 +19,7 @@ global using SV5T.Application.Users.Dtos;
 global using SV5T.Application.Users.Services;
 global using SV5T.Application.Users.Validators;
 global using SV5T.Application.Admin.Dtos;
-global using SV5T.Application.Admin.Queries;
+global using SV5T.Application.Admin.Services;
 global using SV5T.Application.Admin.Validators;
 global using SV5T.Application.Welcome.Dtos;
 global using SV5T.Application.Welcome.Queries;

@@ -111,7 +111,7 @@ export function StandardSetDetailPage() {
     if (!isIndividual) return null;
 
     const presentCodes = new Set(
-      standards.map((s) => s.groupCode).filter(Boolean),
+      standards.flatMap((s) => (s.groupCode ? [s.groupCode] : [])),
     );
 
     const checklist = REQUIRED_INDIVIDUAL_GROUPS.map((group) => ({
@@ -354,7 +354,7 @@ export function StandardSetDetailPage() {
                   type="button"
                   onClick={() => setIsPublishModalOpen(true)}
                   disabled={Boolean(isIndividual && groupStatus && !groupStatus.isAllReady)}
-                  className="h-9 px-3.5 rounded-lg font-medium text-xs text-white bg-sky-500 hover:bg-sky-600 active:scale-95 shadow-sm shadow-sky-500/25 inline-flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                  className="h-9 px-3.5 rounded-lg font-medium text-xs text-white bg-sky-500 hover:bg-sky-600 active:scale-95 shadow-sm shadow-sky-500/25 inline-flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   <Upload size={14} className="shrink-0" />
                   <span>Công bố tiêu chuẩn</span>

@@ -101,4 +101,6 @@ public interface IAuthRedisStore
     Task<bool> IsLoginBlockedAsync(string email, string ipAddress);
     Task RecordLoginFailureAsync(string email, string ipAddress);
     Task ClearAccountLoginFailuresAsync(string email);
+    Task SetUserSecurityVersionAsync(Guid userId, int securityVersion, TimeSpan? expiry = null);
+    Task<int?> GetUserSecurityVersionAsync(Guid userId);
 }

@@ -26,7 +26,7 @@ export function DashboardFilterBar({
           <select
             value={filters.campaign}
             onChange={(e) => onUpdateFilter('campaign', e.target.value)}
-            className="w-full h-9 px-3 text-xs text-slate-700 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all font-medium cursor-pointer"
+            className="w-full h-9 px-3 text-xs text-slate-700 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors font-medium cursor-pointer"
           >
             <option value="sv5t-2025">SV5T 2025–2026</option>
             <option value="sv5t-2024">SV5T 2024–2025</option>
@@ -38,7 +38,7 @@ export function DashboardFilterBar({
           <select
             value={filters.schoolYear}
             onChange={(e) => onUpdateFilter('schoolYear', e.target.value)}
-            className="w-full h-9 px-3 text-xs text-slate-700 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all font-medium cursor-pointer"
+            className="w-full h-9 px-3 text-xs text-slate-700 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors font-medium cursor-pointer"
           >
             <option value="2025-2026">2025-2026</option>
             <option value="2024-2025">2024-2025</option>
@@ -50,7 +50,7 @@ export function DashboardFilterBar({
           <select
             value={filters.level}
             onChange={(e) => onUpdateFilter('level', e.target.value)}
-            className="w-full h-9 px-3 text-xs text-slate-700 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all font-medium cursor-pointer"
+            className="w-full h-9 px-3 text-xs text-slate-700 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors font-medium cursor-pointer"
           >
             <option value="school">Cấp Trường</option>
             <option value="city">Cấp Thành phố</option>
@@ -63,7 +63,7 @@ export function DashboardFilterBar({
           <select
             value={filters.department}
             onChange={(e) => onUpdateFilter('department', e.target.value)}
-            className="w-full h-9 px-3 text-xs text-slate-700 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all font-medium cursor-pointer"
+            className="w-full h-9 px-3 text-xs text-slate-700 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors font-medium cursor-pointer"
           >
             <option value="all">Tất cả đơn vị</option>
             <option value="it">Công nghệ thông tin</option>
@@ -73,7 +73,7 @@ export function DashboardFilterBar({
 
         <label className="space-y-1 min-w-0">
           <span className="text-[11px] font-semibold text-slate-500 pl-0.5">Từ ngày</span>
-          <div className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all">
+          <div className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-[border-color,box-shadow]">
             <CalendarDays size={14} className="text-slate-400 flex-shrink-0" />
             <input
               type="date"
@@ -86,7 +86,7 @@ export function DashboardFilterBar({
 
         <label className="space-y-1 min-w-0">
           <span className="text-[11px] font-semibold text-slate-500 pl-0.5">Đến ngày</span>
-          <div className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all">
+          <div className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-[border-color,box-shadow]">
             <CalendarDays size={14} className="text-slate-400 flex-shrink-0" />
             <input
               type="date"

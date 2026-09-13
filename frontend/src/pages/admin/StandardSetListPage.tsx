@@ -38,6 +38,15 @@ import {
   Trash2,
 } from 'lucide-react';
 
+const formatDate = (isoString?: string | null) => {
+  if (!isoString) return '—';
+  return new Date(isoString).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
+
 export function StandardSetListPage() {
 
   const navigate = useNavigate();
@@ -144,15 +153,6 @@ export function StandardSetListPage() {
     await deleteStandardSet.mutateAsync(deletingSet.id);
     setIsDeleteModalOpen(false);
     setDeletingSet(null);
-  };
-
-  const formatDate = (isoString?: string | null) => {
-    if (!isoString) return '—';
-    return new Date(isoString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
   };
 
   return (

@@ -1,9 +1,9 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SV5T.Application.Admin.Dtos;
-using SV5T.Application.Admin.Queries;
 using SV5T.Application.Admin.Services;
 using SV5T.Application.Admin.Validators;
+using SV5T.Application.Common.Behaviors;
 using SV5T.Application.Auth.Commands.ForgotPassword;
 using SV5T.Application.Auth.Commands.Login;
 using SV5T.Application.Auth.Commands.Logout;
@@ -54,6 +54,7 @@ public static class DependencyInjection
 
         // Admin Services & Management
         services.AddScoped<IAdminStandardService, AdminStandardService>();
+        services.AddScoped<SV5T.Application.Criteria.Abstractions.ICriterionService, SV5T.Application.Criteria.Services.CriterionService>();
         services.AddScoped<IAdminCampaignService, AdminCampaignService>();
         services.AddScoped<IAdminEvidenceReviewService, AdminEvidenceReviewService>();
         services.AddScoped<AdminDashboardService>();
@@ -63,6 +64,14 @@ public static class DependencyInjection
 
         // Validators
         services.AddValidatorsFromAssemblyContaining<AdminStandardService>();
+
+        // MediatR & Pipeline Behaviors
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
+            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+        });
 
         return services;
     }

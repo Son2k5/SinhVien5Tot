@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
+using SV5T.Application.Common.Security;
 using SV5T.Application.Users.Dtos;
 using SV5T.Domain.Users;
 
@@ -110,7 +111,7 @@ public sealed class UpdateAvatarHandler(
         var read = await memory.ReadAsync(header.AsMemory(0, header.Length), cancellationToken);
         memory.Position = 0;
 
-        ValidateImageSignature(header, read);
+        FileSignatureValidator.EnsureValidImageSignature(header, read);
         var extension = Path.GetExtension(request.FileName);
         if (string.IsNullOrWhiteSpace(extension))
         {
@@ -118,22 +119,6 @@ public sealed class UpdateAvatarHandler(
         }
 
         return (memory, $"{Guid.NewGuid():N}{extension}");
-    }
-
-    private static void ValidateImageSignature(byte[] header, int read)
-    {
-        var jpeg = read >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
-        var png = read >= 8 && header.AsSpan(0, 8).SequenceEqual(
-            new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
-        var webp = read >= 12 && header.AsSpan(0, 4).SequenceEqual("RIFF"u8) &&
-                   header.AsSpan(8, 4).SequenceEqual("WEBP"u8);
-        if (!jpeg && !png && !webp)
-        {
-            throw new UseCaseException(
-                ApplicationErrorKind.Validation,
-                "Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP.",
-                "unsupported_avatar_format");
-        }
     }
 
     private async Task TryDeleteAvatarAsync(string publicId, string resourceType)

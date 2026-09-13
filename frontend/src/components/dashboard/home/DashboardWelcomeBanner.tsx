@@ -24,7 +24,7 @@ export function DashboardWelcomeBanner({
   return (
     <section
       aria-label="Lời chào và tổng quan"
-      className="relative bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-7 lg:p-8 shadow-sm transition-all"
+      className="relative bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-7 lg:p-8 shadow-sm transition-shadow"
     >
       {/* Soft background radial nuance */}
       <div
@@ -147,7 +147,7 @@ export function DashboardWelcomeBanner({
                 onOpenLauncher();
               }
             }}
-            className="absolute z-[5] -bottom-1 right-0 sm:right-3 w-[84%] sm:w-[78%] p-3.5 sm:p-4 rounded-xl bg-white/95 backdrop-blur-lg border border-slate-200/60 shadow-xl hover:shadow-2xl hover:bg-white transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group/widget"
+            className="absolute z-[5] -bottom-1 right-0 sm:right-3 w-[84%] sm:w-[78%] p-3.5 sm:p-4 rounded-xl bg-white/95 backdrop-blur-lg border border-slate-200/60 shadow-xl hover:shadow-2xl hover:bg-white transition-[box-shadow,background-color] duration-200 cursor-pointer flex items-center justify-between gap-3 group/widget"
           >
             <div className="space-y-0.5 pr-2 min-w-0">
               <div className="flex items-center gap-1 text-blue-600 text-[10px] font-bold tracking-wider uppercase">
@@ -162,7 +162,7 @@ export function DashboardWelcomeBanner({
               </p>
             </div>
 
-            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-600 group-hover/widget:bg-blue-700 text-white flex items-center justify-center shadow-sm transition-all group-hover/widget:translate-x-0.5">
+            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-600 group-hover/widget:bg-blue-700 text-white flex items-center justify-center shadow-sm transition-[background-color,transform] group-hover/widget:translate-x-0.5">
               <ArrowUpRight className="w-4 h-4" />
             </span>
           </div>

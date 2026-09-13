@@ -208,7 +208,7 @@ public sealed class AdminCampaignServiceTests
     {
         public List<StandardSet> Items { get; } = [];
 
-        public Task<StandardSet?> GetByIdAsync(Guid id, bool includeCriteria = false, bool tracking = false, CancellationToken cancellationToken = default) =>
+        public Task<StandardSet?> GetByIdAsync(Guid id, bool includeStandards = false, bool includeCriteria = false, bool tracking = false, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.FirstOrDefault(x => x.Id == id));
 
         public Task<IReadOnlyList<StandardSet>> GetAllAsync(CancellationToken cancellationToken = default) =>

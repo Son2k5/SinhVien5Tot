@@ -74,91 +74,94 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
   }, [chatOpen, accountOpen, notificationOpen]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-700 flex font-['Be_Vietnam_Pro',sans-serif]">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-700 flex flex-col font-['Be_Vietnam_Pro',sans-serif]">
       {/* Skip Link for Accessibility */}
       <a
         href="#admin-main"
-        className="fixed z-[300] -top-16 left-5 px-4 py-2.5 text-xs font-semibold text-white bg-blue-600 rounded-xl shadow-lg transition-all focus:top-4"
+        className="fixed z-[300] -top-16 left-5 px-4 py-2.5 text-xs font-semibold text-white bg-blue-600 rounded-xl shadow-lg transition-[top] focus:top-4"
       >
         Chuyển đến nội dung chính
       </a>
 
-      {/* Mobile Backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden transition-opacity"
-          aria-hidden="true"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Left Sidebar */}
-      <AdminSidebar
-        groups={visibleGroups}
+      {/* Top Header — full width trên cùng */}
+      <AdminHeader
+        user={user}
+        displayName={displayName}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onOpenMobile={() => setMobileOpen(true)}
         collapsed={collapsed}
-        mobileOpen={mobileOpen}
-        onToggleCollapse={() => setCollapsed((prev) => !prev)}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
+        chatOpen={chatOpen}
+        onToggleChat={() => {
+          setChatOpen((prev) => !prev);
+          setNotificationOpen(false);
+          setAccountOpen(false);
+        }}
+        notificationOpen={notificationOpen}
+        onToggleNotification={() => {
+          setNotificationOpen((prev) => !prev);
+          setChatOpen(false);
+          setAccountOpen(false);
+        }}
+        accountOpen={accountOpen}
+        onToggleAccount={() => {
+          setAccountOpen((prev) => !prev);
+          setChatOpen(false);
+          setNotificationOpen(false);
+        }}
+        popoverRef={popoverRef}
+      >
+        {/* Chat Popover */}
+        {chatOpen && (
+          <AdminChatPopover onClose={() => setChatOpen(false)} />
+        )}
 
-      {/* Main Page Content Wrapper */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
-        <AdminHeader
-          user={user}
-          displayName={displayName}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onOpenMobile={() => setMobileOpen(true)}
-          chatOpen={chatOpen}
-          onToggleChat={() => {
-            setChatOpen((prev) => !prev);
-            setNotificationOpen(false);
-            setAccountOpen(false);
-          }}
-          notificationOpen={notificationOpen}
-          onToggleNotification={() => {
-            setNotificationOpen((prev) => !prev);
-            setChatOpen(false);
-            setAccountOpen(false);
-          }}
-          accountOpen={accountOpen}
-          onToggleAccount={() => {
-            setAccountOpen((prev) => !prev);
-            setChatOpen(false);
-            setNotificationOpen(false);
-          }}
-          popoverRef={popoverRef}
-        >
-          {/* Chat Popover */}
-          {chatOpen && (
-            <AdminChatPopover onClose={() => setChatOpen(false)} />
-          )}
+        {/* Notifications Popover */}
+        {notificationOpen && (
+          <AdminNotificationPopover onClose={() => setNotificationOpen(false)} />
+        )}
 
-          {/* Notifications Popover */}
-          {notificationOpen && (
-            <AdminNotificationPopover onClose={() => setNotificationOpen(false)} />
-          )}
+        {/* User Profile Menu */}
+        {accountOpen && (
+          <AdminUserMenu
+            user={user}
+            displayName={displayName}
+            onLogout={onLogout}
+            onClose={() => setAccountOpen(false)}
+          />
+        )}
+      </AdminHeader>
 
-          {/* User Profile Menu */}
-          {accountOpen && (
-            <AdminUserMenu
-              user={user}
-              displayName={displayName}
-              onLogout={onLogout}
-              onClose={() => setAccountOpen(false)}
-            />
-          )}
-        </AdminHeader>
+      {/* Body: Sidebar + Main nằm dưới header */}
+      <div className="flex flex-1 min-h-0 relative">
+        {/* Mobile Backdrop */}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden transition-opacity"
+            aria-hidden="true"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
+        {/* Left Sidebar (đẩy xuống dưới header) */}
+        <AdminSidebar
+          groups={visibleGroups}
+          collapsed={collapsed}
+          mobileOpen={mobileOpen}
+          onToggleCollapse={() => setCollapsed((prev) => !prev)}
+          onCloseMobile={() => setMobileOpen(false)}
+        />
 
         {/* Main Content Viewport */}
-        <main
-          id="admin-main"
-          className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto outline-none overflow-y-auto"
-          tabIndex={-1}
-        >
-          <Outlet />
-        </main>
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+          <main
+            id="admin-main"
+            className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto outline-none"
+            tabIndex={-1}
+          >
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );

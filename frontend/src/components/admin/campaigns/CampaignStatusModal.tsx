@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import {
   CampaignStatus,
   CAMPAIGN_STATUS_LABELS,
@@ -25,6 +25,38 @@ const STATUS_DESCRIPTIONS: Record<CampaignStatus, string> = {
   [CampaignStatus.Archived]: 'Lưu trữ hồ sơ đợt xét, khóa toàn bộ thao tác chỉnh sửa.',
 };
 
+const STATUS_OPTIONS: CampaignStatus[] = [
+  CampaignStatus.Draft,
+  CampaignStatus.Open,
+  CampaignStatus.Closed,
+  CampaignStatus.Reviewing,
+  CampaignStatus.Published,
+  CampaignStatus.Archived,
+];
+
+interface StatusModalState {
+  selectedStatus: CampaignStatus;
+  error: string | null;
+}
+
+type StatusModalAction =
+  | { type: 'RESET'; status: CampaignStatus }
+  | { type: 'SET_STATUS'; status: CampaignStatus }
+  | { type: 'SET_ERROR'; error: string | null };
+
+function statusModalReducer(state: StatusModalState, action: StatusModalAction): StatusModalState {
+  switch (action.type) {
+    case 'RESET':
+      return { selectedStatus: action.status, error: null };
+    case 'SET_STATUS':
+      return { ...state, selectedStatus: action.status };
+    case 'SET_ERROR':
+      return { ...state, error: action.error };
+    default:
+      return state;
+  }
+}
+
 export function CampaignStatusModal({
   isOpen,
   campaign,
@@ -32,59 +64,62 @@ export function CampaignStatusModal({
   onClose,
   onSave,
 }: CampaignStatusModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState<CampaignStatus>(
+  const [state, dispatch] = useReducer(
+    statusModalReducer,
     campaign?.status ?? CampaignStatus.Draft,
+    (initStatus) => ({ selectedStatus: initStatus, error: null }),
   );
-  const [error, setError] = useState<string | null>(null);
+
+  const { selectedStatus, error } = state;
+
+  useEffect(() => {
+    if (campaign && isOpen) {
+      dispatch({ type: 'RESET', status: campaign.status });
+    }
+  }, [campaign, isOpen]);
 
   if (!isOpen || !campaign) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    dispatch({ type: 'SET_ERROR', error: null });
     try {
       await onSave(selectedStatus);
       onClose();
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Không thể cập nhật trạng thái đợt xét.',
-      );
+      dispatch({
+        type: 'SET_ERROR',
+        error: err instanceof Error ? err.message : 'Không thể cập nhật trạng thái đợt xét.',
+      });
     }
   };
-
-  const statusOptions = [
-    CampaignStatus.Draft,
-    CampaignStatus.Open,
-    CampaignStatus.Closed,
-    CampaignStatus.Reviewing,
-    CampaignStatus.Published,
-    CampaignStatus.Archived,
-  ];
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="campaign-status-modal-title"
     >
       <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-5 relative">
         <button
           type="button"
           onClick={onClose}
           disabled={isLoading}
+          aria-label="Đóng"
           className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
         >
           <X size={18} />
         </button>
 
         <div className="space-y-1">
-          <h2 className="text-base font-semibold text-slate-800">
-            Cập nhật trạng thái đợt xét
-          </h2>
+          <h3 id="campaign-status-modal-title" className="text-base font-semibold text-slate-800">
+            Chuyển trạng thái đợt xét
+          </h3>
           <p className="text-xs text-slate-500">
-            {campaign.name} · Hiện tại:{' '}
-            <span className="font-medium text-slate-700">
-              {CAMPAIGN_STATUS_LABELS[campaign.status]}
+            Đợt xét: <span className="font-semibold text-slate-700">{campaign.name}</span>
+            <span className="ml-1 text-slate-400">
+              ({CAMPAIGN_STATUS_LABELS[campaign.status]})
             </span>
           </p>
         </div>
@@ -98,16 +133,16 @@ export function CampaignStatusModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-700 block">
+            <span className="text-xs font-medium text-slate-700 block">
               Chọn trạng thái mới
-            </label>
+            </span>
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {statusOptions.map((st) => {
+              {STATUS_OPTIONS.map((st) => {
                 const isSelected = selectedStatus === st;
                 return (
                   <label
                     key={st}
-                    onClick={() => setSelectedStatus(st)}
+                    onClick={() => dispatch({ type: 'SET_STATUS', status: st })}
                     className={`flex items-start gap-3 p-2.5 rounded-lg border transition-colors cursor-pointer ${
                       isSelected
                         ? 'border-blue-500 bg-blue-50/50'
@@ -118,7 +153,7 @@ export function CampaignStatusModal({
                       type="radio"
                       name="campaignStatus"
                       checked={isSelected}
-                      onChange={() => setSelectedStatus(st)}
+                      onChange={() => dispatch({ type: 'SET_STATUS', status: st })}
                       className="mt-1 text-blue-600 focus:ring-blue-500"
                     />
                     <div className="space-y-0.5 min-w-0 flex-1">

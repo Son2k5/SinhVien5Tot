@@ -46,7 +46,7 @@ export function DashboardHeader({
   }, [accountOpen]);
 
   return (
-    <header className="sticky top-0 z-40 h-16 sm:h-18 bg-white/90 backdrop-blur-md border-b border-slate-200/90 shadow-sm transition-all">
+    <header className="sticky top-0 z-40 h-16 sm:h-18 bg-white/90 backdrop-blur-md border-b border-slate-200/90 shadow-sm transition-shadow">
       <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
         {/* Left Side: Menu Trigger + Logo */}
         <div className="flex items-center gap-3 sm:gap-4">
@@ -74,7 +74,7 @@ export function DashboardHeader({
         <button
           type="button"
           onClick={onOpenLauncher}
-          className="hidden md:flex items-center justify-between w-72 lg:w-96 h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80 hover:border-slate-300 text-slate-400 hover:text-slate-600 text-xs transition-all shadow-sm cursor-pointer"
+          className="hidden md:flex items-center justify-between w-72 lg:w-96 h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80 hover:border-slate-300 text-slate-400 hover:text-slate-600 text-xs transition-colors shadow-sm cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
             <Search className="w-4 h-4 text-slate-400" />

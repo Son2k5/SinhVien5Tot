@@ -5,17 +5,15 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useAdminDashboard } from '../../hooks/admin/useAdminDashboard';
-import {
-  ActivityFeedCard,
-  ApprovalFunnelCard,
-  CollectiveUnitsCard,
-  DashboardFilterBar,
-  DashboardKpiGrid,
-  DepartmentRankingsTable,
-  StandardBottleneckCard,
-  StatusDonutChart,
-  UrgentApplicationsCard,
-} from '../../components/admin/dashboard';
+import { ActivityFeedCard } from '../../components/admin/dashboard/ActivityFeedCard';
+import { ApprovalFunnelCard } from '../../components/admin/dashboard/ApprovalFunnelCard';
+import { CollectiveUnitsCard } from '../../components/admin/dashboard/CollectiveUnitsCard';
+import { DashboardFilterBar } from '../../components/admin/dashboard/DashboardFilterBar';
+import { DashboardKpiGrid } from '../../components/admin/dashboard/DashboardKpiGrid';
+import { DepartmentRankingsTable } from '../../components/admin/dashboard/DepartmentRankingsTable';
+import { StandardBottleneckCard } from '../../components/admin/dashboard/StandardBottleneckCard';
+import { StatusDonutChart } from '../../components/admin/dashboard/StatusDonutChart';
+import { UrgentApplicationsCard } from '../../components/admin/dashboard/UrgentApplicationsCard';
 
 export function AdminDashboardPage() {
   const {

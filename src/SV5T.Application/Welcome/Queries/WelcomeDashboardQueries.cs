@@ -1,5 +1,7 @@
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
+using SV5T.Application.Users.Abstractions;
+using SV5T.Application.Users.Dtos;
 using SV5T.Application.Welcome.Dtos;
 using SV5T.Domain.Users;
 using SV5T.Domain.Welcome;
@@ -35,7 +37,7 @@ public sealed class WelcomeDashboardService(
                 "invalid_session");
         }
 
-        var user = await userRepository.GetByIdAsync(
+        var user = await userRepository.GetSummaryByIdAsync(
             currentUser.UserId.Value,
             cancellationToken);
         if (user is null || !user.IsActive || !user.IsVerified)
@@ -53,7 +55,7 @@ public sealed class WelcomeDashboardService(
             cancellationToken);
         var mappedContents = contents.Select(MapContent).ToArray();
 
-        var profileFullName = user.Profile?.FullName?.Trim();
+        var profileFullName = user.ProfileFullName?.Trim();
         var displayName = !string.IsNullOrWhiteSpace(profileFullName)
             ? profileFullName
             : string.IsNullOrWhiteSpace(user.DisplayName)
@@ -66,7 +68,7 @@ public sealed class WelcomeDashboardService(
                 displayName,
                 user.Email,
                 user.AvatarUrl,
-                user.Profile?.Faculty),
+                user.ProfileFaculty),
             GetFeatures(),
             mappedContents
                 .Where(item => item.Type == PortalContentType.Notification)

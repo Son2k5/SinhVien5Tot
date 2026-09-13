@@ -9,6 +9,8 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminFeaturePage } from './pages/admin/AdminFeaturePage';
 import { CampaignListPage } from './pages/admin/CampaignListPage';
 import { CampaignDetailPage } from './pages/admin/CampaignDetailPage';
+import { StudentListPage } from './pages/admin/StudentListPage';
+import { StudentDetailPage } from './pages/admin/StudentDetailPage';
 import { StandardSetListPage } from './pages/admin/StandardSetListPage';
 import { StandardSetDetailPage } from './pages/admin/StandardSetDetailPage';
 import { AdminLayout } from './components/admin/AdminLayout';
@@ -35,6 +37,8 @@ export function App() {
           <Route path="campaigns/:id" element={<CampaignDetailPage />} />
           <Route path="applications" element={<AdminFeaturePage section="applications" />} />
           <Route path="evidence" element={<AdminFeaturePage section="evidence" />} />
+          <Route path="students" element={<StudentListPage />} />
+          <Route path="students/:id" element={<StudentDetailPage />} />
           <Route path="collectives" element={<AdminFeaturePage section="collectives" />} />
           <Route path="reports" element={<AdminFeaturePage section="reports" />} />
           <Route path="settings" element={<AdminFeaturePage section="settings" />} />

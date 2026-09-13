@@ -21,6 +21,7 @@ public sealed class StandardSetRepository(ApplicationDbContext dbContext)
 {
     public Task<StandardSet?> GetByIdAsync(
         Guid id,
+        bool includeStandards = false,
         bool includeCriteria = false,
         bool tracking = false,
         CancellationToken cancellationToken = default)
@@ -29,7 +30,11 @@ public sealed class StandardSetRepository(ApplicationDbContext dbContext)
 
         if (includeCriteria)
         {
-            query = query.Include(x => x.Criteria);
+            query = query.Include(x => x.Standards).ThenInclude(x => x.Criteria);
+        }
+        else if (includeStandards)
+        {
+            query = query.Include(x => x.Standards);
         }
 
         if (!tracking)
@@ -92,6 +97,89 @@ public sealed class StandardSetRepository(ApplicationDbContext dbContext)
     }
 }
 
+public sealed class StandardRepository(ApplicationDbContext dbContext)
+    : IStandardRepository
+{
+    public Task<Standard?> GetByIdAsync(
+        Guid id,
+        bool includeCriteria = false,
+        bool tracking = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Standards.AsQueryable();
+
+        if (includeCriteria)
+        {
+            query = query.Include(x => x.Criteria);
+        }
+
+        if (!tracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return query.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Standard>> GetByStandardSetIdAsync(
+        Guid standardSetId,
+        bool includeCriteria = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Standards.AsQueryable();
+
+        if (includeCriteria)
+        {
+            query = query.Include(x => x.Criteria);
+        }
+
+        return await query
+            .AsNoTracking()
+            .Where(x => x.StandardSetId == standardSetId)
+            .OrderBy(x => x.DisplayOrder)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> ExistsCodeInStandardSetAsync(
+        Guid standardSetId,
+        string code,
+        Guid? excludeId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Standards
+            .AsNoTracking()
+            .Where(x => x.StandardSetId == standardSetId && x.Code == code);
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeId.Value);
+        }
+
+        return query.AnyAsync(cancellationToken);
+    }
+
+    public Task AddAsync(Standard standard, CancellationToken cancellationToken = default) =>
+        dbContext.Standards.AddAsync(standard, cancellationToken).AsTask();
+
+    public Task UpdateAsync(Standard standard, CancellationToken cancellationToken = default)
+    {
+        dbContext.Standards.Update(standard);
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAsync(Standard standard, CancellationToken cancellationToken = default)
+    {
+        dbContext.Standards.Remove(standard);
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveRangeAsync(IEnumerable<Standard> standards, CancellationToken cancellationToken = default)
+    {
+        dbContext.Standards.RemoveRange(standards);
+        return Task.CompletedTask;
+    }
+}
+
 public sealed class CriterionRepository(ApplicationDbContext dbContext)
     : ICriterionRepository
 {
@@ -110,24 +198,33 @@ public sealed class CriterionRepository(ApplicationDbContext dbContext)
         return query.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Criterion>> GetByStandardIdAsync(
+        Guid standardId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.Criteria
+            .AsNoTracking()
+            .Where(x => x.StandardId == standardId)
+            .OrderBy(x => x.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<Criterion>> GetByStandardSetIdAsync(
         Guid standardSetId,
         CancellationToken cancellationToken = default) =>
         await dbContext.Criteria
             .AsNoTracking()
-            .Where(x => x.StandardSetId == standardSetId)
+            .Where(x => x.Standard.StandardSetId == standardSetId)
             .OrderBy(x => x.DisplayOrder)
             .ToListAsync(cancellationToken);
 
-    public Task<bool> ExistsCodeInStandardSetAsync(
-        Guid standardSetId,
+    public Task<bool> ExistsCodeInStandardAsync(
+        Guid standardId,
         string code,
         Guid? excludeId = null,
         CancellationToken cancellationToken = default)
     {
         var query = dbContext.Criteria
             .AsNoTracking()
-            .Where(x => x.StandardSetId == standardSetId && x.Code == code);
+            .Where(x => x.StandardId == standardId && x.Code == code);
 
         if (excludeId.HasValue)
         {
@@ -321,11 +418,22 @@ public sealed class EvidenceRepository(ApplicationDbContext dbContext)
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Evidence> filtered = dbContext.Evidences
-            .AsNoTracking()
-            .Where(x => !campaignId.HasValue || x.Application.CampaignId == campaignId.Value)
-            .Where(x => !status.HasValue || x.Status == status.Value)
-            .Where(x => !applicationId.HasValue || x.ApplicationId == applicationId.Value);
+        IQueryable<Evidence> filtered = dbContext.Evidences.AsNoTracking();
+
+        if (campaignId.HasValue)
+        {
+            filtered = filtered.Where(x => x.Application.CampaignId == campaignId.Value);
+        }
+
+        if (status.HasValue)
+        {
+            filtered = filtered.Where(x => x.Status == status.Value);
+        }
+
+        if (applicationId.HasValue)
+        {
+            filtered = filtered.Where(x => x.ApplicationId == applicationId.Value);
+        }
 
         var totalCount = await filtered.CountAsync(cancellationToken);
 

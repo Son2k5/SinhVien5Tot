@@ -7,6 +7,7 @@ public interface IStandardSetRepository
 {
     Task<StandardSet?> GetByIdAsync(
         Guid id,
+        bool includeStandards = false,
         bool includeCriteria = false,
         bool tracking = false,
         CancellationToken cancellationToken = default);

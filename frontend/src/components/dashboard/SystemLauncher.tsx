@@ -113,7 +113,7 @@ export function SystemLauncher({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Tìm kiếm nhanh chức năng..."
               aria-label="Tìm chức năng"
-              className="w-full h-10 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 font-medium placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-full h-10 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 font-medium placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-[border-color,box-shadow,background-color]"
             />
             <span className="absolute right-3 text-xs font-semibold text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200">
               {filteredCount}
@@ -143,7 +143,7 @@ export function SystemLauncher({
                         key={feature.key}
                         to={feature.route}
                         onClick={onClose}
-                        className="group flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200/80 transition-all cursor-pointer"
+                        className="group flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200/80 transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-3 min-w-0 pr-2">
                           <div className="w-9 h-9 rounded-lg bg-white border border-slate-200/80 group-hover:border-blue-200 text-blue-600 flex items-center justify-center flex-shrink-0 transition-colors">
@@ -158,7 +158,7 @@ export function SystemLauncher({
                             </p>
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-[color,transform] flex-shrink-0" />
                       </Link>
                     ) : (
                       <div

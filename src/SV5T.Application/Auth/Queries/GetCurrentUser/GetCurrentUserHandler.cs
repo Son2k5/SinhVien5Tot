@@ -1,5 +1,7 @@
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
+using SV5T.Application.Users.Abstractions;
+using SV5T.Application.Users.Dtos;
 using SV5T.Domain.Users;
 
 namespace SV5T.Application.Auth.Queries.GetCurrentUser;
@@ -27,7 +29,7 @@ public sealed class GetCurrentUserHandler(
                 "invalid_session");
         }
 
-        var user = await userRepository.GetByIdAsync(currentUser.UserId.Value, cancellationToken);
+        var user = await userRepository.GetSummaryByIdAsync(currentUser.UserId.Value, cancellationToken);
         if (user is null || !user.IsActive || !user.IsVerified)
         {
             throw new UseCaseException(

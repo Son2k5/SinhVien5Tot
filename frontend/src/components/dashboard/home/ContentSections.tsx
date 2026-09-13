@@ -51,7 +51,7 @@ export function FeaturedActivitiesSection({ items }: NewsItemsProps) {
           {/* Main Primary Feature Card */}
           <Link
             to={'/news/' + primaryItem.id}
-            className="group lg:col-span-7 relative min-h-[380px] sm:min-h-[420px] rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between p-6 sm:p-8 text-white cursor-pointer"
+            className="group lg:col-span-7 relative min-h-[380px] sm:min-h-[420px] rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/90 shadow-sm hover:shadow-md transition-[box-shadow,border-color] flex flex-col justify-between p-6 sm:p-8 text-white cursor-pointer"
           >
             <img
               src={primaryItem.imageUrl}
@@ -109,7 +109,7 @@ export function FeaturedActivitiesSection({ items }: NewsItemsProps) {
                 <Link
                   key={item.id}
                   to={'/news/' + item.id}
-                  className="group flex-1 flex flex-col sm:flex-row items-stretch gap-4 p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                  className="group flex-1 flex flex-col sm:flex-row items-stretch gap-4 p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-300 hover:shadow-md transition-[box-shadow,border-color] cursor-pointer"
                 >
                   <div className="relative w-full sm:w-36 h-36 sm:h-auto rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
                     <img
@@ -167,7 +167,7 @@ function NewsMarqueeGroup({ items, duplicate = false }: NewsItemsProps & { dupli
           to={'/news/' + item.id}
           tabIndex={duplicate ? -1 : undefined}
           aria-label={duplicate ? undefined : 'Đọc tin: ' + item.title}
-          className="group relative w-[300px] sm:w-[320px] shrink-0 bg-white border border-slate-200/90 hover:border-blue-300 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-150 flex flex-col justify-between"
+          className="group relative w-[300px] sm:w-[320px] shrink-0 bg-white border border-slate-200/90 hover:border-blue-300 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-[box-shadow,border-color] duration-150 flex flex-col justify-between"
         >
           <div className="relative h-40 overflow-hidden bg-slate-100">
             <img

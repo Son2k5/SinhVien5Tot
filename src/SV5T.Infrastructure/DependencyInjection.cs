@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using SV5T.Application.Users.Abstractions;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +12,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+using SV5T.Application.Admin.Abstractions;
+using SV5T.Application.Admin.Students.Abstractions;
 using SV5T.Application.Campaigns.Abstractions;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Criteria.Abstractions;
@@ -211,9 +215,13 @@ public static class DependencyInjection
         // Admin & Management Repositories
         services.AddScoped<StandardSetRepository>();
         services.AddScoped<IStandardSetRepository, CachedStandardSetRepository>();
+        services.AddScoped<IStandardRepository, StandardRepository>();
         services.AddScoped<ICriterionRepository, CriterionRepository>();
         services.AddScoped<ICampaignRepository, CampaignRepository>();
         services.AddScoped<IEvidenceRepository, EvidenceRepository>();
+        services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
+        services.AddScoped<IAdminStudentRepository, AdminStudentRepository>();
+        services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IOtpService, OtpService>();
         services.AddSingleton<ISha256Hasher, Sha256Hasher>();
@@ -223,6 +231,7 @@ public static class DependencyInjection
         services.AddSingleton<IAuthChallengePayloadProtector, DataProtectionAuthChallengePayloadProtector>();
         services.AddSingleton<IAuthChallengeStore, RedisAuthChallengeStore>();
         services.AddSingleton<IJwtService, JwtService>();
+        services.AddScoped<JwtSecurityEvents>();
         services.AddHostedService<RefreshTokenCleanupService>();
         services.AddHostedService<UnverifiedUserCleanupService>();
         services.AddEmailServices(configuration, environment);
@@ -255,38 +264,7 @@ public static class DependencyInjection
                     ClockSkew = TimeSpan.Zero,
                     NameClaimType = JwtRegisteredClaimNames.Sub
                 };
-                options.Events = new JwtBearerEvents
-                {
-                    OnChallenge = async context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                        context.Response.ContentType = "application/problem+json";
-                        await context.Response.WriteAsJsonAsync(new
-                        {
-                            type = "https://httpstatuses.com/401",
-                            title = "Chưa xác thực",
-                            status = 401,
-                            detail = "Yêu cầu cần access token hợp lệ.",
-                            code = "unauthorized",
-                            traceId = context.HttpContext.TraceIdentifier
-                        });
-                    },
-                    OnForbidden = async context =>
-                    {
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                        context.Response.ContentType = "application/problem+json";
-                        await context.Response.WriteAsJsonAsync(new
-                        {
-                            type = "https://httpstatuses.com/403",
-                            title = "Không có quyền truy cập",
-                            status = 403,
-                            detail = "Bạn không có quyền thực hiện thao tác này.",
-                            code = "forbidden",
-                            traceId = context.HttpContext.TraceIdentifier
-                        });
-                    }
-                };
+                options.EventsType = typeof(JwtSecurityEvents);
             });
         services.AddAuthorization();
 

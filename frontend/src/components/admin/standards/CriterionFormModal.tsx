@@ -181,11 +181,24 @@ function criterionFormReducer(
   }
 }
 
+const EMPTY_CRITERIA: CriterionResponse[] = [];
+
+const parseSafeInt = (value: string, fallback = 1): number => {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const parseSafeFloat = (value: string): number | '' => {
+  if (!value.trim()) return '';
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : '';
+};
+
 export function CriterionFormModal({
   isOpen,
   criterion,
   parentCriterion,
-  existingCriteria = [],
+  existingCriteria = EMPTY_CRITERIA,
   isLoading = false,
   onClose,
   onSubmit,
@@ -511,7 +524,7 @@ export function CriterionFormModal({
               <input
                 type="number"
                 value={displayOrder}
-                onChange={(e) => setField('displayOrder', Number(e.target.value))}
+                onChange={(e) => setField('displayOrder', parseSafeInt(e.target.value, 1))}
                 className="w-full h-10 px-3.5 text-xs border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
               />
             </div>
@@ -742,7 +755,7 @@ export function CriterionFormModal({
                         <input
                           type="number"
                           value={accumulatedMinTotal}
-                          onChange={(e) => setField('accumulatedMinTotal', e.target.value ? Number(e.target.value) : '')}
+                          onChange={(e) => setField('accumulatedMinTotal', parseSafeFloat(e.target.value))}
                           placeholder="VD: 30"
                           className="w-full h-9 px-3 text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-900 outline-none"
                         />

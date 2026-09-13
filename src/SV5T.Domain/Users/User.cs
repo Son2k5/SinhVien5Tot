@@ -30,6 +30,14 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity
 
     public bool IsActive { get; set; } = true;
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
+
+    public Guid? DeletedBy { get; set; }
+
+    public string? DeleteReason { get; set; }
+
     public int SecurityVersion { get; set; } = 1;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

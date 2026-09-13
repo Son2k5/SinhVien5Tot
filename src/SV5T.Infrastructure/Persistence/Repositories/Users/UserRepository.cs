@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SV5T.Application.Users.Abstractions;
+using SV5T.Application.Users.Dtos;
 using SV5T.Domain.Users;
 using SV5T.Infrastructure.Persistence.Context;
 
@@ -9,34 +10,31 @@ public sealed class UserRepository(ApplicationDbContext dbContext) : IUserReposi
 {
     public Task<User?> GetByIdAsync(
         Guid id,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+
+    public Task<UserSummaryResponse?> GetSummaryByIdAsync(
+        Guid id,
         CancellationToken cancellationToken = default)
     {
         return dbContext.Users
             .AsNoTracking()
             .Where(user => user.Id == id)
-            .Select(user => new User
-            {
-                Id = user.Id,
-                Email = user.Email,
-                NormalizedEmail = user.NormalizedEmail,
-                DisplayName = user.DisplayName,
-                Role = user.Role,
-                AvatarUrl = user.AvatarUrl,
-                IsVerified = user.IsVerified,
-                IsActive = user.IsActive,
-                SecurityVersion = user.SecurityVersion,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt,
-                Profile = user.Profile == null
-                    ? null
-                    : new UserProfile
-                    {
-                        Id = user.Profile.Id,
-                        UserId = user.Profile.UserId,
-                        FullName = user.Profile.FullName,
-                        Faculty = user.Profile.Faculty
-                    }
-            })
+            .Select(user => new UserSummaryResponse(
+                user.Id,
+                user.Email,
+                user.DisplayName,
+                user.Role,
+                user.AvatarUrl,
+                user.IsVerified,
+                user.IsActive,
+                user.SecurityVersion,
+                user.CreatedAt,
+                user.UpdatedAt,
+                user.Profile == null ? null : user.Profile.FullName,
+                user.Profile == null ? null : user.Profile.Faculty))
             .FirstOrDefaultAsync(cancellationToken);
     }
 

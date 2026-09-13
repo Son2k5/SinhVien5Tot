@@ -184,9 +184,6 @@ namespace SV5T.Migrations
                     b.Property<int>("EvaluationType")
                         .HasColumnType("int");
 
-                    b.Property<int?>("GroupCode")
-                        .HasColumnType("int");
-
                     b.Property<int?>("MinimumSatisfied")
                         .HasColumnType("int");
 
@@ -199,7 +196,7 @@ namespace SV5T.Migrations
                     b.Property<string>("ReviewGuidance")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid>("StandardSetId")
+                    b.Property<Guid>("StandardId")
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Title")
@@ -220,7 +217,7 @@ namespace SV5T.Migrations
 
                     b.HasIndex("ParentCriterionId");
 
-                    b.HasIndex("StandardSetId", "ParentCriterionId", "DisplayOrder");
+                    b.HasIndex("StandardId", "ParentCriterionId", "DisplayOrder");
 
                     b.ToTable("criteria", (string)null);
                 });
@@ -342,6 +339,59 @@ namespace SV5T.Migrations
                         .IsUnique();
 
                     b.ToTable("evidence_type_templates", (string)null);
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Standards.Standard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GroupCode")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MinimumSatisfied")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Operator")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("StandardSetId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StandardSetId", "DisplayOrder");
+
+                    b.ToTable("standards", (string)null);
                 });
 
             modelBuilder.Entity("SV5T.Domain.Standards.StandardSet", b =>
@@ -887,15 +937,15 @@ namespace SV5T.Migrations
                         .HasForeignKey("ParentCriterionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SV5T.Domain.Standards.StandardSet", "StandardSet")
+                    b.HasOne("SV5T.Domain.Standards.Standard", "Standard")
                         .WithMany("Criteria")
-                        .HasForeignKey("StandardSetId")
+                        .HasForeignKey("StandardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ParentCriterion");
 
-                    b.Navigation("StandardSet");
+                    b.Navigation("Standard");
                 });
 
             modelBuilder.Entity("SV5T.Domain.Evidences.Evidence", b =>
@@ -923,6 +973,17 @@ namespace SV5T.Migrations
                     b.Navigation("Criterion");
 
                     b.Navigation("EvidenceTypeTemplate");
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Standards.Standard", b =>
+                {
+                    b.HasOne("SV5T.Domain.Standards.StandardSet", "StandardSet")
+                        .WithMany("Standards")
+                        .HasForeignKey("StandardSetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StandardSet");
                 });
 
             modelBuilder.Entity("SV5T.Domain.Standards.StandardSet", b =>
@@ -1006,11 +1067,16 @@ namespace SV5T.Migrations
                     b.Navigation("Children");
                 });
 
-            modelBuilder.Entity("SV5T.Domain.Standards.StandardSet", b =>
+            modelBuilder.Entity("SV5T.Domain.Standards.Standard", b =>
                 {
                     b.Navigation("Criteria");
+                });
 
+            modelBuilder.Entity("SV5T.Domain.Standards.StandardSet", b =>
+                {
                     b.Navigation("LaterVersions");
+
+                    b.Navigation("Standards");
                 });
 
             modelBuilder.Entity("SV5T.Domain.Submissions.Application", b =>

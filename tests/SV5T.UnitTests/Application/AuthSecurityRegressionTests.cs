@@ -1,6 +1,18 @@
 using FluentValidation;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using SV5T.Application.Auth.Commands.ForgotPassword;
+using SV5T.Application.Auth.Commands.Login;
+using SV5T.Application.Auth.Commands.Logout;
+using SV5T.Application.Auth.Commands.RefreshToken;
+using SV5T.Application.Auth.Commands.Register;
+using SV5T.Application.Auth.Commands.ResendOtp;
+using SV5T.Application.Auth.Commands.ResetPassword;
+using SV5T.Application.Auth.Commands.VerifyOtp;
+using SV5T.Application.Auth.Commands.VerifyResetOtp;
+using SV5T.Application.Auth.Dtos;
+using SV5T.Application.Auth.Services;
+using SV5T.Application.Auth.Validators;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Models;
 using SV5T.Infrastructure.Security.Hashing;
@@ -399,42 +411,89 @@ public sealed class AuthSecurityRegressionTests
         var password = passwordHasher ?? new FakePasswordHasher();
         var otp = new FakeOtpService();
         var sha = new FakeSha256Hasher();
-        var registration = new RegistrationService(
+        var registerHandler = new RegisterHandler(
             users,
             challenges,
-            unitOfWork,
             password,
             otp,
             redis,
             email,
-            new RegisterRequestValidator(new AllowSchoolEmailValidator()),
-            new VerifyOtpRequestValidator(),
+            new RegisterRequestValidator(new AllowSchoolEmailValidator()));
+
+        var verifyOtpHandler = new VerifyOtpHandler(
+            users,
+            challenges,
+            unitOfWork,
+            otp,
+            redis,
+            new VerifyOtpRequestValidator());
+
+        var resendOtpHandler = new ResendOtpHandler(
+            challenges,
+            otp,
+            redis,
+            email,
             new ResendOtpRequestValidator());
-        var tokens = new TokenService(
+
+        var loginHandler = new LoginHandler(
             users,
             refreshRepository,
             unitOfWork,
             password,
-            sha,
             redis,
             new FakeJwtService(),
             new FakeRefreshTokenFactory(),
             new LoginRequestValidator());
-        var reset = new PasswordResetService(
+
+        var refreshTokenHandler = new RefreshTokenHandler(
+            users,
+            refreshRepository,
+            unitOfWork,
+            sha,
+            new FakeJwtService(),
+            new FakeRefreshTokenFactory());
+
+        var logoutHandler = new LogoutHandler(
+            refreshRepository,
+            unitOfWork,
+            sha,
+            new FakeRefreshTokenFactory());
+
+        var forgotPasswordHandler = new ForgotPasswordHandler(
+            users,
+            challenges,
+            otp,
+            sha,
+            redis,
+            email,
+            NullLogger<ForgotPasswordHandler>.Instance,
+            new ForgotPasswordRequestValidator());
+
+        var verifyResetOtpHandler = new VerifyResetOtpHandler(
+            challenges,
+            otp,
+            new VerifyResetOtpRequestValidator());
+
+        var resetPasswordHandler = new ResetPasswordHandler(
             users,
             refreshRepository,
             challenges,
             unitOfWork,
             password,
             otp,
-            sha,
             redis,
-            email,
-            NullLogger<PasswordResetService>.Instance,
-            new ForgotPasswordRequestValidator(),
-            new VerifyResetOtpRequestValidator(),
             new ResetPasswordRequestValidator());
-        return new AuthService(registration, tokens, reset);
+
+        return new AuthService(
+            registerHandler,
+            verifyOtpHandler,
+            resendOtpHandler,
+            loginHandler,
+            refreshTokenHandler,
+            logoutHandler,
+            forgotPasswordHandler,
+            verifyResetOtpHandler,
+            resetPasswordHandler);
     }
 
     private static User ActiveUser() =>
@@ -533,6 +592,27 @@ public sealed class AuthSecurityRegressionTests
             Guid id,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(items.FirstOrDefault(user => user.Id == id));
+
+        public Task<UserSummaryResponse?> GetSummaryByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            var user = items.FirstOrDefault(u => u.Id == id);
+            if (user == null) return Task.FromResult<UserSummaryResponse?>(null);
+            return Task.FromResult<UserSummaryResponse?>(new UserSummaryResponse(
+                user.Id,
+                user.Email,
+                user.DisplayName,
+                user.Role,
+                user.AvatarUrl,
+                user.IsVerified,
+                user.IsActive,
+                user.SecurityVersion,
+                user.CreatedAt,
+                user.UpdatedAt,
+                user.Profile?.FullName,
+                user.Profile?.Faculty));
+        }
 
         public Task<User?> GetByNormalizedEmailAsync(
             string normalizedEmail,
@@ -692,6 +772,8 @@ public sealed class AuthSecurityRegressionTests
 
     private sealed class FakeRedisStore : IAuthRedisStore
     {
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, int> _securityVersions = new();
+
         public Task<OtpIssueResult> ReserveOtpRequestAsync(string email) =>
             Task.FromResult(OtpIssueResult.Allowed);
         public Task<bool> IsLoginBlockedAsync(string email, string ipAddress) =>
@@ -700,6 +782,15 @@ public sealed class AuthSecurityRegressionTests
             Task.CompletedTask;
         public Task ClearAccountLoginFailuresAsync(string email) =>
             Task.CompletedTask;
+        public Task SetUserSecurityVersionAsync(Guid userId, int securityVersion, TimeSpan? expiry = null)
+        {
+            _securityVersions[userId] = securityVersion;
+            return Task.CompletedTask;
+        }
+        public Task<int?> GetUserSecurityVersionAsync(Guid userId)
+        {
+            return Task.FromResult(_securityVersions.TryGetValue(userId, out var sv) ? (int?)sv : null);
+        }
     }
 
     private sealed class FakeJwtService : IJwtService

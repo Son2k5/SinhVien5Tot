@@ -75,7 +75,7 @@ export function SystemFeatureSection({ features, onOpenAll }: SystemFeatureSecti
             <Link
               key={feature.key}
               to={feature.route}
-              className="group flex items-start justify-between p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-300 hover:shadow-md transition-all duration-150 cursor-pointer"
+              className="group flex items-start justify-between p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-300 hover:shadow-md transition-[border-color,box-shadow] duration-150 cursor-pointer"
             >
               <div className="flex items-start gap-3.5 min-w-0 pr-2">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -90,7 +90,7 @@ export function SystemFeatureSection({ features, onOpenAll }: SystemFeatureSecti
                   </p>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all flex-shrink-0 mt-1" />
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-[color,transform] flex-shrink-0 mt-1" />
             </Link>
           ) : (
             <div
@@ -238,21 +238,23 @@ export function AdminFeedbackSection({ displayName }: { displayName: string }) {
         <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-800">Người gửi</label>
+              <label htmlFor="feedback-sender-input" className="text-xs font-semibold text-slate-800">Người gửi</label>
               <input
+                id="feedback-sender-input"
                 name="sender"
                 defaultValue={displayName}
                 autoComplete="name"
-                className="w-full h-10 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 font-medium focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                className="w-full h-10 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 font-medium focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-[border-color,box-shadow,background-color]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-800">Chủ đề</label>
+              <label htmlFor="feedback-topic-select" className="text-xs font-semibold text-slate-800">Chủ đề</label>
               <select
+                id="feedback-topic-select"
                 name="topic"
                 defaultValue="feedback"
-                className="w-full h-10 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 font-medium focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                className="w-full h-10 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 font-medium focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-[border-color,box-shadow,background-color]"
               >
                 <option value="feedback">Góp ý giao diện &amp; trải nghiệm</option>
                 <option value="support">Cần hỗ trợ minh chứng</option>
@@ -263,14 +265,15 @@ export function AdminFeedbackSection({ displayName }: { displayName: string }) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-800">Nội dung phản hồi</label>
+            <label htmlFor="feedback-message-textarea" className="text-xs font-semibold text-slate-800">Nội dung phản hồi</label>
             <textarea
+              id="feedback-message-textarea"
               name="message"
               rows={4}
               required
               minLength={10}
               placeholder="Chia sẻ ý kiến hoặc thắc mắc của bạn tại đây..."
-              className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all leading-relaxed font-normal"
+              className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-[border-color,box-shadow,background-color] leading-relaxed font-normal"
             />
           </div>
 

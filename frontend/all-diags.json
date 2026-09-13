@@ -1,0 +1,1661 @@
+[
+  {
+    "rule": "no-high-complexity-react-function",
+    "file": "src/App.tsx",
+    "line": 18,
+    "title": "React function has high control-flow complexity",
+    "msg": "`App` has cyclomatic complexity 17, cognitive complexity 17, and maximum nesting depth 2, so its React logic is hard to understand and change. Extract independent branches into components or hooks."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/AdminConfirmDialog.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/AdminConfirmDialog.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "`export *` hides what's exported, so Fast Refresh can't safely preserve component state."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/AdminLayout.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/AdminLayout.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "`export *` hides what's exported, so Fast Refresh can't safely preserve component state."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/AdminPageHeader.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/AdminPageHeader.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "`export *` hides what's exported, so Fast Refresh can't safely preserve component state."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/AdminStatusBadge.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/CampaignFormModal.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/CampaignFormModal.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "`export *` hides what's exported, so Fast Refresh can't safely preserve component state."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/CampaignStatusModal.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/CampaignStatusModal.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "`export *` hides what's exported, so Fast Refresh can't safely preserve component state."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/CriterionFormModal.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/CriterionFormModal.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "`export *` hides what's exported, so Fast Refresh can't safely preserve component state."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/CriterionTree.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/CriterionTree.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "`export *` hides what's exported, so Fast Refresh can't safely preserve component state."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/StandardSetFormModal.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "This rule can't verify that `export *` only exports components."
+  },
+  {
+    "rule": "only-export-components",
+    "file": "src/components/admin/StandardSetFormModal.tsx",
+    "line": 1,
+    "title": "Non-component export in component file",
+    "msg": "`export *` hides what's exported, so Fast Refresh can't safely preserve component state."
+  },
+  {
+    "rule": "no-high-complexity-react-function",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 174,
+    "title": "React function has high control-flow complexity",
+    "msg": "`CampaignFormModal` has cyclomatic complexity 27, cognitive complexity 25, and maximum nesting depth 1, so its React logic is hard to understand and change. Extract independent branches into components or hooks."
+  },
+  {
+    "rule": "no-giant-component",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 174,
+    "title": "Large component is hard to read and change",
+    "msg": "Component \"CampaignFormModal\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components."
+  },
+  {
+    "rule": "dialog-has-accessible-name",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 369,
+    "title": "Dialog without accessible name",
+    "msg": "This dialog has no accessible name, so screen readers announce it as just “dialog.” Add `aria-label` or point `aria-labelledby` at its heading."
+  },
+  {
+    "rule": "prefer-html-dialog",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 371,
+    "title": "Custom modal instead of dialog",
+    "msg": "Keyboard users can tab out of this `role=\"dialog\"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 375,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 444,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 447,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 465,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 468,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 481,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 484,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 496,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 499,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 511,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 514,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 543,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 546,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 567,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 570,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 596,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 599,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 611,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 614,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 626,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 629,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 641,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 644,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 672,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/campaigns/CampaignFormModal.tsx",
+    "line": 676,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "prefer-module-scope-static-value",
+    "file": "src/components/admin/campaigns/CampaignStatusModal.tsx",
+    "line": 55,
+    "title": "Static value rebuilt every render",
+    "msg": "`statusOptions` inside `CampaignStatusModal` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component."
+  },
+  {
+    "rule": "dialog-has-accessible-name",
+    "file": "src/components/admin/campaigns/CampaignStatusModal.tsx",
+    "line": 65,
+    "title": "Dialog without accessible name",
+    "msg": "This dialog has no accessible name, so screen readers announce it as just “dialog.” Add `aria-label` or point `aria-labelledby` at its heading."
+  },
+  {
+    "rule": "prefer-html-dialog",
+    "file": "src/components/admin/campaigns/CampaignStatusModal.tsx",
+    "line": 67,
+    "title": "Custom modal instead of dialog",
+    "msg": "Keyboard users can tab out of this `role=\"dialog\"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/campaigns/CampaignStatusModal.tsx",
+    "line": 71,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/campaigns/CampaignStatusModal.tsx",
+    "line": 101,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "prefer-use-effect-event",
+    "file": "src/components/admin/common/AdminConfirmDialog.tsx",
+    "line": 36,
+    "title": "Effect re-subscribes on a changing callback",
+    "msg": "Your effect re-subscribes whenever \"onClose\" changes, even though it's only used inside `addEventListener`."
+  },
+  {
+    "rule": "prefer-html-dialog",
+    "file": "src/components/admin/common/AdminConfirmDialog.tsx",
+    "line": 46,
+    "title": "Custom modal instead of dialog",
+    "msg": "Keyboard users can tab out of this `role=\"dialog\"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free."
+  },
+  {
+    "rule": "prefer-module-scope-static-value",
+    "file": "src/components/admin/common/AdminStatusBadge.tsx",
+    "line": 159,
+    "title": "Static value rebuilt every render",
+    "msg": "`colors` inside `StandardGroupBadge` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/dashboard/ApprovalFunnelCard.tsx",
+    "line": 27,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/dashboard/CollectiveUnitsCard.tsx",
+    "line": 37,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/dashboard/DashboardFilterBar.tsx",
+    "line": 26,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/dashboard/DashboardFilterBar.tsx",
+    "line": 38,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/dashboard/DashboardFilterBar.tsx",
+    "line": 50,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/dashboard/DashboardFilterBar.tsx",
+    "line": 63,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/dashboard/DashboardFilterBar.tsx",
+    "line": 76,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/dashboard/DashboardFilterBar.tsx",
+    "line": 89,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/layout/AdminChatPopover.tsx",
+    "line": 189,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/layout/AdminChatPopover.tsx",
+    "line": 189,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/layout/AdminChatPopover.tsx",
+    "line": 205,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/layout/AdminHeader.tsx",
+    "line": 57,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/layout/AdminHeader.tsx",
+    "line": 68,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/layout/AdminHeader.tsx",
+    "line": 85,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/layout/AdminHeader.tsx",
+    "line": 85,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/layout/AdminLayout.tsx",
+    "line": 79,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/layout/AdminSidebar.tsx",
+    "line": 65,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/layout/AdminSidebar.tsx",
+    "line": 231,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-high-complexity-react-function",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 184,
+    "title": "React function has high control-flow complexity",
+    "msg": "`CriterionFormModal` has cyclomatic complexity 22, cognitive complexity 21, and maximum nesting depth 1, so its React logic is hard to understand and change. Extract independent branches into components or hooks."
+  },
+  {
+    "rule": "no-giant-component",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 184,
+    "title": "Large component is hard to read and change",
+    "msg": "Component \"CriterionFormModal\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components."
+  },
+  {
+    "rule": "rerender-memo-with-default-value",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 188,
+    "title": "Empty default prop breaks memo",
+    "msg": "This reruns hooks that list it in their dependency array because default prop value [] makes a brand new array every render, so move it to a constant at the top of the file"
+  },
+  {
+    "rule": "dialog-has-accessible-name",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 373,
+    "title": "Dialog without accessible name",
+    "msg": "This dialog has no accessible name, so screen readers announce it as just “dialog.” Add `aria-label` or point `aria-labelledby` at its heading."
+  },
+  {
+    "rule": "prefer-html-dialog",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 375,
+    "title": "Custom modal instead of dialog",
+    "msg": "Keyboard users can tab out of this `role=\"dialog\"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 380,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 410,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 469,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 472,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 488,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 491,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 508,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 511,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-unguarded-numeric-input-parse",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 514,
+    "title": "Unguarded numeric parse of an input value",
+    "msg": "Coercing an input's value with this parse stores `0` for a cleared field and `NaN` for partial input, which then flows into state or a request body; guard the empty and NaN cases (for example `value ? Number(value) : undefined`) before using it."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 521,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 524,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 541,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 544,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 562,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 565,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 578,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 581,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 608,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 611,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 624,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 627,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 657,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 660,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 677,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 678,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 691,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 692,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 705,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 706,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 729,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 730,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "duplicate-jsx-subtree",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 739,
+    "title": "Duplicated JSX structure",
+    "msg": "2 copies of this 6-node JSX tree appear across 2 files, repeating about 22 lines. Composition path: CriterionFormModal > div > div > form > div > div > div > div."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 740,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 742,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionFormModal.tsx",
+    "line": 749,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "no-high-complexity-react-function",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 193,
+    "title": "React function has high control-flow complexity",
+    "msg": "`CriterionItemModal` has cyclomatic complexity 17, cognitive complexity 16, and maximum nesting depth 1, so its React logic is hard to understand and change. Extract independent branches into components or hooks."
+  },
+  {
+    "rule": "no-giant-component",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 193,
+    "title": "Large component is hard to read and change",
+    "msg": "Component \"CriterionItemModal\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components."
+  },
+  {
+    "rule": "rerender-memo-with-default-value",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 198,
+    "title": "Empty default prop breaks memo",
+    "msg": "This reruns hooks that list it in their dependency array because default prop value [] makes a brand new array every render, so move it to a constant at the top of the file"
+  },
+  {
+    "rule": "rerender-memo-with-default-value",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 199,
+    "title": "Empty default prop breaks memo",
+    "msg": "This reruns hooks that list it in their dependency array because default prop value [] makes a brand new array every render, so move it to a constant at the top of the file"
+  },
+  {
+    "rule": "prefer-use-effect-event",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 267,
+    "title": "Effect re-subscribes on a changing callback",
+    "msg": "Your effect re-subscribes whenever \"onClose\" changes, even though it's only used inside `addEventListener`."
+  },
+  {
+    "rule": "dialog-has-accessible-name",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 359,
+    "title": "Dialog without accessible name",
+    "msg": "This dialog has no accessible name, so screen readers announce it as just “dialog.” Add `aria-label` or point `aria-labelledby` at its heading."
+  },
+  {
+    "rule": "prefer-html-dialog",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 362,
+    "title": "Custom modal instead of dialog",
+    "msg": "Keyboard users can tab out of this `role=\"dialog\"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 406,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 410,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 430,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 490,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 493,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 510,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 513,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 531,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 535,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 550,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 553,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 583,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 586,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 603,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 605,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 620,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 622,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 636,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 637,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 660,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 661,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 671,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 673,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/CriterionItemModal.tsx",
+    "line": 680,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "no-giant-component",
+    "file": "src/components/admin/standards/CriterionTree.tsx",
+    "line": 42,
+    "title": "Large component is hard to read and change",
+    "msg": "Component \"CriterionTree\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components."
+  },
+  {
+    "rule": "rerender-memo-with-default-value",
+    "file": "src/components/admin/standards/CriterionTree.tsx",
+    "line": 43,
+    "title": "Empty default prop breaks memo",
+    "msg": "This reruns hooks that list it in their dependency array because default prop value [] makes a brand new array every render, so move it to a constant at the top of the file"
+  },
+  {
+    "rule": "js-tosorted-immutable",
+    "file": "src/components/admin/standards/CriterionTree.tsx",
+    "line": 54,
+    "title": "Spread copy before sort()",
+    "msg": "This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)"
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/standards/CriterionTree.tsx",
+    "line": 118,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/standards/CriterionTree.tsx",
+    "line": 220,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/admin/standards/CriterionTree.tsx",
+    "line": 307,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "rerender-memo-with-default-value",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 55,
+    "title": "Empty default prop breaks memo",
+    "msg": "This reruns hooks that list it in their dependency array because default prop value [] makes a brand new array every render, so move it to a constant at the top of the file"
+  },
+  {
+    "rule": "rerender-state-only-in-handlers",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 65,
+    "title": "State only used in handlers",
+    "msg": "Each update to \"displayOrder\" redraws your component for nothing because this useState is set but never shown on screen."
+  },
+  {
+    "rule": "no-derived-state",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 77,
+    "title": "Derived value copied into state",
+    "msg": "Storing \"displayOrder\" in state when you can derive it from other values costs an extra render."
+  },
+  {
+    "rule": "js-flatmap-filter",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 79,
+    "title": ".map().filter(Boolean) loops twice",
+    "msg": "This .map().filter(Boolean) chain creates an intermediate array and traverses it again; if this is a measured hot path, combine the transform and truthy check with .reduce() or for...of"
+  },
+  {
+    "rule": "no-derived-state",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 88,
+    "title": "Derived value copied into state",
+    "msg": "Storing \"displayOrder\" in state when you can derive it from other values costs an extra render."
+  },
+  {
+    "rule": "no-adjust-state-on-prop-change",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 91,
+    "title": "State adjusted after a prop changes",
+    "msg": "This effect adjusts state after a prop changes, so users briefly see the stale value."
+  },
+  {
+    "rule": "no-adjust-state-on-prop-change",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 92,
+    "title": "State adjusted after a prop changes",
+    "msg": "This effect adjusts state after a prop changes, so users briefly see the stale value."
+  },
+  {
+    "rule": "dialog-has-accessible-name",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 147,
+    "title": "Dialog without accessible name",
+    "msg": "This dialog has no accessible name, so screen readers announce it as just “dialog.” Add `aria-label` or point `aria-labelledby` at its heading."
+  },
+  {
+    "rule": "prefer-html-dialog",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 149,
+    "title": "Custom modal instead of dialog",
+    "msg": "Keyboard users can tab out of this `role=\"dialog\"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 153,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 181,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 184,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 198,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 201,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 218,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/StandardGroupModal.tsx",
+    "line": 221,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "rerender-memo-with-default-value",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 36,
+    "title": "Empty default prop breaks memo",
+    "msg": "This reruns hooks that list it in their dependency array because default prop value [] makes a brand new array every render, so move it to a constant at the top of the file"
+  },
+  {
+    "rule": "no-adjust-state-on-prop-change",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 58,
+    "title": "State adjusted after a prop changes",
+    "msg": "This effect adjusts state after a prop changes, so users briefly see the stale value."
+  },
+  {
+    "rule": "no-adjust-state-on-prop-change",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 60,
+    "title": "State adjusted after a prop changes",
+    "msg": "This effect adjusts state after a prop changes, so users briefly see the stale value."
+  },
+  {
+    "rule": "no-adjust-state-on-prop-change",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 63,
+    "title": "State adjusted after a prop changes",
+    "msg": "This effect adjusts state after a prop changes, so users briefly see the stale value."
+  },
+  {
+    "rule": "no-adjust-state-on-prop-change",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 66,
+    "title": "State adjusted after a prop changes",
+    "msg": "This effect adjusts state after a prop changes, so users briefly see the stale value."
+  },
+  {
+    "rule": "no-adjust-state-on-prop-change",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 67,
+    "title": "State adjusted after a prop changes",
+    "msg": "This effect adjusts state after a prop changes, so users briefly see the stale value."
+  },
+  {
+    "rule": "dialog-has-accessible-name",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 116,
+    "title": "Dialog without accessible name",
+    "msg": "This dialog has no accessible name, so screen readers announce it as just “dialog.” Add `aria-label` or point `aria-labelledby` at its heading."
+  },
+  {
+    "rule": "prefer-html-dialog",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 118,
+    "title": "Custom modal instead of dialog",
+    "msg": "Keyboard users can tab out of this `role=\"dialog\"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 122,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 151,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 154,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 174,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 177,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 189,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 192,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 205,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/admin/standards/StandardSetFormModal.tsx",
+    "line": 208,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/DashboardHeader.tsx",
+    "line": 49,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/DashboardHeader.tsx",
+    "line": 74,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/SystemLauncher.tsx",
+    "line": 109,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/SystemLauncher.tsx",
+    "line": 142,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/SystemLauncher.tsx",
+    "line": 161,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/ContentSections.tsx",
+    "line": 52,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/ContentSections.tsx",
+    "line": 109,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/ContentSections.tsx",
+    "line": 165,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/CriteriaSections.tsx",
+    "line": 62,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 75,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 93,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 241,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 242,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 242,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 251,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 252,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 252,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "label-has-associated-control",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 266,
+    "title": "Label missing associated control",
+    "msg": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 267,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/DashboardDiscoverySections.tsx",
+    "line": 267,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/DashboardWelcomeBanner.tsx",
+    "line": 25,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/DashboardWelcomeBanner.tsx",
+    "line": 140,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/components/dashboard/home/DashboardWelcomeBanner.tsx",
+    "line": 165,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-high-complexity-react-function",
+    "file": "src/components/profile/UserProfileForm.tsx",
+    "line": 145,
+    "title": "React function has high control-flow complexity",
+    "msg": "`UserProfileForm` has cyclomatic complexity 22, cognitive complexity 21, and maximum nesting depth 1, so its React logic is hard to understand and change. Extract independent branches into components or hooks."
+  },
+  {
+    "rule": "no-create-object-url-without-revoke",
+    "file": "src/components/profile/UserProfileForm.tsx",
+    "line": 216,
+    "title": "createObjectURL without revokeObjectURL",
+    "msg": "`URL.createObjectURL(...)` pins the underlying Blob/File in memory, and this produced URL is not provably revoked. Store the URL and pass that same value to `URL.revokeObjectURL` once you're done so the Blob can be freed."
+  },
+  {
+    "rule": "no-barrel-import",
+    "file": "src/pages/UserProfilePage.tsx",
+    "line": 6,
+    "title": "Import from a barrel file",
+    "msg": "This ships extra code to your users & slows page load. Import directly from \"../components/dashboard/home/homeDashboardConfig\"."
+  },
+  {
+    "rule": "no-barrel-import",
+    "file": "src/pages/admin/AdminDashboardPage.tsx",
+    "line": 8,
+    "title": "Import from a barrel file",
+    "msg": "This ships extra code to your users & slows page load. Import directly from: \"../../components/admin/dashboard/ActivityFeedCard\", \"../../components/admin/dashboard/ApprovalFunnelCard\", \"../../components/admin/dashboard/CollectiveUnitsCard\", \"../../components/admin/dashboard/DashboardFilterBar\", \"../../components/admin/dashboard/DashboardKpiGrid\", \"../../components/admin/dashboard/DepartmentRankingsTable\", \"../../components/admin/dashboard/StandardBottleneckCard\", \"../../components/admin/dashboard/StatusDonutChart\", \"../../components/admin/dashboard/UrgentApplicationsCard\"."
+  },
+  {
+    "rule": "no-high-complexity-react-function",
+    "file": "src/pages/admin/CampaignDetailPage.tsx",
+    "line": 52,
+    "title": "React function has high control-flow complexity",
+    "msg": "`CampaignDetailPage` has cyclomatic complexity 27, cognitive complexity 28, and maximum nesting depth 2, so its React logic is hard to understand and change. Extract independent branches into components or hooks."
+  },
+  {
+    "rule": "no-giant-component",
+    "file": "src/pages/admin/CampaignDetailPage.tsx",
+    "line": 52,
+    "title": "Large component is hard to read and change",
+    "msg": "Component \"CampaignDetailPage\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/pages/admin/CampaignDetailPage.tsx",
+    "line": 275,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-high-complexity-react-function",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 39,
+    "title": "React function has high control-flow complexity",
+    "msg": "`CampaignListPage` has cyclomatic complexity 16, cognitive complexity 13, and maximum nesting depth 1, so its React logic is hard to understand and change. Extract independent branches into components or hooks."
+  },
+  {
+    "rule": "no-giant-component",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 39,
+    "title": "Large component is hard to read and change",
+    "msg": "Component \"CampaignListPage\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components."
+  },
+  {
+    "rule": "prefer-module-scope-pure-function",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 158,
+    "title": "Pure function rebuilt every render",
+    "msg": "`formatDate` inside `CampaignListPage` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 175,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 195,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 195,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 217,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 236,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 261,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 276,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 292,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 303,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 547,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/pages/admin/CampaignListPage.tsx",
+    "line": 558,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-high-complexity-react-function",
+    "file": "src/pages/admin/StandardSetDetailPage.tsx",
+    "line": 61,
+    "title": "React function has high control-flow complexity",
+    "msg": "`StandardSetDetailPage` has cyclomatic complexity 27, cognitive complexity 25, and maximum nesting depth 2, so its React logic is hard to understand and change. Extract independent branches into components or hooks."
+  },
+  {
+    "rule": "no-giant-component",
+    "file": "src/pages/admin/StandardSetDetailPage.tsx",
+    "line": 61,
+    "title": "Large component is hard to read and change",
+    "msg": "Component \"StandardSetDetailPage\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components."
+  },
+  {
+    "rule": "js-flatmap-filter",
+    "file": "src/pages/admin/StandardSetDetailPage.tsx",
+    "line": 114,
+    "title": ".map().filter(Boolean) loops twice",
+    "msg": "This .map().filter(Boolean) chain creates an intermediate array and traverses it again; if this is a measured hot path, combine the transform and truthy check with .reduce() or for...of"
+  },
+  {
+    "rule": "no-transition-all",
+    "file": "src/pages/admin/StandardSetDetailPage.tsx",
+    "line": 353,
+    "title": "transition: all animates everything",
+    "msg": "Your users see janky animation because `transition-all` animates every property that changes, including expensive layout ones and instant ones like focus rings. Name the properties: `transition-colors`, `transition-opacity`, or `transition-transform`."
+  },
+  {
+    "rule": "no-giant-component",
+    "file": "src/pages/admin/StandardSetListPage.tsx",
+    "line": 41,
+    "title": "Large component is hard to read and change",
+    "msg": "Component \"StandardSetListPage\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components."
+  },
+  {
+    "rule": "prefer-module-scope-pure-function",
+    "file": "src/pages/admin/StandardSetListPage.tsx",
+    "line": 149,
+    "title": "Pure function rebuilt every render",
+    "msg": "`formatDate` inside `StandardSetListPage` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/pages/admin/StandardSetListPage.tsx",
+    "line": 200,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/pages/admin/StandardSetListPage.tsx",
+    "line": 210,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "control-has-associated-label",
+    "file": "src/pages/admin/StandardSetListPage.tsx",
+    "line": 227,
+    "title": "Control missing accessible label",
+    "msg": "Blind users can't tell what this control does because its name is missing or only a symbol, so add visible text, `aria-label`, or `aria-labelledby`."
+  },
+  {
+    "rule": "no-placeholder-only-field",
+    "file": "src/pages/admin/StandardSetListPage.tsx",
+    "line": 244,
+    "title": "Field relies on placeholder text for its label",
+    "msg": "Placeholder text disappears during entry and cannot replace a persistent field label. Add a visible associated label."
+  }
+]

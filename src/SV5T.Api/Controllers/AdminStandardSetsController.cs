@@ -8,8 +8,7 @@ namespace SV5T.Api.Controllers;
 [ApiController]
 [Authorize(Roles = "Admin")]
 [Route("api/admin/standard-sets")]
-public sealed class AdminStandardSetsController(
-    IAdminStandardService standardService)
+public sealed class AdminStandardSetsController(IAdminStandardService standardService)
     : ControllerBase
 {
     [HttpGet]
@@ -80,55 +79,71 @@ public sealed class AdminStandardSetsController(
         CancellationToken cancellationToken) =>
         Ok(await standardService.PublishAsync(id, cancellationToken));
 
-    // ================= Criteria Sub-resources =================
-
-    [HttpGet("{id:guid}/criteria")]
-    [ProducesResponseType<IReadOnlyList<CriterionResponse>>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyList<CriterionResponse>>> GetCriteria(
-        Guid id,
-        CancellationToken cancellationToken) =>
-        Ok(await standardService.GetCriteriaAsync(id, cancellationToken));
-
-    [HttpPost("{id:guid}/criteria")]
-    [ProducesResponseType<CriterionResponse>(StatusCodes.Status201Created)]
+    [HttpPost("{id:guid}/unpublish")]
+    [ProducesResponseType<StandardSetResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<CriterionResponse>> AddCriterion(
+    public async Task<ActionResult<StandardSetResponse>> Unpublish(
         Guid id,
-        CreateCriterionRequest request,
+        CancellationToken cancellationToken) =>
+        Ok(await standardService.UnpublishAsync(id, cancellationToken));
+
+    // ================= Standard Sub-resources (Tiêu chuẩn lớn) =================
+
+    [HttpGet("{id:guid}/standards")]
+    [ProducesResponseType<IReadOnlyList<StandardResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<StandardResponse>>> GetStandards(
+        Guid id,
+        CancellationToken cancellationToken) =>
+        Ok(await standardService.GetStandardsAsync(id, cancellationToken));
+
+    [HttpPost("{id:guid}/standards")]
+    [ProducesResponseType<StandardResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<StandardResponse>> AddStandard(
+        Guid id,
+        CreateStandardRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await standardService.AddCriterionAsync(id, request, cancellationToken);
-
-        return Created(
-            $"api/admin/standard-sets/{id}/criteria/{result.Id}",
-            result);
+        var result = await standardService.AddStandardAsync(id, request, cancellationToken);
+        return Created($"api/admin/standard-sets/{id}/standards/{result.Id}", result);
     }
 
-    [HttpPut("{id:guid}/criteria/{criterionId:guid}")]
-    [ProducesResponseType<CriterionResponse>(StatusCodes.Status200OK)]
+    [HttpPost("{id:guid}/standards/init-defaults")]
+    [ProducesResponseType<IReadOnlyList<StandardResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<StandardResponse>>> InitDefaultStandards(
+        Guid id,
+        CancellationToken cancellationToken) =>
+        Ok(await standardService.InitDefaultStandardsAsync(id, cancellationToken));
+
+    [HttpPut("{id:guid}/standards/{standardId:guid}")]
+    [ProducesResponseType<StandardResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<CriterionResponse>> UpdateCriterion(
+    public async Task<ActionResult<StandardResponse>> UpdateStandard(
         Guid id,
-        Guid criterionId,
-        UpdateCriterionRequest request,
+        Guid standardId,
+        UpdateStandardRequest request,
         CancellationToken cancellationToken) =>
-        Ok(await standardService.UpdateCriterionAsync(id, criterionId, request, cancellationToken));
+        Ok(await standardService.UpdateStandardAsync(id, standardId, request, cancellationToken));
 
-    [HttpDelete("{id:guid}/criteria/{criterionId:guid}")]
+    [HttpDelete("{id:guid}/standards/{standardId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> DeleteCriterion(
+    public async Task<IActionResult> DeleteStandard(
         Guid id,
-        Guid criterionId,
+        Guid standardId,
         CancellationToken cancellationToken)
     {
-        await standardService.DeleteCriterionAsync(id, criterionId, cancellationToken);
+        await standardService.DeleteStandardAsync(id, standardId, cancellationToken);
         return NoContent();
     }
 }

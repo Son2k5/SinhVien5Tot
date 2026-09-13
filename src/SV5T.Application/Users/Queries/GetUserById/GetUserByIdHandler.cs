@@ -18,7 +18,7 @@ public sealed class GetUserByIdHandler(
             return null;
         }
 
-        var user = await userRepository.GetByIdAsync(query.Id, cancellationToken);
+        var user = await userRepository.GetByIdWithProfileAsync(query.Id, tracking: false, cancellationToken: cancellationToken);
         return user is null || !user.IsActive || !user.IsVerified
             ? null
             : ToUserDto(user);

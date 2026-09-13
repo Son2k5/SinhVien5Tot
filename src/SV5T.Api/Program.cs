@@ -182,7 +182,7 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(allowedOrigins)
             .WithHeaders("Content-Type", "Authorization", CorrelationIdMiddleware.HeaderName)
-            .WithMethods("GET", "POST", "PUT", "OPTIONS")
+            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             .AllowCredentials();
     });
 });

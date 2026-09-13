@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { DashboardFooter } from '../components/dashboard/DashboardFooter';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { SystemLauncher } from '../components/dashboard/SystemLauncher';
-import { formatUserRole } from '../components/dashboard/home';
+import { formatUserRole } from '../components/dashboard/home/homeDashboardConfig';
 import { UserProfileForm } from '../components/profile/UserProfileForm';
 import { useWelcomeDashboard } from '../hooks/dashboard/useWelcomeDashboard';
 import { useLauncher } from '../hooks/dashboard/useLauncher';

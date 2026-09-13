@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useReducer } from 'react';
 import {
   AwardLevel,
   AwardType,
@@ -30,41 +30,89 @@ export interface StandardSetFormModalProps {
   ) => Promise<void> | void;
 }
 
+const EMPTY_SETS: StandardSetResponse[] = [];
+
+interface StandardSetFormState {
+  academicYear: string;
+  level: AwardLevel;
+  awardType: AwardType;
+  templateStandardSetId: string;
+  formError: string | null;
+  fieldErrors: Record<string, string>;
+}
+
+type StandardSetFormAction =
+  | { type: 'RESET'; standardSet?: StandardSetResponse | null }
+  | { type: 'SET_FIELD'; field: keyof StandardSetFormState; value: unknown }
+  | { type: 'SET_ERRORS'; fieldErrors: Record<string, string>; formError?: string | null }
+  | { type: 'SET_FORM_ERROR'; formError: string | null };
+
+function getInitialStandardSetState(
+  standardSet?: StandardSetResponse | null,
+): StandardSetFormState {
+  if (standardSet) {
+    return {
+      academicYear: standardSet.academicYear,
+      level: standardSet.level,
+      awardType: standardSet.awardType,
+      templateStandardSetId: '',
+      formError: null,
+      fieldErrors: {},
+    };
+  }
+  return {
+    academicYear: '2025-2026',
+    level: AwardLevel.School,
+    awardType: AwardType.Individual,
+    templateStandardSetId: '',
+    formError: null,
+    fieldErrors: {},
+  };
+}
+
+function standardSetFormReducer(
+  state: StandardSetFormState,
+  action: StandardSetFormAction,
+): StandardSetFormState {
+  switch (action.type) {
+    case 'RESET':
+      return getInitialStandardSetState(action.standardSet);
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value };
+    case 'SET_ERRORS':
+      return {
+        ...state,
+        fieldErrors: action.fieldErrors,
+        formError: action.formError ?? state.formError,
+      };
+    case 'SET_FORM_ERROR':
+      return { ...state, formError: action.formError };
+    default:
+      return state;
+  }
+}
+
 export function StandardSetFormModal({
   isOpen,
   standardSet,
-  existingSets = [],
+  existingSets = EMPTY_SETS,
   isLoading = false,
   onClose,
   onSubmit,
 }: StandardSetFormModalProps) {
   const isEdit = Boolean(standardSet);
 
-  const [academicYear, setAcademicYear] = useState('2025-2026');
-  const [level, setLevel] = useState<AwardLevel>(AwardLevel.School);
-  const [awardType, setAwardType] = useState<AwardType>(AwardType.Individual);
-  const [templateStandardSetId, setTemplateStandardSetId] = useState<string>('');
+  const [state, dispatch] = useReducer(
+    standardSetFormReducer,
+    standardSet,
+    getInitialStandardSetState,
+  );
 
-  const [formError, setFormError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const { academicYear, level, awardType, templateStandardSetId, formError, fieldErrors } = state;
 
   useEffect(() => {
     if (!isOpen) return;
-
-    if (standardSet) {
-      setAcademicYear(standardSet.academicYear);
-      setLevel(standardSet.level);
-      setAwardType(standardSet.awardType);
-      setTemplateStandardSetId('');
-    } else {
-      setAcademicYear('2025-2026');
-      setLevel(AwardLevel.School);
-      setAwardType(AwardType.Individual);
-      setTemplateStandardSetId('');
-    }
-
-    setFormError(null);
-    setFieldErrors({});
+    dispatch({ type: 'RESET', standardSet });
   }, [isOpen, standardSet]);
 
   const templateCandidates = useMemo(() => {
@@ -84,16 +132,16 @@ export function StandardSetFormModal({
       errors.academicYear = 'Năm học không được quá 20 ký tự.';
     }
 
-    setFieldErrors(errors);
+    dispatch({ type: 'SET_ERRORS', fieldErrors: errors });
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
+    dispatch({ type: 'SET_FORM_ERROR', formError: null });
 
     if (!validate()) {
-      setFormError('Vui lòng kiểm tra lại các trường thông tin.');
+      dispatch({ type: 'SET_FORM_ERROR', formError: 'Vui lòng kiểm tra lại các trường thông tin.' });
       return;
     }
 
@@ -108,7 +156,7 @@ export function StandardSetFormModal({
       await onSubmit(payload);
       onClose();
     } catch (err: unknown) {
-      setFormError(sanitizeApiError(err));
+      dispatch({ type: 'SET_FORM_ERROR', formError: sanitizeApiError(err) });
     }
   };
 
@@ -117,6 +165,7 @@ export function StandardSetFormModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="standard-set-modal-title"
     >
       <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-5 relative">
         <button
@@ -124,12 +173,13 @@ export function StandardSetFormModal({
           onClick={onClose}
           disabled={isLoading}
           className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          aria-label="Đóng"
         >
           <X size={18} />
         </button>
 
         <div className="space-y-1">
-          <h2 className="text-base font-semibold text-slate-800">
+          <h2 id="standard-set-modal-title" className="text-base font-semibold text-slate-800">
             {isEdit
               ? `Bộ tiêu chuẩn ${standardSet?.academicYear}`
               : 'Thiết lập khung tiêu chuẩn SV5T'}
@@ -148,13 +198,14 @@ export function StandardSetFormModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1">
+            <label htmlFor="standard-set-year-input" className="text-xs font-bold text-slate-700 block mb-1">
               Năm học áp dụng <span className="text-rose-500">*</span>
             </label>
             <input
+              id="standard-set-year-input"
               type="text"
               value={academicYear}
-              onChange={(e) => setAcademicYear(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'academicYear', value: e.target.value })}
               placeholder="Ví dụ: 2025-2026"
               className={`w-full h-10 px-3.5 text-xs border rounded-xl bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 ${
                 fieldErrors.academicYear
@@ -171,12 +222,13 @@ export function StandardSetFormModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">
+              <label htmlFor="standard-set-level-select" className="text-xs font-bold text-slate-700 block mb-1">
                 Cấp xét duyệt <span className="text-rose-500">*</span>
               </label>
               <select
+                id="standard-set-level-select"
                 value={level}
-                onChange={(e) => setLevel(e.target.value as AwardLevel)}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'level', value: e.target.value as AwardLevel })}
                 className="w-full h-10 px-3 text-xs border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer"
               >
                 <option value={AwardLevel.School}>{AWARD_LEVEL_LABELS[AwardLevel.School]}</option>
@@ -186,12 +238,13 @@ export function StandardSetFormModal({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">
+              <label htmlFor="standard-set-award-type-select" className="text-xs font-bold text-slate-700 block mb-1">
                 Loại danh hiệu <span className="text-rose-500">*</span>
               </label>
               <select
+                id="standard-set-award-type-select"
                 value={awardType}
-                onChange={(e) => setAwardType(e.target.value as AwardType)}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'awardType', value: e.target.value as AwardType })}
                 className="w-full h-10 px-3 text-xs border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer"
               >
                 <option value={AwardType.Individual}>{AWARD_TYPE_LABELS[AwardType.Individual]}</option>
@@ -202,12 +255,13 @@ export function StandardSetFormModal({
 
           {!isEdit && (
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">
+              <label htmlFor="standard-set-template-select" className="text-xs font-bold text-slate-700 block mb-1">
                 Nhân bản từ bộ tiêu chuẩn mẫu (Tuỳ chọn)
               </label>
               <select
+                id="standard-set-template-select"
                 value={templateStandardSetId}
-                onChange={(e) => setTemplateStandardSetId(e.target.value)}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'templateStandardSetId', value: e.target.value })}
                 className="w-full h-10 px-3 text-xs border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer"
               >
                 <option value="">-- Tạo bộ khung rỗng mới (Tự cấu hình tiêu chí) --</option>

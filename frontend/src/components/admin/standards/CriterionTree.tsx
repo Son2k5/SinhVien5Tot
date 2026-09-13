@@ -39,8 +39,10 @@ export interface CriterionTreeProps {
   ) => void;
 }
 
+const EMPTY_STANDARDS: StandardResponse[] = [];
+
 export function CriterionTree({
-  standards = [],
+  standards = EMPTY_STANDARDS,
   isEditable = false,
   onAddGroup,
   onQuickInitAllGroups,
@@ -51,7 +53,7 @@ export function CriterionTree({
   onDeleteCriterion,
 }: CriterionTreeProps) {
   const sortedStandards = useMemo(() => {
-    return [...(standards ?? [])].sort((a, b) => a.displayOrder - b.displayOrder);
+    return (standards ?? EMPTY_STANDARDS).toSorted((a, b) => a.displayOrder - b.displayOrder);
   }, [standards]);
 
   if (sortedStandards.length === 0) {
@@ -117,7 +119,7 @@ export function CriterionTree({
         return (
           <div
             key={std.id}
-            className="bg-white rounded-xl border border-slate-200 hover:border-blue-300/80 shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_16px_rgba(37,99,235,0.06)] transition-all overflow-hidden"
+            className="bg-white rounded-xl border border-slate-200 hover:border-blue-300/80 shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_16px_rgba(37,99,235,0.06)] transition-[border-color,box-shadow] overflow-hidden"
           >
             {/* Header of Major Standard */}
             <div className="p-3.5 sm:p-4 bg-gradient-to-r from-blue-100/70 via-sky-50/90 to-blue-50/60 border-b border-blue-200/90 flex flex-wrap items-center justify-between gap-3">
@@ -219,7 +221,7 @@ export function CriterionTree({
                     {mandatoryCriteria.map((item) => (
                       <div
                         key={item.id}
-                        className="p-3 sm:p-3.5 bg-white rounded-xl border border-slate-200/80 hover:border-emerald-200 shadow-2xs space-y-2 transition-all"
+                        className="p-3 sm:p-3.5 bg-white rounded-xl border border-slate-200/80 hover:border-emerald-200 shadow-2xs space-y-2 transition-[border-color,box-shadow]"
                       >
                         <div>
                           <p className="text-[13px] sm:text-sm font-medium text-slate-800 leading-snug">
@@ -306,7 +308,7 @@ export function CriterionTree({
                     {optionalCriteria.map((item) => (
                       <div
                         key={item.id}
-                        className="p-3 sm:p-3.5 bg-white rounded-xl border border-slate-200/80 hover:border-amber-200 shadow-2xs space-y-2 transition-all"
+                        className="p-3 sm:p-3.5 bg-white rounded-xl border border-slate-200/80 hover:border-amber-200 shadow-2xs space-y-2 transition-[border-color,box-shadow]"
                       >
                         <div>
                           <p className="text-[13px] sm:text-sm font-medium text-slate-800 leading-snug">

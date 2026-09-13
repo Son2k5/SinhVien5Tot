@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SV5T.Domain.Admin;
 using SV5T.Domain.Auth;
 using SV5T.Domain.Campaigns;
 using SV5T.Domain.Criteria;
@@ -39,6 +40,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.CreatedBy).HasMaxLength(100);
         builder.Property(user => user.UpdatedBy).HasMaxLength(100);
         builder.Property(user => user.SecurityVersion).HasDefaultValue(1);
+        builder.Property(user => user.IsDeleted).HasDefaultValue(false);
+        builder.Property(user => user.DeleteReason).HasMaxLength(500);
         builder.HasIndex(user => user.NormalizedEmail).IsUnique();
     }
 }
@@ -249,6 +252,29 @@ public sealed class StandardSetConfiguration : IEntityTypeConfiguration<Standard
     }
 }
 
+public sealed class StandardConfiguration : IEntityTypeConfiguration<Standard>
+{
+    public void Configure(EntityTypeBuilder<Standard> builder)
+    {
+        builder.ToTable("standards");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Code).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Title).HasMaxLength(500).IsRequired();
+
+        builder.HasIndex(x => new
+        {
+            x.StandardSetId,
+            x.DisplayOrder
+        });
+
+        builder.HasOne(x => x.StandardSet)
+            .WithMany(x => x.Standards)
+            .HasForeignKey(x => x.StandardSetId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
 public sealed class CriterionConfiguration : IEntityTypeConfiguration<Criterion>
 {
     public void Configure(EntityTypeBuilder<Criterion> builder)
@@ -263,14 +289,14 @@ public sealed class CriterionConfiguration : IEntityTypeConfiguration<Criterion>
 
         builder.HasIndex(x => new
         {
-            x.StandardSetId,
+            x.StandardId,
             x.ParentCriterionId,
             x.DisplayOrder
         });
 
-        builder.HasOne(x => x.StandardSet)
+        builder.HasOne(x => x.Standard)
             .WithMany(x => x.Criteria)
-            .HasForeignKey(x => x.StandardSetId)
+            .HasForeignKey(x => x.StandardId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.ParentCriterion)
@@ -416,3 +442,20 @@ public sealed class ReviewLogConfiguration : IEntityTypeConfiguration<ReviewLog>
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+public sealed class AdminAuditLogConfiguration : IEntityTypeConfiguration<AdminAuditLog>
+{
+    public void Configure(EntityTypeBuilder<AdminAuditLog> builder)
+    {
+        builder.ToTable("admin_audit_logs");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Action).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Reason).HasMaxLength(500);
+        builder.Property(x => x.MetadataJson).HasColumnType("longtext");
+
+        builder.HasIndex(x => new { x.ActorId, x.CreatedAt });
+        builder.HasIndex(x => new { x.TargetUserId, x.CreatedAt });
+    }
+}
+

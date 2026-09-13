@@ -60,17 +60,24 @@ interface AdminChatPopoverProps {
   onClose: () => void;
 }
 
+interface ChatMessage {
+  id: string;
+  sender: 'user' | 'admin';
+  text: string;
+  time: string;
+}
+
 export function AdminChatPopover({ onClose }: AdminChatPopoverProps) {
   const [selectedChat, setSelectedChat] = useState<ChatConversation | null>(null);
   const [chatSearch, setChatSearch] = useState('');
   const [replyText, setReplyText] = useState('');
-  const [messages, setMessages] = useState<Record<string, Array<{ sender: 'user' | 'admin'; text: string; time: string }>>>({
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({
     '1': [
-      { sender: 'user', text: 'Dạ em chào Thầy/Cô ạ!', time: '14:20' },
-      { sender: 'user', text: 'Thầy/Cô cho em hỏi về minh chứng tiêu chuẩn Học tập tốt ạ? Em nộp bảng điểm có cần dấu mộc đỏ không?', time: '14:22' },
+      { id: '1-1', sender: 'user', text: 'Dạ em chào Thầy/Cô ạ!', time: '14:20' },
+      { id: '1-2', sender: 'user', text: 'Thầy/Cô cho em hỏi về minh chứng tiêu chuẩn Học tập tốt ạ? Em nộp bảng điểm có cần dấu mộc đỏ không?', time: '14:22' },
     ],
     '2': [
-      { sender: 'user', text: 'Em đã nộp lại file PDF chứng nhận tình nguyện hè rồi ạ. Nhờ Thầy/Cô xem giúp em.', time: '14:05' },
+      { id: '2-1', sender: 'user', text: 'Em đã nộp lại file PDF chứng nhận tình nguyện hè rồi ạ. Nhờ Thầy/Cô xem giúp em.', time: '14:05' },
     ],
   });
 
@@ -84,8 +91,9 @@ export function AdminChatPopover({ onClose }: AdminChatPopoverProps) {
     e.preventDefault();
     if (!replyText.trim() || !selectedChat) return;
 
-    const newMsg = {
-      sender: 'admin' as const,
+    const newMsg: ChatMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      sender: 'admin',
       text: replyText.trim(),
       time: 'Vừa xong',
     };
@@ -149,9 +157,9 @@ export function AdminChatPopover({ onClose }: AdminChatPopoverProps) {
 
           {/* Messages Area */}
           <div className="flex-1 p-3 overflow-y-auto space-y-2.5 text-xs">
-            {(messages[selectedChat.id] || []).map((msg, idx) => (
+            {(messages[selectedChat.id] || []).map((msg) => (
               <div
-                key={idx}
+                key={msg.id}
                 className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}
               >
                 <div
@@ -175,13 +183,15 @@ export function AdminChatPopover({ onClose }: AdminChatPopoverProps) {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder={`Trả lời ${selectedChat.userName}...`}
+              aria-label={`Trả lời ${selectedChat.userName}`}
               className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
               autoFocus
             />
             <button
               type="submit"
               disabled={!replyText.trim()}
-              className="p-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed"
+              aria-label="Gửi tin nhắn"
+              className="p-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               <Send size={14} />
             </button>
