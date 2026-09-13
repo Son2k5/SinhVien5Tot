@@ -251,6 +251,7 @@ public static class DependencyInjection
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -261,7 +262,9 @@ public static class DependencyInjection
                     ValidAudience = jwt.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(jwt.Key)),
-                    ClockSkew = TimeSpan.Zero,
+                    // Nới 60s để tránh 401 oan khi frontend gọi /me ngay sau login
+                    // (chênh clock nbf 1-2s qua Vite proxy) mà vẫn an toàn với token 15p.
+                    ClockSkew = TimeSpan.FromSeconds(60),
                     NameClaimType = JwtRegisteredClaimNames.Sub
                 };
                 options.EventsType = typeof(JwtSecurityEvents);

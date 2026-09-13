@@ -1,17 +1,18 @@
+using MediatR;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Domain.Auth;
 
 namespace SV5T.Application.Auth.Commands.Logout;
 
-public sealed record LogoutCommand(Guid UserId, string? RefreshToken);
+public sealed record LogoutCommand(Guid UserId, string? RefreshToken) : IRequest;
 
 public sealed class LogoutHandler(
     IRefreshTokenRepository refreshTokenRepository,
     IUnitOfWork unitOfWork,
     ISha256Hasher sha256Hasher,
-    IRefreshTokenFactory refreshTokenFactory) : ICommandHandler<LogoutCommand>
+    IRefreshTokenFactory refreshTokenFactory) : IRequestHandler<LogoutCommand>
 {
-    public async Task HandleAsync(LogoutCommand command, CancellationToken cancellationToken = default)
+    public async Task Handle(LogoutCommand command, CancellationToken cancellationToken)
     {
         var userId = command.UserId;
         var refreshToken = command.RefreshToken;

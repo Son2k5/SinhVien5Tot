@@ -1,6 +1,12 @@
 import { apiClient } from '../apiClient';
 import type { AdminStudentDetail, AdminStudentEvidenceItem } from '../../types/admin/student';
-import type { AdminStudentListItem, DeleteStudentRequest, LockStudentRequest } from '../../types/admin/student';
+import type {
+  AdminStudentListItem,
+  BatchDeleteStudentsRequest,
+  BatchDeleteStudentsResponse,
+  DeleteStudentRequest,
+  LockStudentRequest,
+} from '../../types/admin/student';
 import type { PagedResponse, ReviewStudentEvidenceRequest, StudentFilterParams, UnlockStudentRequest } from '../../types/admin/student';
 
 function toQuery(params: StudentFilterParams) {
@@ -35,6 +41,10 @@ export const studentService = {
   },
   async remove(id: string, body: DeleteStudentRequest): Promise<void> {
     await apiClient.delete(`/admin/students/${id}`, { data: body });
+  },
+  async batchDelete(body: BatchDeleteStudentsRequest): Promise<BatchDeleteStudentsResponse> {
+    const res = await apiClient.post<BatchDeleteStudentsResponse>('/admin/students/batch-delete', body);
+    return res.data;
   },
   async review(id: string, body: ReviewStudentEvidenceRequest): Promise<AdminStudentEvidenceItem> {
     const res = await apiClient.patch<AdminStudentEvidenceItem>(`/admin/students/${id}/review`, body);

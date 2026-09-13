@@ -1,18 +1,17 @@
 using MediatR;
 using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Campaigns.Abstractions;
-using SV5T.Application.Common.Models;
 using SV5T.Domain.Campaigns;
 
 namespace SV5T.Application.Admin.Campaigns.Queries.GetCampaignsPaged;
 
 public sealed class GetCampaignsPagedHandler(ICampaignRepository campaignRepository)
-    : IRequestHandler<GetCampaignsPagedQuery, PagedResult<CampaignResponse>>
+    : IRequestHandler<GetCampaignsPagedQuery, PagedResponse<CampaignResponse>>
 {
     private const int DefaultPageSize = 20;
     private const int MaxPageSize = 100;
 
-    public async Task<PagedResult<CampaignResponse>> Handle(
+    public async Task<PagedResponse<CampaignResponse>> Handle(
         GetCampaignsPagedQuery request,
         CancellationToken cancellationToken
     )
@@ -27,11 +26,12 @@ public sealed class GetCampaignsPagedHandler(ICampaignRepository campaignReposit
             pageSize,
             cancellationToken
         );
-        return new PagedResult<CampaignResponse>(
+        return new PagedResponse<CampaignResponse>(
             paged.Items.Select(MapToResponse).ToList(),
             paged.TotalCount,
             paged.PageIndex,
-            paged.PageSize
+            paged.PageSize,
+            paged.TotalPages
         );
     }
 
@@ -44,7 +44,7 @@ public sealed class GetCampaignsPagedHandler(ICampaignRepository campaignReposit
             campaign.AwardType,
             campaign.Status,
             campaign.StandardSetId,
-            campaign.StandardSet?.AcademicYear,
+            campaign.StandardSet?.Name ?? campaign.StandardSet?.AcademicYear,
             campaign.PrerequisiteCampaignId,
             campaign.PrerequisiteCampaign?.Name,
             campaign.RegOpenAt,

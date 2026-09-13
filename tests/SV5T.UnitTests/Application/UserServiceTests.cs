@@ -4,11 +4,12 @@ using SV5T.Application.Users.Commands.UpdateAvatar;
 using SV5T.Application.Users.Commands.UpdateProfile;
 using SV5T.Application.Users.Queries.GetMyProfile;
 using SV5T.Application.Users.Queries.GetUserById;
+using SV5T.Application.Users.Validators;
 using Xunit;
 
 namespace SV5T.UnitTests.Application;
 
-public sealed class UserServiceTests
+public sealed class UserHandlerTests
 {
     [Fact]
     public async Task UpdateProfile_UpdatesExistingProfileAndAddresses()
@@ -22,7 +23,7 @@ public sealed class UserServiceTests
             District = "Old district",
             StreetAddress = "Old street"
         });
-        var service = CreateService(user, out _, out _);
+        var (handler, _, _) = CreateProfileHandler(user);
         var request = ValidRequest() with
         {
             FullName = "Nguyen Van A",
@@ -35,7 +36,7 @@ public sealed class UserServiceTests
             ]
         };
 
-        var result = await service.UpdateMyProfileAsync(user.Id, request);
+        var result = await handler.Handle(new UpdateProfileCommand(user.Id, request), CancellationToken.None);
 
         Assert.Equal("Nguyen Van A", user.Profile!.FullName);
         Assert.Equal("SV001", user.Profile.StudentCode);
@@ -50,7 +51,7 @@ public sealed class UserServiceTests
     public async Task UpdateProfile_CreatesProfileWhenMissing()
     {
         var user = ActiveUser(withProfile: false);
-        var service = CreateService(user, out var repository, out _);
+        var (handler, repository, _) = CreateProfileHandler(user);
         var request = ValidRequest() with
         {
             Addresses =
@@ -60,7 +61,7 @@ public sealed class UserServiceTests
             ]
         };
 
-        var result = await service.UpdateMyProfileAsync(user.Id, request);
+        var result = await handler.Handle(new UpdateProfileCommand(user.Id, request), CancellationToken.None);
 
         Assert.NotNull(user.Profile);
         Assert.Equal(user.Id, user.Profile!.UserId);
@@ -80,25 +81,25 @@ public sealed class UserServiceTests
             UserId = user.Id,
             AddressType = AddressType.Temporary
         });
-        var service = CreateService(user, out _, out _);
+        var (handler, _, _) = CreateProfileHandler(user);
 
-        var result = await service.UpdateMyProfileAsync(user.Id, ValidRequest());
+        var result = await handler.Handle(new UpdateProfileCommand(user.Id, ValidRequest()), CancellationToken.None);
 
         Assert.Empty(user.Addresses);
         Assert.Empty(result.Addresses);
     }
 
     [Fact]
-    public async Task UpdateProfile_InvalidRequestThrowsValidation()
+    public void UpdateProfile_InvalidRequestFailsValidation()
     {
         var user = ActiveUser(withProfile: false);
-        var service = CreateService(user, out _, out _);
         var request = ValidRequest() with { FullName = string.Empty };
+        var validator = new UpdateProfileCommandValidator(new UpdateUserProfileRequestValidator());
 
-        var exception = await Assert.ThrowsAsync<UseCaseException>(
-            () => service.UpdateMyProfileAsync(user.Id, request));
+        var result = validator.Validate(new UpdateProfileCommand(user.Id, request));
 
-        Assert.Equal(ApplicationErrorKind.Validation, exception.Kind);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("FullName"));
     }
 
     [Fact]
@@ -108,10 +109,10 @@ public sealed class UserServiceTests
         var other = ActiveUser(withProfile: true);
         other.Profile!.StudentCode = "SV001";
         var repository = new FakeUserRepository(user, other);
-        var service = CreateService(user, repository, new FakeAvatarStorage());
+        var handler = CreateProfileHandlerWithRepo(user, repository);
 
         var exception = await Assert.ThrowsAsync<UseCaseException>(
-            () => service.UpdateMyProfileAsync(user.Id, ValidRequest()));
+            () => handler.Handle(new UpdateProfileCommand(user.Id, ValidRequest()), CancellationToken.None));
 
         Assert.Equal(ApplicationErrorKind.Conflict, exception.Kind);
         Assert.Equal("student_code_taken", exception.ErrorCode);
@@ -121,41 +122,43 @@ public sealed class UserServiceTests
     public async Task UpdateAvatar_PersistsCloudinaryResult()
     {
         var user = ActiveUser(withProfile: false);
-        var service = CreateService(user, out _, out var storage);
+        var (handler, storage) = CreateAvatarHandler(user);
         await using var content = new MemoryStream(
             [0xff, 0xd8, 0xff, 0x00, 0x01]);
 
-        var result = await service.UpdateMyAvatarAsync(
-            user.Id,
-            new UpdateUserAvatarRequest(content, "avatar.jpg", content.Length));
+        var result = await handler.Handle(
+            new UpdateAvatarCommand(user.Id, new UpdateUserAvatarRequest(content, "avatar.jpg", content.Length)),
+            CancellationToken.None);
 
         Assert.Equal(storage.Uploaded.Url, user.AvatarUrl);
         Assert.Equal(storage.Uploaded.PublicId, user.AvatarPublicId);
         Assert.Equal(storage.Uploaded.Url, result.AvatarUrl);
     }
 
-    private static UserService CreateService(
-        User user,
-        out FakeUserRepository repository,
-        out FakeAvatarStorage storage)
+    private static (UpdateProfileHandler Handler, FakeUserRepository Repository, FakeUnitOfWork UnitOfWork) CreateProfileHandler(User user)
     {
-        repository = new FakeUserRepository(user);
-        storage = new FakeAvatarStorage();
-        return CreateService(user, repository, storage);
+        var repository = new FakeUserRepository(user);
+        var unitOfWork = new FakeUnitOfWork();
+        var currentUser = new FakeCurrentUser(user.Id);
+        var handler = new UpdateProfileHandler(currentUser, repository, unitOfWork);
+        return (handler, repository, unitOfWork);
     }
 
-    private static UserService CreateService(
-        User current,
-        FakeUserRepository repository,
-        FakeAvatarStorage storage)
+    private static UpdateProfileHandler CreateProfileHandlerWithRepo(User user, FakeUserRepository repository)
     {
-        var currentUser = new FakeCurrentUser(current.Id);
         var unitOfWork = new FakeUnitOfWork();
-        return new UserService(
-            new GetUserByIdHandler(currentUser, repository),
-            new GetMyProfileHandler(currentUser, repository),
-            new UpdateProfileHandler(currentUser, repository, unitOfWork, new UpdateUserProfileRequestValidator()),
-            new UpdateAvatarHandler(currentUser, repository, unitOfWork, storage, NullLogger<UpdateAvatarHandler>.Instance));
+        var currentUser = new FakeCurrentUser(user.Id);
+        return new UpdateProfileHandler(currentUser, repository, unitOfWork);
+    }
+
+    private static (UpdateAvatarHandler Handler, FakeAvatarStorage Storage) CreateAvatarHandler(User user)
+    {
+        var repository = new FakeUserRepository(user);
+        var storage = new FakeAvatarStorage();
+        var unitOfWork = new FakeUnitOfWork();
+        var currentUser = new FakeCurrentUser(user.Id);
+        var handler = new UpdateAvatarHandler(currentUser, repository, unitOfWork, storage, NullLogger<UpdateAvatarHandler>.Instance);
+        return (handler, storage);
     }
 
     private static User ActiveUser(bool withProfile) =>
@@ -238,7 +241,7 @@ public sealed class UserServiceTests
         public Task<User?> GetByIdWithProfileAsync(
             Guid id, bool tracking = false,
             CancellationToken cancellationToken = default) =>
-            GetByIdAsync(id, cancellationToken);
+            Task.FromResult(users.FirstOrDefault(user => user.Id == id));
         public Task<bool> ExistsStudentCodeAsync(
             string studentCode, Guid excludeUserId,
             CancellationToken cancellationToken = default) =>
@@ -283,10 +286,12 @@ public sealed class UserServiceTests
         public StoredAvatar Uploaded { get; } =
             new("https://res.cloudinary.com/test/avatar.jpg", "avatar-id", "image");
         public List<string> Deleted { get; } = [];
+
         public Task<StoredAvatar> UploadAsync(
             Guid userId, Stream content, string fileName,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Uploaded);
+
         public Task DeleteAsync(
             string publicId, string resourceType,
             CancellationToken cancellationToken = default)
@@ -296,5 +301,3 @@ public sealed class UserServiceTests
         }
     }
 }
-
-

@@ -34,6 +34,13 @@ public interface IAdminStudentRepository
         CancellationToken cancellationToken = default
     );
 
+    Task<IReadOnlyList<User>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        bool tracking = false,
+        bool includeDeleted = false,
+        CancellationToken cancellationToken = default
+    );
+
     Task<IReadOnlyList<SubmissionApplication>> GetApplicationsAsync(
         Guid studentId,
         CancellationToken cancellationToken = default

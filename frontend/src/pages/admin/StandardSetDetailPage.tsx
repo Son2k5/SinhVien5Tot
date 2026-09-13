@@ -306,11 +306,11 @@ export function StandardSetDetailPage() {
     <div className="w-full max-w-7xl mx-auto space-y-5 pb-12 animate-in fade-in duration-300">
       {/* Header */}
       <AdminPageHeader
-        title={`Bộ tiêu chuẩn ${standardSet.academicYear}`}
+        title={standardSet.name || `Bộ tiêu chuẩn ${standardSet.academicYear}`}
         description={`${AWARD_LEVEL_LABELS[standardSet.level]} · ${AWARD_TYPE_LABELS[standardSet.awardType]}`}
         breadcrumbs={[
           { label: 'Cấu hình tiêu chuẩn', to: '/admin/standards' },
-          { label: `Năm học ${standardSet.academicYear}` },
+          { label: standardSet.name || `Năm học ${standardSet.academicYear}` },
         ]}
         backTo="/admin/standards"
         actions={
@@ -410,6 +410,17 @@ export function StandardSetDetailPage() {
           <hr className="border-blue-50 my-2" />
 
           <dl className="space-y-1.5">
+            {Boolean(standardSet.name?.trim()) && (
+              <div className="flex items-center justify-between gap-2">
+                <dt className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <FileEdit className="w-3.5 h-3.5 text-blue-500/80 shrink-0" />
+                  Tên
+                </dt>
+                <dd className="text-xs font-medium text-slate-800 truncate max-w-[170px]" title={standardSet.name}>
+                  {standardSet.name}
+                </dd>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-2">
               <dt className="flex items-center gap-1.5 text-xs text-slate-500">
                 <GraduationCap className="w-3.5 h-3.5 text-blue-500/80" />

@@ -19,6 +19,8 @@ public sealed record AuthTokens(
     DateTime RefreshTokenExpiresAtUtc,
     bool IsPersistent);
 
+public sealed record RefreshRequest(string? RefreshToken = null);
+
 public sealed record ForgotPasswordRequest(string Email);
 
 public sealed record GeneratedAccessToken(

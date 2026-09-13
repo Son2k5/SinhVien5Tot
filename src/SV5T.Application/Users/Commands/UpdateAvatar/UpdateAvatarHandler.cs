@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.Extensions.Logging;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
@@ -7,18 +8,18 @@ using SV5T.Domain.Users;
 
 namespace SV5T.Application.Users.Commands.UpdateAvatar;
 
-public sealed record UpdateAvatarCommand(Guid UserId, UpdateUserAvatarRequest Request);
+public sealed record UpdateAvatarCommand(Guid UserId, UpdateUserAvatarRequest Request) : IRequest<UserDto>;
 
 public sealed class UpdateAvatarHandler(
     ICurrentUser currentUser,
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     IAvatarStorage avatarStorage,
-    ILogger<UpdateAvatarHandler> logger) : ICommandHandler<UpdateAvatarCommand, UserDto>
+    ILogger<UpdateAvatarHandler> logger) : IRequestHandler<UpdateAvatarCommand, UserDto>
 {
     private const long MaxAvatarBytes = 5 * 1024 * 1024;
 
-    public async Task<UserDto> HandleAsync(UpdateAvatarCommand command, CancellationToken cancellationToken = default)
+    public async Task<UserDto> Handle(UpdateAvatarCommand command, CancellationToken cancellationToken)
     {
         var userId = command.UserId;
         var request = command.Request;

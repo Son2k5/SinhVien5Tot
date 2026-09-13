@@ -1,3 +1,4 @@
+using MediatR;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Users.Abstractions;
@@ -6,7 +7,7 @@ using SV5T.Domain.Users;
 
 namespace SV5T.Application.Auth.Queries.GetCurrentUser;
 
-public sealed record GetCurrentUserQuery;
+public sealed record GetCurrentUserQuery : IRequest<CurrentUserDto>;
 
 public sealed record CurrentUserDto(
     Guid Id,
@@ -17,9 +18,9 @@ public sealed record CurrentUserDto(
 
 public sealed class GetCurrentUserHandler(
     ICurrentUser currentUser,
-    IUserRepository userRepository) : IQueryHandler<GetCurrentUserQuery, CurrentUserDto>
+    IUserRepository userRepository) : IRequestHandler<GetCurrentUserQuery, CurrentUserDto>
 {
-    public async Task<CurrentUserDto> HandleAsync(GetCurrentUserQuery query, CancellationToken cancellationToken = default)
+    public async Task<CurrentUserDto> Handle(GetCurrentUserQuery query, CancellationToken cancellationToken)
     {
         if (!currentUser.UserId.HasValue)
         {

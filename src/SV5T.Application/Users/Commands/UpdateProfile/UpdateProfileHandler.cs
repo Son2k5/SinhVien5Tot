@@ -1,5 +1,4 @@
-using FluentValidation;
-using SV5T.Application.Auth.Support;
+using MediatR;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Users.Dtos;
@@ -7,21 +6,19 @@ using SV5T.Domain.Users;
 
 namespace SV5T.Application.Users.Commands.UpdateProfile;
 
-public sealed record UpdateProfileCommand(Guid UserId, UpdateUserProfileRequest Request);
+public sealed record UpdateProfileCommand(Guid UserId, UpdateUserProfileRequest Request) : IRequest<UserProfileDto>;
 
 public sealed class UpdateProfileHandler(
     ICurrentUser currentUser,
     IUserRepository userRepository,
-    IUnitOfWork unitOfWork,
-    IValidator<UpdateUserProfileRequest> profileValidator) : ICommandHandler<UpdateProfileCommand, UserProfileDto>
+    IUnitOfWork unitOfWork) : IRequestHandler<UpdateProfileCommand, UserProfileDto>
 {
-    public async Task<UserProfileDto> HandleAsync(UpdateProfileCommand command, CancellationToken cancellationToken = default)
+    public async Task<UserProfileDto> Handle(UpdateProfileCommand command, CancellationToken cancellationToken)
     {
         var userId = command.UserId;
         var request = command.Request;
 
         EnsureOwnUser(userId);
-        await AuthServiceSupport.ValidateAsync(profileValidator, request, cancellationToken);
 
         UserProfileDto? result = null;
         await unitOfWork.ExecuteInTransactionAsync(

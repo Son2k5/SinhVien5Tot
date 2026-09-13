@@ -1,6 +1,5 @@
 using MediatR;
 using SV5T.Application.Admin.Dtos;
-using SV5T.Application.Common.Models;
 using SV5T.Domain.Awards.Enums;
 using SV5T.Domain.Campaigns.Enums;
 
@@ -12,4 +11,4 @@ public sealed record GetCampaignsPagedQuery(
     string? SchoolYear,
     int PageIndex,
     int PageSize
-) : IRequest<PagedResult<CampaignResponse>>;
+) : IRequest<PagedResponse<CampaignResponse>>;

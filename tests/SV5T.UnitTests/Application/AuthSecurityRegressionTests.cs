@@ -11,7 +11,6 @@ using SV5T.Application.Auth.Commands.ResetPassword;
 using SV5T.Application.Auth.Commands.VerifyOtp;
 using SV5T.Application.Auth.Commands.VerifyResetOtp;
 using SV5T.Application.Auth.Dtos;
-using SV5T.Application.Auth.Services;
 using SV5T.Application.Auth.Validators;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Models;
@@ -398,7 +397,46 @@ public sealed class AuthSecurityRegressionTests
             second.HashIdentifier("student@ms.hanu.edu.vn"));
     }
 
-    private static AuthService CreateService(
+    private sealed class TestAuthDispatcher(
+        RegisterHandler registerHandler,
+        VerifyOtpHandler verifyOtpHandler,
+        ResendOtpHandler resendOtpHandler,
+        LoginHandler loginHandler,
+        RefreshTokenHandler refreshTokenHandler,
+        LogoutHandler logoutHandler,
+        ForgotPasswordHandler forgotPasswordHandler,
+        VerifyResetOtpHandler verifyResetOtpHandler,
+        ResetPasswordHandler resetPasswordHandler)
+    {
+        public Task<Guid> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default) =>
+            registerHandler.Handle(new RegisterCommand(request.Name, request.Email, request.Password), cancellationToken);
+
+        public Task VerifyOtpAsync(VerifyOtpRequest request, CancellationToken cancellationToken = default) =>
+            verifyOtpHandler.Handle(new VerifyOtpCommand(request.RegistrationId, request.Otp), cancellationToken);
+
+        public Task ResendOtpAsync(ResendOtpRequest request, CancellationToken cancellationToken = default) =>
+            resendOtpHandler.Handle(new ResendOtpCommand(request.RegistrationId), cancellationToken);
+
+        public Task<AuthTokens> LoginAsync(LoginRequest request, string ipAddress, CancellationToken cancellationToken = default) =>
+            loginHandler.Handle(new LoginCommand(request, ipAddress), cancellationToken);
+
+        public Task<AuthTokens> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default) =>
+            refreshTokenHandler.Handle(new RefreshTokenCommand(refreshToken), cancellationToken);
+
+        public Task<Guid> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default) =>
+            forgotPasswordHandler.Handle(new ForgotPasswordCommand(request.Email), cancellationToken);
+
+        public Task VerifyResetOtpAsync(VerifyResetOtpRequest request, CancellationToken cancellationToken = default) =>
+            verifyResetOtpHandler.Handle(new VerifyResetOtpCommand(request.ResetId, request.Otp), cancellationToken);
+
+        public Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default) =>
+            resetPasswordHandler.Handle(new ResetPasswordCommand(request.ResetId, request.Otp, request.NewPassword), cancellationToken);
+
+        public Task LogoutAsync(Guid userId, string? refreshToken, CancellationToken cancellationToken = default) =>
+            logoutHandler.Handle(new LogoutCommand(userId, refreshToken), cancellationToken);
+    }
+
+    private static TestAuthDispatcher CreateService(
         IUserRepository users,
         IAuthChallengeStore challenges,
         IEmailQueue email,
@@ -417,23 +455,20 @@ public sealed class AuthSecurityRegressionTests
             password,
             otp,
             redis,
-            email,
-            new RegisterRequestValidator(new AllowSchoolEmailValidator()));
+            email);
 
         var verifyOtpHandler = new VerifyOtpHandler(
             users,
             challenges,
             unitOfWork,
             otp,
-            redis,
-            new VerifyOtpRequestValidator());
+            redis);
 
         var resendOtpHandler = new ResendOtpHandler(
             challenges,
             otp,
             redis,
-            email,
-            new ResendOtpRequestValidator());
+            email);
 
         var loginHandler = new LoginHandler(
             users,
@@ -442,8 +477,7 @@ public sealed class AuthSecurityRegressionTests
             password,
             redis,
             new FakeJwtService(),
-            new FakeRefreshTokenFactory(),
-            new LoginRequestValidator());
+            new FakeRefreshTokenFactory());
 
         var refreshTokenHandler = new RefreshTokenHandler(
             users,
@@ -466,13 +500,11 @@ public sealed class AuthSecurityRegressionTests
             sha,
             redis,
             email,
-            NullLogger<ForgotPasswordHandler>.Instance,
-            new ForgotPasswordRequestValidator());
+            NullLogger<ForgotPasswordHandler>.Instance);
 
         var verifyResetOtpHandler = new VerifyResetOtpHandler(
             challenges,
-            otp,
-            new VerifyResetOtpRequestValidator());
+            otp);
 
         var resetPasswordHandler = new ResetPasswordHandler(
             users,
@@ -481,10 +513,9 @@ public sealed class AuthSecurityRegressionTests
             unitOfWork,
             password,
             otp,
-            redis,
-            new ResetPasswordRequestValidator());
+            redis);
 
-        return new AuthService(
+        return new TestAuthDispatcher(
             registerHandler,
             verifyOtpHandler,
             resendOtpHandler,

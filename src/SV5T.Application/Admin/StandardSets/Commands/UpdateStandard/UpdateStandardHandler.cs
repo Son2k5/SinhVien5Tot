@@ -1,8 +1,6 @@
-using FluentValidation;
 using MediatR;
 using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Admin.StandardSets.Common;
-using SV5T.Application.Auth.Support;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Standards.Abstractions;
@@ -14,69 +12,68 @@ public sealed class UpdateStandardHandler(
     IStandardSetRepository standardSetRepository,
     IStandardRepository standardRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser,
-    IValidator<UpdateStandardRequest> validator
+    ICurrentUser currentUser
 ) : IRequestHandler<UpdateStandardCommand, StandardResponse>
 {
-    public async Task<StandardResponse> Handle(UpdateStandardCommand request, CancellationToken cancellationToken)
+    public async Task<StandardResponse> Handle(UpdateStandardCommand command, CancellationToken cancellationToken)
     {
-        await AuthServiceSupport.ValidateAsync(validator, request.Request, cancellationToken);
+        var updateRequest = command.Request;
         var standardSet =
             await standardSetRepository.GetByIdAsync(
-                request.StandardSetId,
+                command.StandardSetId,
                 tracking: false,
                 cancellationToken: cancellationToken
             )
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
+                "Không tìm thấy bộ tiêu chuẩn.",
                 "standard_set_not_found"
             );
         if (standardSet.Status != StandardSetStatus.Draft)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Khong the chinh sua tieu chuan cua bo tieu chuan da cong bo (Published).",
+                "Không thể chỉnh sửa tiêu chuẩn của bộ tiêu chuẩn đã công bố (Published).",
                 "standard_set_not_editable"
             );
         var standard =
-            await standardRepository.GetByIdAsync(request.StandardId, true, true, cancellationToken)
+            await standardRepository.GetByIdAsync(command.StandardId, true, true, cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay tieu chuan.",
+                "Không tìm thấy tiêu chuẩn.",
                 "standard_not_found"
             );
-        if (standard.StandardSetId != request.StandardSetId)
+        if (standard.StandardSetId != command.StandardSetId)
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Tieu chuan khong thuoc bo tieu chuan duoc chi dinh.",
+                "Tiêu chuẩn không thuộc bộ tiêu chuẩn được chỉ định.",
                 "invalid_standard_scope"
             );
         if (
-            !string.IsNullOrWhiteSpace(request.Request.Code)
-            && !string.Equals(standard.Code, request.Request.Code.Trim(), StringComparison.OrdinalIgnoreCase)
+            !string.IsNullOrWhiteSpace(updateRequest.Code)
+            && !string.Equals(standard.Code, updateRequest.Code.Trim(), StringComparison.OrdinalIgnoreCase)
         )
         {
             var codeExists = await standardRepository.ExistsCodeInStandardSetAsync(
-                request.StandardSetId,
-                request.Request.Code.Trim(),
-                excludeId: request.StandardId,
+                command.StandardSetId,
+                updateRequest.Code.Trim(),
+                excludeId: command.StandardId,
                 cancellationToken: cancellationToken
             );
             if (codeExists)
                 throw new UseCaseException(
                     ApplicationErrorKind.Conflict,
-                    $"Ma tieu chuan '{request.Request.Code.Trim()}' da ton tai trong bo tieu chuan nay.",
+                    $"Mã tiêu chuẩn '{updateRequest.Code.Trim()}' đã tồn tại trong bộ tiêu chuẩn này.",
                     "standard_code_duplicate"
                 );
-            standard.Code = request.Request.Code.Trim();
+            standard.Code = updateRequest.Code.Trim();
         }
         var actorId = RequireAdminUserId();
-        standard.GroupCode = request.Request.GroupCode;
-        standard.Title = request.Request.Title.Trim();
-        standard.Description = request.Request.Description?.Trim();
-        standard.DisplayOrder = request.Request.DisplayOrder;
-        standard.Operator = request.Request.Operator;
-        standard.MinimumSatisfied = request.Request.MinimumSatisfied;
+        standard.GroupCode = updateRequest.GroupCode;
+        standard.Title = updateRequest.Title.Trim();
+        standard.Description = updateRequest.Description?.Trim();
+        standard.DisplayOrder = updateRequest.DisplayOrder;
+        standard.Operator = updateRequest.Operator;
+        standard.MinimumSatisfied = updateRequest.MinimumSatisfied;
         standard.UpdatedAt = DateTime.UtcNow;
         standard.UpdatedBy = actorId.ToString();
         await standardRepository.UpdateAsync(standard, cancellationToken);
@@ -88,6 +85,7 @@ public sealed class UpdateStandardHandler(
         currentUser.UserId
         ?? throw new UseCaseException(
             ApplicationErrorKind.Unauthorized,
-            "Khong xac dinh duoc danh tinh nguoi dung hien tai."
+            "Không xác định được danh tính người dùng hiện tại."
         );
 }
+

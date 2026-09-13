@@ -175,7 +175,7 @@ public sealed class AuthRedisStore(
     }
 
     private static bool IsBlocked(RedisValue value, int maximum) =>
-        value.TryParse(out int attempts) && attempts >= maximum;
+        !value.IsNullOrEmpty && value.TryParse(out int attempts) && attempts >= maximum;
 
     private string UserSecurityVersionKey(Guid userId) => Key($"auth:user-sv:{userId:D}");
 
@@ -199,6 +199,10 @@ public sealed class AuthRedisStore(
         try
         {
             var value = await db.StringGetAsync(key);
+            if (value.IsNullOrEmpty)
+            {
+                return null;
+            }
             if (value.TryParse(out int sv))
             {
                 return sv;

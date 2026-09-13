@@ -1,16 +1,17 @@
+using MediatR;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Users.Dtos;
 using SV5T.Domain.Users;
 
 namespace SV5T.Application.Users.Queries.GetUserById;
 
-public sealed record GetUserByIdQuery(Guid Id);
+public sealed record GetUserByIdQuery(Guid Id) : IRequest<UserDto?>;
 
 public sealed class GetUserByIdHandler(
     ICurrentUser currentUser,
-    IUserRepository userRepository) : IQueryHandler<GetUserByIdQuery, UserDto?>
+    IUserRepository userRepository) : IRequestHandler<GetUserByIdQuery, UserDto?>
 {
-    public async Task<UserDto?> HandleAsync(GetUserByIdQuery query, CancellationToken cancellationToken = default)
+    public async Task<UserDto?> Handle(GetUserByIdQuery query, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (currentUser.UserId != query.Id && !currentUser.IsInRole("Admin") && !currentUser.IsInRole("Mentor"))

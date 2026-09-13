@@ -9,19 +9,19 @@ namespace SV5T.Application.Admin.StandardSets.Commands.DeleteStandardSet;
 public sealed class DeleteStandardSetHandler(IStandardSetRepository standardSetRepository, IUnitOfWork unitOfWork)
     : IRequestHandler<DeleteStandardSetCommand, Unit>
 {
-    public async Task<Unit> Handle(DeleteStandardSetCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(DeleteStandardSetCommand command, CancellationToken cancellationToken)
     {
         var standardSet =
-            await standardSetRepository.GetByIdAsync(request.StandardSetId, true, true, true, cancellationToken)
+            await standardSetRepository.GetByIdAsync(command.StandardSetId, true, true, true, cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
+                "Không tìm thấy bộ tiêu chuẩn.",
                 "standard_set_not_found"
             );
         if (standardSet.Status != StandardSetStatus.Draft)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Khong the xoa bo tieu chuan da cong bo hoac dang su dung.",
+                "Không thể xóa bộ tiêu chuẩn đã công bố hoặc đang sử dụng.",
                 "standard_set_not_deletable"
             );
         await standardSetRepository.RemoveAsync(standardSet, cancellationToken);
@@ -29,3 +29,4 @@ public sealed class DeleteStandardSetHandler(IStandardSetRepository standardSetR
         return Unit.Value;
     }
 }
+

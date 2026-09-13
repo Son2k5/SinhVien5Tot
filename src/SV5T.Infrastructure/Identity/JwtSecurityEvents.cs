@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SV5T.Application.Common.Abstractions;
@@ -14,18 +15,31 @@ namespace SV5T.Infrastructure.Identity;
 
 public sealed class JwtSecurityEvents : JwtBearerEvents
 {
+    private readonly ILogger<JwtSecurityEvents>? _logger;
+
+    public JwtSecurityEvents()
+    {
+    }
+
+    public JwtSecurityEvents(ILogger<JwtSecurityEvents> logger)
+    {
+        _logger = logger;
+    }
     public override async Task TokenValidated(TokenValidatedContext context)
     {
         var principal = context.Principal;
         if (principal is null)
         {
+            LogDenied("missing_principal", null);
             context.Fail("Missing authenticated principal.");
             return;
         }
 
-        var subClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var subClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(subClaim, out var userId))
         {
+            LogDenied("invalid_sub", userId: null);
             context.Fail("Missing or invalid sub claim.");
             return;
         }
@@ -37,6 +51,7 @@ public sealed class JwtSecurityEvents : JwtBearerEvents
                 CultureInfo.InvariantCulture,
                 out var tokenSv))
         {
+            LogDenied("invalid_sv_claim", userId);
             context.Fail("Missing or invalid security version claim.");
             return;
         }
@@ -61,6 +76,7 @@ public sealed class JwtSecurityEvents : JwtBearerEvents
 
             if (user is null)
             {
+                LogDenied("user_not_found", userId);
                 context.Fail("User no longer exists.");
                 return;
             }
@@ -76,9 +92,34 @@ public sealed class JwtSecurityEvents : JwtBearerEvents
 
         if (tokenSv != currentSv)
         {
+            _logger?.LogWarning(
+                "Jwt TokenValidated denied: reason={Reason} userId={UserId} tokenSv={TokenSv} currentSv={CurrentSv} redisHit={RedisHit}",
+                "sv_mismatch",
+                userId,
+                tokenSv,
+                currentSv,
+                cachedSv.HasValue);
             context.Fail("Token has been invalidated.");
         }
     }
+
+    public override async Task AuthenticationFailed(AuthenticationFailedContext context)
+    {
+        // Ghi lý do thật (signature/lifetime/issuer/audience/key) ra log server.
+        // Client vẫn chỉ nhận 401 generic từ Challenge() để không lộ secret.
+        _logger?.LogWarning(
+            context.Exception,
+            "Jwt AuthenticationFailed: {ExceptionType} traceId={TraceId}",
+            context.Exception.GetType().Name,
+            context.HttpContext.TraceIdentifier);
+        await Task.CompletedTask;
+    }
+
+    private void LogDenied(string reason, Guid? userId) =>
+        _logger?.LogWarning(
+            "Jwt TokenValidated denied: reason={Reason} userId={UserId}",
+            reason,
+            userId);
 
     public override async Task Challenge(JwtBearerChallengeContext context)
     {

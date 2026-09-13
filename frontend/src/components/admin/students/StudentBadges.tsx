@@ -7,15 +7,11 @@ import {
   type SubmissionStatus,
 } from '../../../types/admin/student';
 import {
-  BadgeCheck,
-  BadgeX,
   CheckCircle2,
   Clock3,
   FileEdit,
   FileWarning,
   FileX2,
-  Lock,
-  Unlock,
   XCircle,
   History,
   Send,
@@ -28,27 +24,19 @@ const base =
 
 export function VerifiedBadge({ verified, onDark }: { verified: boolean; onDark?: boolean }) {
   if (onDark) {
-    return verified ? (
-      <span className={`${base} border-white/40 bg-white/20 text-white backdrop-blur`}>
-        <BadgeCheck size={13} className="shrink-0" />
-        Đã xác minh
-      </span>
-    ) : (
-      <span className={`${base} border-white/40 bg-white/10 text-white/90 backdrop-blur`}>
-        <BadgeX size={13} className="shrink-0" />
-        Chưa xác minh
+    return (
+      <span className={`text-xs font-normal whitespace-nowrap ${verified ? 'text-white' : 'text-white/70'}`}>
+        {verified ? 'Đã xác minh' : 'Chưa xác minh'}
       </span>
     );
   }
-  return verified ? (
-    <span className={`${base} border-emerald-200/80 bg-emerald-50/90 text-emerald-700`}>
-      <BadgeCheck size={13} className="shrink-0" />
-      Đã xác minh
-    </span>
-  ) : (
-    <span className={`${base} border-slate-200 bg-slate-100/80 text-slate-500`}>
-      <BadgeX size={13} className="shrink-0" />
-      Chưa xác minh
+  return (
+    <span
+      className={`text-xs font-normal whitespace-nowrap ${
+        verified ? 'text-slate-800' : 'text-slate-500'
+      }`}
+    >
+      {verified ? 'Đã xác minh' : 'Chưa xác minh'}
     </span>
   );
 }
@@ -56,27 +44,25 @@ export function VerifiedBadge({ verified, onDark }: { verified: boolean; onDark?
 export function ActiveBadge({ active, onDark }: { active: boolean; onDark?: boolean }) {
   if (onDark) {
     return active ? (
-      <span className={`${base} border-white/40 bg-white/20 text-white backdrop-blur`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0 ring-2 ring-white/40" />
-        <Unlock size={12} className="shrink-0" />
+      <span className={`${base} border-emerald-400/40 bg-emerald-500/20 text-emerald-100 backdrop-blur`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
         Đang hoạt động
       </span>
     ) : (
-      <span className={`${base} border-white/40 bg-rose-500/25 text-white backdrop-blur`}>
-        <Lock size={12} className="shrink-0" />
+      <span className={`${base} border-rose-400/40 bg-rose-500/25 text-rose-100 backdrop-blur`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
         Đã khóa
       </span>
     );
   }
   return active ? (
-    <span className={`${base} border-sky-200/80 bg-sky-50/90 text-sky-700`}>
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-      <Unlock size={12} className="shrink-0" />
+    <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
       Đang hoạt động
     </span>
   ) : (
     <span className={`${base} border-rose-200 bg-rose-50 text-rose-700`}>
-      <Lock size={12} className="shrink-0" />
+      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
       Đã khóa
     </span>
   );

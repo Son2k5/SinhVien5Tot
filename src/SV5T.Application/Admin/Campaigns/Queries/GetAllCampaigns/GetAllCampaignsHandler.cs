@@ -31,7 +31,7 @@ public sealed class GetAllCampaignsHandler(ICampaignRepository campaignRepositor
             campaign.AwardType,
             campaign.Status,
             campaign.StandardSetId,
-            campaign.StandardSet?.AcademicYear,
+            campaign.StandardSet?.Name ?? campaign.StandardSet?.AcademicYear,
             campaign.PrerequisiteCampaignId,
             campaign.PrerequisiteCampaign?.Name,
             campaign.RegOpenAt,

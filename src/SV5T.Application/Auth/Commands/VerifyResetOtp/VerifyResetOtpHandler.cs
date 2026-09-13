@@ -1,36 +1,31 @@
-using FluentValidation;
-using SV5T.Application.Auth.Dtos;
+using MediatR;
 using SV5T.Application.Auth.Support;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Domain.Auth.Enums;
 
 namespace SV5T.Application.Auth.Commands.VerifyResetOtp;
 
-public sealed record VerifyResetOtpCommand(VerifyResetOtpRequest Request);
+public sealed record VerifyResetOtpCommand(Guid ResetId, string Otp) : IRequest;
 
 public sealed class VerifyResetOtpHandler(
     IAuthChallengeStore challengeStore,
-    IOtpService otpService,
-    IValidator<VerifyResetOtpRequest> verifyResetOtpValidator) : ICommandHandler<VerifyResetOtpCommand>
+    IOtpService otpService) : IRequestHandler<VerifyResetOtpCommand>
 {
-    public async Task HandleAsync(VerifyResetOtpCommand command, CancellationToken cancellationToken = default)
+    public async Task Handle(VerifyResetOtpCommand command, CancellationToken cancellationToken)
     {
-        var request = command.Request;
-        await AuthServiceSupport.ValidateAsync(
-            verifyResetOtpValidator, request, cancellationToken);
         var now = DateTime.UtcNow;
-        var challenge = await challengeStore.GetAsync(request.ResetId, cancellationToken);
+        var challenge = await challengeStore.GetAsync(command.ResetId, cancellationToken);
         AuthServiceSupport.EnsureChallengeUsable(
             challenge,
             AuthChallengePurpose.PasswordReset,
             now);
-        var submittedHash = otpService.Hash(request.Otp);
+        var submittedHash = otpService.Hash(command.Otp);
         if (otpService.FixedTimeEquals(submittedHash, challenge!.OtpHash))
         {
             return;
         }
         _ = await challengeStore.IncrementFailureAsync(
-            request.ResetId,
+            command.ResetId,
             AuthChallengePurpose.PasswordReset,
             now,
             cancellationToken);

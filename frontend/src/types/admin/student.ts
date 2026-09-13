@@ -92,6 +92,14 @@ export interface AdminStudentDetail {
   evidenceGroups: AdminStudentEvidenceGroup[]; reviewLogs: AdminStudentReviewLog[];
 }
 export interface DeleteStudentRequest { confirm: boolean; reason?: string | null; }
+export interface BatchDeleteStudentsRequest {
+  ids: string[];
+  confirm?: boolean;
+  reason?: string | null;
+}
+export interface BatchDeleteStudentsResponse {
+  deletedCount: number;
+}
 export interface LockStudentRequest { reason?: string | null; }
 export interface UnlockStudentRequest { reason?: string | null; }
 export interface ReviewStudentEvidenceRequest {

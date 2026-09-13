@@ -12,40 +12,40 @@ public sealed class DeleteStandardHandler(
     IUnitOfWork unitOfWork
 ) : IRequestHandler<DeleteStandardCommand, Unit>
 {
-    public async Task<Unit> Handle(DeleteStandardCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(DeleteStandardCommand command, CancellationToken cancellationToken)
     {
         var standardSet =
             await standardSetRepository.GetByIdAsync(
-                request.StandardSetId,
+                command.StandardSetId,
                 tracking: false,
                 cancellationToken: cancellationToken
             )
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
+                "Không tìm thấy bộ tiêu chuẩn.",
                 "standard_set_not_found"
             );
         if (standardSet.Status != StandardSetStatus.Draft)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Khong the xoa tieu chuan cua bo tieu chuan da cong bo (Published).",
+                "Không thể xóa tiêu chuẩn của bộ tiêu chuẩn đã công bố (Published).",
                 "standard_set_not_editable"
             );
         var standard =
             await standardRepository.GetByIdAsync(
-                request.StandardId,
+                command.StandardId,
                 tracking: true,
                 cancellationToken: cancellationToken
             )
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay tieu chuan.",
+                "Không tìm thấy tiêu chuẩn.",
                 "standard_not_found"
             );
-        if (standard.StandardSetId != request.StandardSetId)
+        if (standard.StandardSetId != command.StandardSetId)
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Tieu chuan khong thuoc bo tieu chuan duoc chi dinh.",
+                "Tiêu chuẩn không thuộc bộ tiêu chuẩn được chỉ định.",
                 "invalid_standard_scope"
             );
         await standardRepository.RemoveAsync(standard, cancellationToken);
@@ -53,3 +53,4 @@ public sealed class DeleteStandardHandler(
         return Unit.Value;
     }
 }
+

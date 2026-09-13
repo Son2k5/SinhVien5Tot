@@ -404,15 +404,18 @@ export function StudentDetailModal({
                 navigate(`/admin/students/${studentId}`);
               }
             }}
-             className="btn-compact inline-flex items-center justify-center gap-1.5 whitespace-nowrap leading-none"
+            className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg bg-[#1683ff] text-white hover:bg-[#0866db] active:scale-[0.98] shadow-xs hover:shadow-sm font-inter font-normal text-[13px] whitespace-nowrap transition-all cursor-pointer"
+            style={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}
           >
-            <ExternalLink size={14} className="shrink-0" /> <span className="leading-none">Mở trang quản trị đầy đủ</span>
+            <ExternalLink size={14} className="shrink-0" />
+            <span>Mở trang quản trị đầy đủ</span>
           </button>
 
           <button
             type="button"
             onClick={onClose}
-             className="btn-compact-outline inline-flex items-center justify-center whitespace-nowrap leading-none"
+            className="inline-flex items-center justify-center h-9 px-4 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98] font-inter font-normal text-[13px] whitespace-nowrap transition-colors cursor-pointer"
+            style={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}
           >
             Đóng
           </button>

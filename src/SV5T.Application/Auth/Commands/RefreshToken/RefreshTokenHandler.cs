@@ -1,3 +1,4 @@
+using MediatR;
 using SV5T.Application.Auth.Dtos;
 using SV5T.Application.Auth.Support;
 using SV5T.Application.Common.Abstractions;
@@ -7,7 +8,7 @@ using SV5T.Domain.Users;
 
 namespace SV5T.Application.Auth.Commands.RefreshToken;
 
-public sealed record RefreshTokenCommand(string RefreshToken);
+public sealed record RefreshTokenCommand(string RefreshToken) : IRequest<AuthTokens>;
 
 public sealed class RefreshTokenHandler(
     IUserRepository userRepository,
@@ -15,9 +16,9 @@ public sealed class RefreshTokenHandler(
     IUnitOfWork unitOfWork,
     ISha256Hasher sha256Hasher,
     IJwtService jwtService,
-    IRefreshTokenFactory refreshTokenFactory) : ICommandHandler<RefreshTokenCommand, AuthTokens>
+    IRefreshTokenFactory refreshTokenFactory) : IRequestHandler<RefreshTokenCommand, AuthTokens>
 {
-    public async Task<AuthTokens> HandleAsync(RefreshTokenCommand command, CancellationToken cancellationToken = default)
+    public async Task<AuthTokens> Handle(RefreshTokenCommand command, CancellationToken cancellationToken)
     {
         var refreshToken = command.RefreshToken;
         if (!refreshTokenFactory.TryGetTokenId(refreshToken, out var oldTokenId))

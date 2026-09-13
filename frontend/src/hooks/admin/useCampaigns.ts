@@ -74,10 +74,18 @@ export function useCampaignMutations() {
     },
   });
 
+  const batchDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) => campaignService.batchDelete(ids),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: campaignQueryKeys.all });
+    },
+  });
+
   return {
     createCampaign: createMutation,
     updateCampaign: updateMutation,
     updateCampaignStatus: updateStatusMutation,
     deleteCampaign: deleteMutation,
+    batchDeleteCampaigns: batchDeleteMutation,
   };
 }

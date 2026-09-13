@@ -33,7 +33,14 @@ public interface ICampaignRepository
         Guid? excludeId = null,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Campaign>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        bool includeDetails = false,
+        bool tracking = false,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(Campaign campaign, CancellationToken cancellationToken = default);
     Task UpdateAsync(Campaign campaign, CancellationToken cancellationToken = default);
     Task RemoveAsync(Campaign campaign, CancellationToken cancellationToken = default);
+    Task RemoveRangeAsync(IEnumerable<Campaign> campaigns, CancellationToken cancellationToken = default);
 }

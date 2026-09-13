@@ -50,4 +50,9 @@ export const campaignService = {
   async delete(id: string): Promise<void> {
     await apiClient.delete(`/admin/campaigns/${id}`);
   },
+
+  async batchDelete(ids: string[]): Promise<{ deletedCount: number }> {
+    const response = await apiClient.post<{ deletedCount: number }>('/admin/campaigns/batch-delete', { ids });
+    return response.data;
+  },
 };

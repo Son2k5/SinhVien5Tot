@@ -4,6 +4,7 @@ import type { AdminStudentListItem, StudentFilterParams } from '../../types/admi
 import { AdminPageHeader } from '../../components/admin/common/AdminPageHeader';
 import { ActiveBadge, VerifiedBadge } from '../../components/admin/students/StudentBadges';
 import { StudentDeleteDialog } from '../../components/admin/students/StudentDeleteDialog';
+import { BatchDeleteStudentDialog } from '../../components/admin/students/BatchDeleteStudentDialog';
 import {
   StudentFilterModal,
   StudentDetailModal,
@@ -13,7 +14,8 @@ import {
 import { sanitizeApiError } from '../../services/apiErrorSanitizer';
 import { useAuthStore } from '../../store/useAuthStore';
 import { canAccessAdmin, isAdmin } from '../../utils/authorization';
-import { AlertCircle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Eye, GraduationCap,
+import {
+  AlertCircle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Eye, GraduationCap,
   RefreshCw, Search, Trash2, Users, X, Lock, LockOpen,
   BadgeCheck, UserX, ArrowUpDown, ArrowUp, ArrowDown,
   SlidersHorizontal,
@@ -56,6 +58,7 @@ export function StudentListPage() {
   const [viewingStudent, setViewingStudent] = useState<AdminStudentListItem | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<AdminStudentListItem | null>(null);
+  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
   const [lockTarget, setLockTarget] = useState<AdminStudentListItem | null>(null);
   const [banner, setBanner] = useState<{ ok: boolean; msg: string } | null>(null);
   const currentUser = useAuthStore((s) => s.user);
@@ -90,7 +93,7 @@ export function StudentListPage() {
   }), [debounced, school, faculty, major, cls, cohort, schoolYear, activeF, verifiedF, showDeleted, sortBy, sortDir, pageIndex, pageSize]);
 
   const { data, isPending, isError, error, refetch } = useStudentsPaged(params);
-  const { deleteStudent, lockStudent, unlockStudent } = useStudentMutations();
+  const { deleteStudent, batchDeleteStudents, lockStudent, unlockStudent } = useStudentMutations();
   const items = data?.items ?? [];
   const total = data?.totalCount ?? 0;
   const totalPages = data?.totalPages ?? 0;
@@ -248,7 +251,25 @@ export function StudentListPage() {
     }
   };
 
+  const confirmBatchDelete = async (reason: string) => {
+    if (selected.size === 0) return;
+    try {
+      const ids = Array.from(selected);
+      const res = await batchDeleteStudents.mutateAsync({
+        ids,
+        confirm: true,
+        reason: reason || null,
+      });
+      setSelected(new Set());
+      setBanner({ ok: true, msg: `Đã xóa thành công ${res.deletedCount} sinh viên.` });
+    } catch (e) {
+      setBanner({ ok: false, msg: sanitizeApiError(e) });
+      throw e instanceof Error ? e : new Error(String(e));
+    }
+  };
+
   const allChecked = items.length > 0 && items.every((i) => selected.has(i.id));
+  const isIndeterminate = items.length > 0 && items.some((i) => selected.has(i.id)) && !allChecked;
 
   const effectivePageSize = data?.pageSize ?? pageSize;
   const effectivePageIndex = data?.pageIndex ?? pageIndex;
@@ -370,10 +391,20 @@ export function StudentListPage() {
         description="Tra cứu và quản lý danh sách hồ sơ sinh viên SV5T."
         actions={
           <>
+            {selected.size > 0 && canDelete && (
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteOpen(true)}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 text-xs font-normal shadow-xs hover:bg-rose-600 hover:text-white hover:shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <Trash2 size={13} strokeWidth={1.8} />
+                <span>Xóa đã chọn ({selected.size})</span>
+              </button>
+            )}
             <button
               type="button"
-               onClick={exportCsv}
-               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#d7f0df] text-[#1c7a45] text-xs font-normal shadow-xs hover:bg-[#bfe6cc] hover:text-[#145c34] hover:shadow-sm active:scale-[0.98] transition-[background-color,color,box-shadow] cursor-pointer"
+              onClick={exportCsv}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#d7f0df] text-[#1c7a45] text-xs font-normal shadow-xs hover:bg-[#bfe6cc] hover:text-[#145c34] hover:shadow-sm active:scale-[0.98] transition-[background-color,color,box-shadow] cursor-pointer"
             >
               <Download size={13} strokeWidth={1.8} />
               <span>Xuất CSV{selected.size > 0 ? ` (${selected.size})` : ''}</span>
@@ -381,7 +412,7 @@ export function StudentListPage() {
             <button
               type="button"
               onClick={() => void refetch()}
-               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#a6cffb] text-[#244a7d] text-xs font-normal shadow-xs hover:bg-[#8fbff9] hover:text-[#1a3a65] hover:shadow-sm active:scale-[0.98] transition-[background-color,color,box-shadow] cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#a6cffb] text-[#244a7d] text-xs font-normal shadow-xs hover:bg-[#8fbff9] hover:text-[#1a3a65] hover:shadow-sm active:scale-[0.98] transition-[background-color,color,box-shadow] cursor-pointer"
             >
               <RefreshCw size={13} strokeWidth={1.8} className={isPending ? 'animate-spin' : ''} />
               <span>Làm mới</span>
@@ -393,9 +424,8 @@ export function StudentListPage() {
       {/* Banner */}
       {banner && (
         <div
-          className={`px-4 py-2.5 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 ${
-            banner.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'
-          }`}
+          className={`px-4 py-2.5 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 ${banner.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'
+            }`}
         >
           <span>{banner.msg}</span>
           <button
@@ -433,180 +463,179 @@ export function StudentListPage() {
 
       {/* Unified card: Filter + Table - premium soft surface, clear rhythm  */}
       <div className="bg-white border border-slate-200/80 rounded-xl shadow-[0_8px_30px_-12px_rgba(30,58,138,0.18)] overflow-hidden">
-        {/* Zone 1: Filter toolbar - gọn, thấp */}
-        <div className="px-3 sm:px-4 py-2 space-y-1 bg-gradient-to-b from-slate-50/70 to-white">
+        {/* Zone 1: Filter toolbar - gọn, căn đều top/bottom */}
+        <div className="px-3 sm:px-4 pt-2.5 pb-2.5 space-y-1 bg-gradient-to-b from-slate-50/70 to-white">
           <div className="filter-no-ring flex flex-col lg:flex-row items-stretch lg:items-center gap-1.5">
             {/* Search - ngan 1 nua, nam ben trai */}
             <div className="relative w-full lg:w-[46%] lg:max-w-[490px] shrink-0">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Tìm kiếm theo họ tên, mã sinh viên (MSSV), email..."
-                    className="input-compact w-full !h-9 !rounded-md !bg-white pl-7 pr-8 !py-0 !text-[12px] !leading-9 font-medium !text-slate-900 placeholder:!text-slate-500 placeholder:font-normal focus:!border-slate-200 focus:!ring-0 focus:!outline-none focus:!shadow-none"
-                  />
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
-                </div>
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer transition-colors"
-                title="Xóa tìm kiếm"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-
-          {/* Cum phai: 2 selects + nut filter icon */}
-          <div className="flex flex-1 flex-col sm:flex-row sm:justify-end sm:items-center gap-1 lg:pl-2">
-            <div className="flex w-full sm:w-auto gap-1.5">
-              {/* Activity status */}
-              <div className="relative w-full sm:w-[150px] shrink-0">
-                <select
-                  value={activeF}
-                  onChange={(e) => handleActiveChange(e.target.value)}
-                  className="select-compact appearance-none w-full !h-9 !rounded-md !bg-white !pl-2.5 !pr-7 !py-0 !text-[12px] !leading-9 font-medium !text-slate-800 focus:!border-slate-200 focus:!ring-0 focus:!outline-none focus:!shadow-none"
-                >
-                  <option value="">Tất cả trạng thái</option>
-                  <option value="1">Đang hoạt động</option>
-                  <option value="0">Vô hiệu hoá</option>
-                </select>
-                <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm kiếm theo họ tên, mã sinh viên (MSSV), email..."
+                  className="w-full h-9 rounded-md border border-slate-300 hover:border-slate-400 bg-white pl-8 pr-8 py-0 text-[12px] leading-9 font-normal text-slate-900 placeholder:text-slate-400 focus:border-[#1683ff] focus:ring-1 focus:ring-[#1683ff]/25 focus:outline-none transition-colors shadow-2xs"
+                />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
               </div>
-              {/* Verification status */}
-              <div className="relative w-full sm:w-[150px] shrink-0">
-                <select
-                  value={verifiedF}
-                  onChange={(e) => handleVerifiedChange(e.target.value)}
-                  className="select-compact appearance-none w-full !h-9 !rounded-md !bg-white !pl-2.5 !pr-7 !py-0 !text-[12px] !leading-9 font-medium !text-slate-800 focus:!border-slate-200 focus:!ring-0 focus:!outline-none focus:!shadow-none"
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer transition-colors"
+                  title="Xóa tìm kiếm"
                 >
-                  <option value="">Tất cả xác minh</option>
-                  <option value="1">Đã xác minh</option>
-                  <option value="0">Chưa xác minh</option>
-                </select>
-                <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-              </div>
+                  <X size={12} />
+                </button>
+              )}
             </div>
 
-          {/* Nut filter chi icon */}
-          <div className="w-full sm:w-auto flex items-center justify-end shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsFilterModalOpen(true)}
-              title="Bộ lọc nâng cao"
-              aria-label="Bộ lọc nâng cao"
-               className={`relative !h-9 !w-9 !p-0 !rounded-md inline-flex items-center justify-center border transition-all cursor-pointer ${
-                 advancedFilterCount > 0
-                   ? 'bg-[#1683ff] text-white border-transparent shadow-[0_6px_16px_-6px_rgba(22,131,255,0.55)] hover:bg-[#0866db]'
-                   : 'bg-white text-slate-500 border-slate-200 hover:border-[#1683ff]/40 hover:text-[#0866db] hover:bg-[#f1f9ff]'
-               }`}
-            >
-              <SlidersHorizontal size={13} />
-              {advancedFilterCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-[#102340] text-white text-[11px] font-medium flex items-center justify-center">
-                  {advancedFilterCount}
+            {/* Cum phai: 2 selects + nut filter icon */}
+            <div className="flex flex-1 flex-col sm:flex-row sm:justify-end sm:items-center gap-1.5 lg:pl-2">
+              <div className="flex w-full sm:w-auto gap-1.5">
+                {/* Activity status */}
+                <div className="relative w-full sm:w-[150px] shrink-0">
+                  <select
+                    value={activeF}
+                    onChange={(e) => handleActiveChange(e.target.value)}
+                    className="appearance-none w-full h-9 rounded-md border border-slate-300 hover:border-slate-400 bg-white pl-2.5 pr-7 py-0 text-[12px] leading-9 font-normal text-slate-800 focus:border-[#1683ff] focus:ring-1 focus:ring-[#1683ff]/25 focus:outline-none cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1">Đang hoạt động</option>
+                    <option value="0">Vô hiệu hoá</option>
+                  </select>
+                  <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+                {/* Verification status */}
+                <div className="relative w-full sm:w-[150px] shrink-0">
+                  <select
+                    value={verifiedF}
+                    onChange={(e) => handleVerifiedChange(e.target.value)}
+                    className="appearance-none w-full h-9 rounded-md border border-slate-300 hover:border-slate-400 bg-white pl-2.5 pr-7 py-0 text-[12px] leading-9 font-normal text-slate-800 focus:border-[#1683ff] focus:ring-1 focus:ring-[#1683ff]/25 focus:outline-none cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <option value="">Tất cả xác minh</option>
+                    <option value="1">Đã xác minh</option>
+                    <option value="0">Chưa xác minh</option>
+                  </select>
+                  <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Nut filter chi icon */}
+              <div className="w-full sm:w-auto flex items-center justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsFilterModalOpen(true)}
+                  title="Bộ lọc nâng cao"
+                  aria-label="Bộ lọc nâng cao"
+                  className={`relative h-9 w-9 p-0 rounded-md inline-flex items-center justify-center border transition-all cursor-pointer shadow-2xs ${advancedFilterCount > 0
+                      ? 'bg-[#1683ff] text-white border-[#1683ff] shadow-[0_6px_16px_-6px_rgba(22,131,255,0.55)] hover:bg-[#0866db]'
+                      : 'bg-white text-slate-600 border-slate-300 hover:border-slate-400 hover:text-[#0866db] hover:bg-[#f1f9ff]'
+                    }`}
+                >
+                  <SlidersHorizontal size={13} />
+                  {advancedFilterCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-[#102340] text-white text-[11px] font-medium flex items-center justify-center">
+                      {advancedFilterCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Filter Chips */}
+          {totalFilterCount > 0 && (
+            <div className="pt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="text-[11px] font-normal text-slate-500 mr-0.5">Đang lọc:</span>
+
+              {debounced.trim() && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100/80 text-slate-600 font-normal text-[11px]">
+                  "{debounced}"
+                  <button type="button" onClick={() => setSearch('')} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
                 </span>
               )}
-            </button>
-          </div>
-          </div>
-        </div>
 
-        {/* Active Filter Chips */}
-        {totalFilterCount > 0 && (
-          <div className="pt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="text-[11px] font-normal text-slate-500 mr-0.5">Đang lọc:</span>
+              {faculty.trim() && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
+                  Khoa: {faculty}
+                  <button type="button" onClick={() => setFaculty('')} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
 
-            {debounced.trim() && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100/80 text-slate-600 font-normal text-[11px]">
-                "{debounced}"
-                <button type="button" onClick={() => setSearch('')} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
+              {major.trim() && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
+                  Ngành: {major}
+                  <button type="button" onClick={() => setMajor('')} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
 
-            {faculty.trim() && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
-                Khoa: {faculty}
-                <button type="button" onClick={() => setFaculty('')} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
+              {cls.trim() && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
+                  Lớp: {cls}
+                  <button type="button" onClick={() => setCls('')} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
 
-            {major.trim() && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
-                Ngành: {major}
-                <button type="button" onClick={() => setMajor('')} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
+              {cohort.trim() && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
+                  Khóa: {cohort}
+                  <button type="button" onClick={() => setCohort('')} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
 
-            {cls.trim() && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
-                Lớp: {cls}
-                <button type="button" onClick={() => setCls('')} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
+              {schoolYear.trim() && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
+                  Năm: {schoolYear}
+                  <button type="button" onClick={() => setSchoolYear('')} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
 
-            {cohort.trim() && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
-                Khóa: {cohort}
-                <button type="button" onClick={() => setCohort('')} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
+              {activeF !== '' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50/80 text-violet-600 font-normal text-[11px] border border-violet-100">
+                  {activeF === '1' ? 'Đang hoạt động' : 'Vô hiệu hóa'}
+                  <button type="button" onClick={() => setActiveF('')} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
 
-            {schoolYear.trim() && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-blue-600 font-normal text-[11px] border border-blue-100">
-                Năm: {schoolYear}
-                <button type="button" onClick={() => setSchoolYear('')} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
+              {verifiedF !== '' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50/80 text-emerald-600 font-normal text-[11px] border border-emerald-100">
+                  {verifiedF === '1' ? 'Đã xác minh' : 'Chưa xác minh'}
+                  <button type="button" onClick={() => setVerifiedF('')} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
 
-            {activeF !== '' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50/80 text-violet-600 font-normal text-[11px] border border-violet-100">
-                {activeF === '1' ? 'Đang hoạt động' : 'Vô hiệu hóa'}
-                <button type="button" onClick={() => setActiveF('')} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
-
-            {verifiedF !== '' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50/80 text-emerald-600 font-normal text-[11px] border border-emerald-100">
-                {verifiedF === '1' ? 'Đã xác minh' : 'Chưa xác minh'}
-                <button type="button" onClick={() => setVerifiedF('')} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
-
-            {showDeleted && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50/80 text-rose-600 font-normal text-[11px] border border-rose-100">
-                Đã xóa
-                <button type="button" onClick={() => setShowDeleted(false)} className="hover:text-rose-600 cursor-pointer">
-                  <X size={11} />
-                </button>
-              </span>
-            )}
+              {showDeleted && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50/80 text-rose-600 font-normal text-[11px] border border-rose-100">
+                  Đã xóa
+                  <button type="button" onClick={() => setShowDeleted(false)} className="hover:text-rose-600 cursor-pointer">
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
 
 
-          </div>
-        )}
+            </div>
+          )}
         </div>
         {/* Short divider: 120px centered gradient rule separating filter / table */}
-        <div className="flex items-center gap-2 px-2 sm:px-6 py-2">
+        <div className="flex items-center gap-2 px-2 sm:px-6 pt-0 pb-2.5">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-slate-200" />
           <div className="flex-1 h-px bg-gradient-to-l from-transparent via-slate-200 to-slate-200" />
         </div>
@@ -624,6 +653,9 @@ export function StudentListPage() {
                 {/* 1. Checkbox */}
                 <th className={col('check', 'py-3.5 text-center')} style={{ width: colWidths.check }}>
                   <input
+                    ref={(el) => {
+                      if (el) el.indeterminate = isIndeterminate;
+                    }}
                     type="checkbox"
                     checked={allChecked}
                     onChange={(e) => toggleAll(e.target.checked)}
@@ -806,7 +838,14 @@ export function StudentListPage() {
               {!isPending && !isError && items.map((s, idx) => (
                 <tr key={s.id} className="hover:bg-blue-50/60 transition-colors duration-200 hover:shadow-[inset_2px_0_0_0_#3b82f6]">
                   {/* Checkbox */}
-                  <td className="px-3 py-2.5 text-center align-middle overflow-hidden">
+                  <td
+                    className="px-3 py-2.5 text-center align-middle overflow-hidden cursor-pointer"
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).tagName !== 'INPUT') {
+                        toggleOne(s.id);
+                      }
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={selected.has(s.id)}
@@ -897,11 +936,10 @@ export function StudentListPage() {
                         <button
                           type="button"
                           onClick={() => setLockTarget(s)}
-                          className={`h-7 w-7 rounded-full flex items-center justify-center border shadow-sm transition-all cursor-pointer ${
-                            s.isActive
+                          className={`h-7 w-7 rounded-full flex items-center justify-center border shadow-sm transition-all cursor-pointer ${s.isActive
                               ? 'bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white border-amber-200 hover:border-amber-600'
                               : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border-emerald-200 hover:border-emerald-600'
-                          }`}
+                            }`}
                           title={s.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                           aria-label={`${s.isActive ? 'Khóa' : 'Mở khóa'} ${s.fullName || s.email}`}
                         >
@@ -1033,6 +1071,17 @@ export function StudentListPage() {
           isLoading={deleteStudent.isPending}
           onClose={() => setDeleting(null)}
           onConfirm={confirmDelete}
+        />
+      )}
+
+      {/* Batch Delete Dialog */}
+      {canDelete && (
+        <BatchDeleteStudentDialog
+          isOpen={isBatchDeleteOpen}
+          selectedCount={selected.size}
+          isLoading={batchDeleteStudents.isPending}
+          onClose={() => setIsBatchDeleteOpen(false)}
+          onConfirm={confirmBatchDelete}
         />
       )}
 

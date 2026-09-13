@@ -272,6 +272,7 @@ public sealed class CampaignRepository(ApplicationDbContext dbContext)
             query = query
                 .Include(x => x.StandardSet)
                 .Include(x => x.PrerequisiteCampaign)
+                .Include(x => x.DependentCampaigns)
                 .Include(x => x.Applications);
         }
 
@@ -381,9 +382,41 @@ public sealed class CampaignRepository(ApplicationDbContext dbContext)
         return Task.CompletedTask;
     }
 
+    public async Task<IReadOnlyList<Campaign>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        bool includeDetails = false,
+        bool tracking = false,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<Campaign> query = dbContext.Campaigns;
+
+        if (includeDetails)
+        {
+            query = query
+                .Include(x => x.StandardSet)
+                .Include(x => x.PrerequisiteCampaign)
+                .Include(x => x.DependentCampaigns)
+                .Include(x => x.Applications);
+        }
+
+        if (!tracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        var idList = ids.ToList();
+        return await query.Where(x => idList.Contains(x.Id)).ToListAsync(cancellationToken);
+    }
+
     public Task RemoveAsync(Campaign campaign, CancellationToken cancellationToken = default)
     {
         dbContext.Campaigns.Remove(campaign);
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveRangeAsync(IEnumerable<Campaign> campaigns, CancellationToken cancellationToken = default)
+    {
+        dbContext.Campaigns.RemoveRange(campaigns);
         return Task.CompletedTask;
     }
 }

@@ -16,21 +16,21 @@ public sealed class PublishStandardSetHandler(
 ) : IRequestHandler<PublishStandardSetCommand, StandardSetResponse>
 {
     public async Task<StandardSetResponse> Handle(
-        PublishStandardSetCommand request,
+        PublishStandardSetCommand command,
         CancellationToken cancellationToken
     )
     {
         var standardSet =
-            await standardSetRepository.GetByIdAsync(request.StandardSetId, true, true, true, cancellationToken)
+            await standardSetRepository.GetByIdAsync(command.StandardSetId, true, true, true, cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
+                "Không tìm thấy bộ tiêu chuẩn.",
                 "standard_set_not_found"
             );
         if (standardSet.Status != StandardSetStatus.Draft)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Chi co the cong bo bo tieu chuan dang o trang thai Nhap (Draft).",
+                "Chỉ có thể công bố bộ tiêu chuẩn đang ở trạng thái Nháp (Draft).",
                 "standard_set_not_draft"
             );
         if (standardSet.AwardType == AwardType.Individual)
@@ -43,10 +43,10 @@ public sealed class PublishStandardSetHandler(
                 StandardGroupCode.Volunteer,
                 StandardGroupCode.Integration,
             };
-            if (required.Any(g => !standardSet.Standards.Any(x => x.GroupCode == g)))
+            if (required.Any(groupCode => !standardSet.Standards.Any(standard => standard.GroupCode == groupCode)))
                 throw new UseCaseException(
                     ApplicationErrorKind.Validation,
-                    "Bo tieu chuan ca nhan phai co day du 5 tieu chuan goc (Dao duc, Hoc tap, The luc, Tinh nguyen, Hoi nhap).",
+                    "Bộ tiêu chuẩn cá nhân phải có đầy đủ 5 tiêu chuẩn gốc (Đạo đức, Học tập, Thể lực, Tình nguyện, Hội nhập).",
                     "missing_standard_groups"
                 );
         }
@@ -65,6 +65,7 @@ public sealed class PublishStandardSetHandler(
         currentUser.UserId
         ?? throw new UseCaseException(
             ApplicationErrorKind.Unauthorized,
-            "Khong xac dinh duoc danh tinh nguoi dung hien tai."
+            "Không xác định được danh tính người dùng hiện tại."
         );
 }
+

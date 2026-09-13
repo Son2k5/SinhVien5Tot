@@ -117,6 +117,7 @@ public static class AdminStandardMappings
     public static StandardSetResponse MapToSetResponse(StandardSet standardSet, bool includeStandards) =>
         new(
             standardSet.Id,
+            standardSet.Name,
             standardSet.AcademicYear,
             standardSet.Level,
             standardSet.AwardType,

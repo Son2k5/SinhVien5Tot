@@ -8,61 +8,65 @@ using SV5T.Domain.Standards.Enums;
 namespace SV5T.Application.Criteria.Commands.DeleteCriterion;
 
 public sealed class DeleteCriterionHandler(
-    IStandardRepository sr,
-    IStandardSetRepository ssr,
-    ICriterionRepository cr,
-    IUnitOfWork uow
+    IStandardRepository standardRepository,
+    IStandardSetRepository standardSetRepository,
+    ICriterionRepository criterionRepository,
+    IUnitOfWork unitOfWork
 ) : IRequestHandler<DeleteCriterionCommand, MediatR.Unit>
 {
-    public async Task<MediatR.Unit> Handle(DeleteCriterionCommand req, CancellationToken ct)
+    public async Task<MediatR.Unit> Handle(DeleteCriterionCommand request, CancellationToken cancellationToken)
     {
         var standard =
-            await sr.GetByIdAsync(req.StandardId, tracking: false, cancellationToken: ct)
+            await standardRepository.GetByIdAsync(request.StandardId, tracking: false, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay tieu chuan.",
-                "standard_not_found"
-            );
-        var set =
-            await ssr.GetByIdAsync(standard.StandardSetId, tracking: false, cancellationToken: ct)
+                "Không tìm thấy tiêu chuẩn.",
+                "standard_not_found");
+
+        var standardSet =
+            await standardSetRepository.GetByIdAsync(standard.StandardSetId, tracking: false, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
-                "standard_set_not_found"
-            );
-        if (set.Status != StandardSetStatus.Draft)
+                "Không tìm thấy bộ tiêu chuẩn tương ứng.",
+                "standard_set_not_found");
+
+        if (standardSet.Status != StandardSetStatus.Draft)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Khong the xoa khi bo da cong bo.",
-                "standard_set_not_editable"
-            );
-        var c =
-            await cr.GetByIdAsync(req.CriterionId, tracking: true, cancellationToken: ct)
+                "Không thể xóa tiêu chí của bộ tiêu chuẩn đã công bố (Published).",
+                "standard_set_not_editable");
+
+        var criterion =
+            await criterionRepository.GetByIdAsync(request.CriterionId, tracking: true, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay tieu chi.",
-                "criterion_not_found"
-            );
-        if (c.StandardId != req.StandardId)
+                "Không tìm thấy tiêu chí.",
+                "criterion_not_found");
+
+        if (criterion.StandardId != request.StandardId)
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Tieu chi khong thuoc tieu chuan.",
-                "invalid_criterion_scope"
-            );
-        var all = await cr.GetByStandardIdAsync(req.StandardId, ct);
-        var toDelete = new HashSet<Guid> { req.CriterionId };
-        void Collect(Guid pid)
+                "Tiêu chí không thuộc tiêu chuẩn được chỉ định.",
+                "invalid_criterion_scope");
+
+        var allCriteria = await criterionRepository.GetByStandardIdAsync(request.StandardId, cancellationToken);
+        var toDeleteIds = new HashSet<Guid> { request.CriterionId };
+
+        void CollectDescendantIds(Guid parentId)
         {
-            foreach (var ch in all.Where(x => x.ParentCriterionId == pid))
+            foreach (var child in allCriteria.Where(x => x.ParentCriterionId == parentId))
             {
-                if (toDelete.Add(ch.Id))
-                    Collect(ch.Id);
+                if (toDeleteIds.Add(child.Id))
+                    CollectDescendantIds(child.Id);
             }
         }
-        Collect(req.CriterionId);
-        var list = all.Where(x => toDelete.Contains(x.Id)).ToList();
-        await cr.RemoveRangeAsync(list, ct);
-        await uow.SaveChangesAsync(ct);
+
+        CollectDescendantIds(request.CriterionId);
+        var criteriaToDelete = allCriteria.Where(x => toDeleteIds.Contains(x.Id)).ToList();
+
+        await criterionRepository.RemoveRangeAsync(criteriaToDelete, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return MediatR.Unit.Value;
     }
 }
+

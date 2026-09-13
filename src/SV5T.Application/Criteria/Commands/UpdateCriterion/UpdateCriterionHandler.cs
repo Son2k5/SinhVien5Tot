@@ -1,8 +1,6 @@
-using FluentValidation;
 using MediatR;
 using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Admin.StandardSets.Common;
-using SV5T.Application.Auth.Support;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Criteria.Abstractions;
@@ -13,102 +11,107 @@ using SV5T.Domain.Standards.Enums;
 namespace SV5T.Application.Criteria.Commands.UpdateCriterion;
 
 public sealed class UpdateCriterionHandler(
-    IStandardRepository sr,
-    IStandardSetRepository ssr,
-    ICriterionRepository cr,
-    IUnitOfWork uow,
-    ICurrentUser cu,
-    IValidator<UpdateCriterionRequest> v
+    IStandardRepository standardRepository,
+    IStandardSetRepository standardSetRepository,
+    ICriterionRepository criterionRepository,
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser
 ) : IRequestHandler<UpdateCriterionCommand, CriterionResponse>
 {
-    public async Task<CriterionResponse> Handle(UpdateCriterionCommand req, CancellationToken ct)
+    public async Task<CriterionResponse> Handle(UpdateCriterionCommand request, CancellationToken cancellationToken)
     {
-        await AuthServiceSupport.ValidateAsync(v, req.Request, ct);
         var standard =
-            await sr.GetByIdAsync(req.StandardId, tracking: false, cancellationToken: ct)
+            await standardRepository.GetByIdAsync(request.StandardId, tracking: false, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay tieu chuan.",
-                "standard_not_found"
-            );
-        var set =
-            await ssr.GetByIdAsync(standard.StandardSetId, tracking: false, cancellationToken: ct)
+                "Không tìm thấy tiêu chuẩn.",
+                "standard_not_found");
+
+        var standardSet =
+            await standardSetRepository.GetByIdAsync(standard.StandardSetId, tracking: false, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
-                "standard_set_not_found"
-            );
-        if (set.Status != StandardSetStatus.Draft)
+                "Không tìm thấy bộ tiêu chuẩn tương ứng.",
+                "standard_set_not_found");
+
+        if (standardSet.Status != StandardSetStatus.Draft)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Khong the sua tieu chi khi bo da cong bo.",
-                "standard_set_not_editable"
-            );
-        var c =
-            await cr.GetByIdAsync(req.CriterionId, tracking: true, cancellationToken: ct)
+                "Không thể chỉnh sửa tiêu chí của bộ tiêu chuẩn đã công bố (Published).",
+                "standard_set_not_editable");
+
+        var criterion =
+            await criterionRepository.GetByIdAsync(request.CriterionId, tracking: true, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay tieu chi.",
-                "criterion_not_found"
-            );
-        if (c.StandardId != req.StandardId)
+                "Không tìm thấy tiêu chí.",
+                "criterion_not_found");
+
+        if (criterion.StandardId != request.StandardId)
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Tieu chi khong thuoc tieu chuan.",
-                "invalid_criterion_scope"
-            );
-        if (
-            !string.IsNullOrWhiteSpace(req.Request.Code)
-            && !string.Equals(c.Code, req.Request.Code.Trim(), StringComparison.OrdinalIgnoreCase)
-        )
+                "Tiêu chí không thuộc tiêu chuẩn được chỉ định.",
+                "invalid_criterion_scope");
+
+        if (!string.IsNullOrWhiteSpace(request.Request.Code) &&
+            !string.Equals(criterion.Code, request.Request.Code.Trim(), StringComparison.OrdinalIgnoreCase))
         {
-            var ex = await cr.ExistsCodeInStandardAsync(
-                req.StandardId,
-                req.Request.Code.Trim(),
-                excludeId: req.CriterionId,
-                cancellationToken: ct
-            );
-            if (ex)
+            var codeExists = await criterionRepository.ExistsCodeInStandardAsync(
+                request.StandardId,
+                request.Request.Code.Trim(),
+                excludeId: request.CriterionId,
+                cancellationToken: cancellationToken);
+
+            if (codeExists)
                 throw new UseCaseException(
                     ApplicationErrorKind.Conflict,
-                    $"Ma '{req.Request.Code.Trim()}' da dung.",
-                    "criterion_code_duplicate"
-                );
-            c.Code = req.Request.Code.Trim();
+                    $"Mã tiêu chí '{request.Request.Code.Trim()}' đã được sử dụng bởi tiêu chí khác.",
+                    "criterion_code_duplicate");
+
+            criterion.Code = request.Request.Code.Trim();
         }
-        if (req.Request.ParentCriterionId.HasValue)
+
+        if (request.Request.ParentCriterionId.HasValue)
         {
-            if (req.Request.ParentCriterionId.Value == req.CriterionId)
+            if (request.Request.ParentCriterionId.Value == request.CriterionId)
                 throw new UseCaseException(
                     ApplicationErrorKind.Validation,
-                    "Khong tu lam cha.",
-                    "self_referencing_criterion"
-                );
-            var p = await cr.GetByIdAsync(req.Request.ParentCriterionId.Value, cancellationToken: ct);
-            if (p is null || p.StandardId != req.StandardId || p.Type != CriterionType.Group)
+                    "Tiêu chí không thể tự làm cha của chính mình.",
+                    "self_referencing_criterion");
+
+            var parent = await criterionRepository.GetByIdAsync(
+                request.Request.ParentCriterionId.Value,
+                cancellationToken: cancellationToken);
+
+            if (parent is null || parent.StandardId != request.StandardId || parent.Type != CriterionType.Group)
                 throw new UseCaseException(
                     ApplicationErrorKind.Validation,
-                    "Tieu chi cha khong hop le.",
-                    "invalid_parent_criterion"
-                );
+                    "Tiêu chí cha không hợp lệ hoặc không thuộc loại Nhóm (Group).",
+                    "invalid_parent_criterion");
         }
-        var actor = cu.UserId ?? throw new UseCaseException(ApplicationErrorKind.Unauthorized, "Khong xac dinh user.");
-        c.ParentCriterionId = req.Request.ParentCriterionId;
-        c.Type = req.Request.Type;
-        if (!string.IsNullOrWhiteSpace(req.Request.Code))
-            c.Code = req.Request.Code.Trim();
-        c.Title = req.Request.Title.Trim();
-        c.Description = req.Request.Description?.Trim();
-        c.DisplayOrder = req.Request.DisplayOrder;
-        c.Operator = req.Request.Operator;
-        c.MinimumSatisfied = req.Request.MinimumSatisfied;
-        c.EvaluationType = req.Request.EvaluationType;
-        c.DefinitionJson = req.Request.DefinitionJson;
-        c.ReviewGuidance = req.Request.ReviewGuidance?.Trim();
-        c.UpdatedAt = DateTime.UtcNow;
-        c.UpdatedBy = actor.ToString();
-        await cr.UpdateAsync(c, ct);
-        await uow.SaveChangesAsync(ct);
-        return AdminStandardMappings.MapToCriterionResponse(c);
+
+        var actorId = currentUser.UserId ?? throw new UseCaseException(
+            ApplicationErrorKind.Unauthorized,
+            "Không xác định được danh tính người dùng hiện tại.");
+
+        criterion.ParentCriterionId = request.Request.ParentCriterionId;
+        criterion.Type = request.Request.Type;
+        if (!string.IsNullOrWhiteSpace(request.Request.Code))
+            criterion.Code = request.Request.Code.Trim();
+        criterion.Title = request.Request.Title.Trim();
+        criterion.Description = request.Request.Description?.Trim();
+        criterion.DisplayOrder = request.Request.DisplayOrder;
+        criterion.Operator = request.Request.Operator;
+        criterion.MinimumSatisfied = request.Request.MinimumSatisfied;
+        criterion.EvaluationType = request.Request.EvaluationType;
+        criterion.DefinitionJson = request.Request.DefinitionJson;
+        criterion.ReviewGuidance = request.Request.ReviewGuidance?.Trim();
+        criterion.UpdatedAt = DateTime.UtcNow;
+        criterion.UpdatedBy = actorId.ToString();
+
+        await criterionRepository.UpdateAsync(criterion, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return AdminStandardMappings.MapToCriterionResponse(criterion);
     }
 }
+

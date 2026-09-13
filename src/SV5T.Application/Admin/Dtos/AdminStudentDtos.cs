@@ -116,6 +116,14 @@ public sealed record AdminStudentDetailResponse(
 
 public sealed record DeleteStudentRequest(bool Confirm, string? Reason);
 
+public sealed record BatchDeleteStudentsRequest(
+    IReadOnlyList<Guid> Ids,
+    bool Confirm = true,
+    string? Reason = null
+);
+
+public sealed record BatchDeleteStudentsResponse(int DeletedCount);
+
 public sealed record LockStudentRequest(string? Reason);
 
 public sealed record UnlockStudentRequest(string? Reason);

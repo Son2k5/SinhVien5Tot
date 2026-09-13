@@ -1,9 +1,9 @@
 using SV5T.Application.Admin.Dtos;
-using SV5T.Application.Admin.Validators;
+using SV5T.Application.Criteria.Abstractions;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
-using SV5T.Application.Criteria.Abstractions;
-using SV5T.Application.Criteria.Services;
+using SV5T.Application.Criteria.Commands.AddCriterion;
+using SV5T.Application.Criteria.Commands.DeleteCriterion;
 using SV5T.Application.Standards.Abstractions;
 using SV5T.Domain.Awards.Enums;
 using SV5T.Domain.Criteria;
@@ -13,7 +13,7 @@ using Xunit;
 
 namespace SV5T.UnitTests.Application;
 
-public sealed class CriterionServiceTests
+public sealed class CriterionHandlerTests
 {
     private readonly FakeStandardSetRepository _standardSetRepo = new();
     private readonly FakeStandardRepository _standardRepo = new();
@@ -21,15 +21,11 @@ public sealed class CriterionServiceTests
     private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly FakeCurrentUser _currentUser = new(Guid.NewGuid());
 
-    private CriterionService CreateService() =>
-        new(
-            _standardRepo,
-            _standardSetRepo,
-            _criterionRepo,
-            _unitOfWork,
-            _currentUser,
-            new CreateCriterionRequestValidator(),
-            new UpdateCriterionRequestValidator());
+    private AddCriterionHandler CreateAddHandler() =>
+        new(_standardRepo, _standardSetRepo, _criterionRepo, _unitOfWork, _currentUser);
+
+    private DeleteCriterionHandler CreateDeleteHandler() =>
+        new(_standardRepo, _standardSetRepo, _criterionRepo, _unitOfWork);
 
     [Fact]
     public async Task AddCriterionAsync_ValidRequest_AddsCriterionSuccessfully()
@@ -57,22 +53,9 @@ public sealed class CriterionServiceTests
         _standardSetRepo.Items.Add(standardSet);
         _standardRepo.Items.Add(standard);
 
-        var service = CreateService();
-        var request = new CreateCriterionRequest(
-            null,
-            CriterionType.Requirement,
-            "TC_NEW",
-            "Tiêu chí mới",
-            "Mô tả tiêu chí",
-            1,
-            CriterionOperator.All,
-            null,
-            CriterionEvaluationType.Manual,
-            "{}",
-            "Hướng dẫn duyệt");
-
-        var result = await service.AddCriterionAsync(standardId, request);
-
+        var service = CreateAddHandler();
+        var request = new CreateCriterionRequest(null, CriterionType.Requirement, "TC_NEW", "Tiêu chí mới", "Mô tả tiêu chí", 1, CriterionOperator.All, null, CriterionEvaluationType.Manual, "{}", "Hướng dẫn duyệt");
+        var result = await service.Handle(new AddCriterionCommand(standardId, request), CancellationToken.None);
         Assert.Equal("TC_NEW", result.Code);
         Assert.Equal("Tiêu chí mới", result.Title);
         Assert.Equal(standardId, result.StandardId);
@@ -113,21 +96,9 @@ public sealed class CriterionServiceTests
             DefinitionJson = "{}"
         });
 
-        var service = CreateService();
-        var request = new CreateCriterionRequest(
-            null,
-            CriterionType.Requirement,
-            "TC01",
-            "Tiêu chí trùng",
-            null,
-            1,
-            CriterionOperator.All,
-            null,
-            CriterionEvaluationType.Manual,
-            "{}",
-            null);
-
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.AddCriterionAsync(standardId, request));
+        var service = CreateAddHandler();
+        var request = new CreateCriterionRequest(null, CriterionType.Requirement, "TC01", "Tiêu chí trùng", null, 1, CriterionOperator.All, null, CriterionEvaluationType.Manual, "{}", null);
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.Handle(new AddCriterionCommand(standardId, request), CancellationToken.None));
 
         Assert.Equal(ApplicationErrorKind.Conflict, ex.Kind);
         Assert.Equal("criterion_code_duplicate", ex.ErrorCode);
@@ -184,8 +155,8 @@ public sealed class CriterionServiceTests
         _criterionRepo.Items.Add(parent);
         _criterionRepo.Items.Add(child);
 
-        var service = CreateService();
-        await service.DeleteCriterionAsync(standardId, parentId);
+        var service = CreateDeleteHandler();
+        await service.Handle(new DeleteCriterionCommand(standardId, parentId), CancellationToken.None);
 
         Assert.Empty(_criterionRepo.Items);
     }

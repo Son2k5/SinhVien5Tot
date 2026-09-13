@@ -1,7 +1,7 @@
+using SV5T.Application.Admin.Campaigns.Commands.CreateCampaign;
 using SV5T.Application.Admin.Dtos;
-using SV5T.Application.Admin.Services;
-using SV5T.Application.Admin.Validators;
 using SV5T.Application.Campaigns.Abstractions;
+using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Models;
 using SV5T.Application.Standards.Abstractions;
@@ -14,21 +14,19 @@ using Xunit;
 
 namespace SV5T.UnitTests.Application;
 
-public sealed class AdminCampaignServiceTests
+public sealed class AdminCampaignHandlerTests
 {
     private readonly FakeCampaignRepository _campaignRepo = new();
     private readonly FakeStandardSetRepository _standardRepo = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly FakeCurrentUser _currentUser = new(Guid.NewGuid());
 
-    private AdminCampaignService CreateService() =>
+    private CreateCampaignHandler CreateHandler() =>
         new(
             _campaignRepo,
             _standardRepo,
             _unitOfWork,
-            _currentUser,
-            new CreateCampaignRequestValidator(),
-            new UpdateCampaignRequestValidator());
+            _currentUser);
 
     [Fact]
     public async Task CreateAsync_SchoolLevelWithPrerequisite_ThrowsValidationException()
@@ -43,7 +41,7 @@ public sealed class AdminCampaignServiceTests
             Status = StandardSetStatus.Published
         });
 
-        var service = CreateService();
+        var handler = CreateHandler();
         var request = new CreateCampaignRequest(
             "Chiến dịch SV5T Cấp Trường",
             "2026-2027",
@@ -58,7 +56,7 @@ public sealed class AdminCampaignServiceTests
             "Mô tả",
             "[]");
 
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.CreateAsync(request));
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(new CreateCampaignCommand(request), CancellationToken.None));
         Assert.Equal("invalid_prerequisite_school", ex.ErrorCode);
     }
 
@@ -75,7 +73,7 @@ public sealed class AdminCampaignServiceTests
             Status = StandardSetStatus.Published
         });
 
-        var service = CreateService();
+        var handler = CreateHandler();
         var request = new CreateCampaignRequest(
             "Chiến dịch SV5T Cấp Thành phố",
             "2026-2027",
@@ -90,7 +88,7 @@ public sealed class AdminCampaignServiceTests
             "Mô tả",
             "[]");
 
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.CreateAsync(request));
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(new CreateCampaignCommand(request), CancellationToken.None));
         Assert.Equal("missing_prerequisite_city", ex.ErrorCode);
     }
 
@@ -107,7 +105,7 @@ public sealed class AdminCampaignServiceTests
             Status = StandardSetStatus.Draft // Chưa publish
         });
 
-        var service = CreateService();
+        var handler = CreateHandler();
         var request = new CreateCampaignRequest(
             "Chiến dịch SV5T Cấp Trường",
             "2026-2027",
@@ -122,7 +120,7 @@ public sealed class AdminCampaignServiceTests
             "Mô tả",
             "[]");
 
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.CreateAsync(request));
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(new CreateCampaignCommand(request), CancellationToken.None));
         Assert.Equal("standard_set_not_published", ex.ErrorCode);
     }
 
@@ -150,7 +148,7 @@ public sealed class AdminCampaignServiceTests
             Status = StandardSetStatus.Published
         });
 
-        var service = CreateService();
+        var handler = CreateHandler();
         var request = new CreateCampaignRequest(
             "Chiến dịch SV5T Cấp Thành phố 2026",
             "2026-2027",
@@ -165,7 +163,7 @@ public sealed class AdminCampaignServiceTests
             "Mô tả",
             "[]");
 
-        var result = await service.CreateAsync(request);
+        var result = await handler.Handle(new CreateCampaignCommand(request), CancellationToken.None);
 
         Assert.Equal("Chiến dịch SV5T Cấp Thành phố 2026", result.Name);
         Assert.Equal(AwardLevel.City, result.Level);
@@ -178,6 +176,9 @@ public sealed class AdminCampaignServiceTests
 
         public Task<Campaign?> GetByIdAsync(Guid id, bool includeDetails = false, bool tracking = false, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.FirstOrDefault(x => x.Id == id));
+
+        public Task<IReadOnlyList<Campaign>> GetByIdsAsync(IEnumerable<Guid> ids, bool includeDetails = false, bool tracking = false, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Campaign>>(Items.Where(x => ids.Contains(x.Id)).ToList());
 
         public Task<IReadOnlyList<Campaign>> GetAllAsync(AwardLevel? level = null, CampaignStatus? status = null, string? schoolYear = null, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Campaign>>(Items);
@@ -200,6 +201,12 @@ public sealed class AdminCampaignServiceTests
         public Task RemoveAsync(Campaign campaign, CancellationToken cancellationToken = default)
         {
             Items.Remove(campaign);
+            return Task.CompletedTask;
+        }
+
+        public Task RemoveRangeAsync(IEnumerable<Campaign> campaigns, CancellationToken cancellationToken = default)
+        {
+            foreach (var c in campaigns) Items.Remove(c);
             return Task.CompletedTask;
         }
     }

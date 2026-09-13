@@ -1,7 +1,5 @@
-using FluentValidation;
-using SV5T.Application.Auth.Dtos;
+using MediatR;
 using SV5T.Application.Auth.Support;
-using SV5T.Application.Auth.Templates;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Models;
@@ -10,24 +8,21 @@ using SV5T.Domain.Users;
 
 namespace SV5T.Application.Auth.Commands.VerifyOtp;
 
-public sealed record VerifyOtpCommand(Guid RegistrationId, string Otp);
+public sealed record VerifyOtpCommand(Guid RegistrationId, string Otp) : IRequest;
 
 public sealed class VerifyOtpHandler(
     IUserRepository userRepository,
     IAuthChallengeStore challengeStore,
     IUnitOfWork unitOfWork,
     IOtpService otpService,
-    IAuthRedisStore throttleStore,
-    IValidator<VerifyOtpRequest> verifyOtpValidator) : ICommandHandler<VerifyOtpCommand>
+    IAuthRedisStore throttleStore) : IRequestHandler<VerifyOtpCommand>
 {
-    public async Task HandleAsync(VerifyOtpCommand command, CancellationToken cancellationToken = default)
+    public async Task Handle(VerifyOtpCommand command, CancellationToken cancellationToken)
     {
-        var request = new VerifyOtpRequest(command.RegistrationId, command.Otp);
-        await AuthServiceSupport.ValidateAsync(verifyOtpValidator, request, cancellationToken);
         var submittedHash = await ValidateChallengeOtpAsync(
-            request.RegistrationId,
+            command.RegistrationId,
             AuthChallengePurpose.Registration,
-            request.Otp,
+            command.Otp,
             cancellationToken);
 
         var accountAlreadyVerified = false;
@@ -36,7 +31,7 @@ public sealed class VerifyOtpHandler(
             {
                 var now = DateTime.UtcNow;
                 var challenge = await challengeStore.GetAsync(
-                    request.RegistrationId,
+                    command.RegistrationId,
                     transactionCancellationToken);
                 AuthServiceSupport.EnsureChallengeUsable(
                     challenge,

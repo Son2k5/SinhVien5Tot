@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SV5T.Application.Admin.Dtos;
+using SV5T.Application.Admin.Students.Commands.BatchDeleteStudents;
 using SV5T.Application.Admin.Students.Commands.DeleteStudent;
 using SV5T.Application.Admin.Students.Commands.LockStudent;
 using SV5T.Application.Admin.Students.Commands.ReviewStudent;
@@ -76,6 +77,24 @@ public sealed class AdminStudentsController(ISender sender) : ControllerBase
     {
         await sender.Send(new DeleteStudentCommand(id, request), ct);
         return NoContent();
+    }
+
+    [HttpPost("batch-delete")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType<BatchDeleteStudentsResponse>(200)]
+    [ProducesResponseType<ProblemDetails>(400)]
+    [ProducesResponseType<ProblemDetails>(404)]
+    [ProducesResponseType<ProblemDetails>(409)]
+    public async Task<ActionResult<BatchDeleteStudentsResponse>> BatchDelete(
+        [FromBody] BatchDeleteStudentsRequest request,
+        CancellationToken ct
+    )
+    {
+        var result = await sender.Send(
+            new BatchDeleteStudentsCommand(request.Ids, request.Reason, request.Confirm),
+            ct
+        );
+        return Ok(new BatchDeleteStudentsResponse(result.DeletedCount));
     }
 
     [HttpPost("{id:guid}/lock")]

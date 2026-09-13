@@ -1,30 +1,29 @@
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
+using SV5T.Api.Controllers;
 using SV5T.Application.Admin.Abstractions;
-using SV5T.Application.Common.Exceptions;
+using SV5T.Application.Admin.Dashboard.Queries;
+using SV5T.Application.Admin.Dtos;
+using SV5T.Application.Admin.Validators;
 using Xunit;
 
 namespace SV5T.UnitTests.Application;
 
-public sealed class AdminDashboardServiceTests
+public sealed class AdminDashboardHandlerTests
 {
     private readonly FakeAdminDashboardRepository fakeRepo = new();
-    private readonly AdminDashboardService service;
-
-    public AdminDashboardServiceTests()
-    {
-        service = new AdminDashboardService(fakeRepo, new AdminDashboardFilterRequestValidator());
-    }
 
     [Fact]
-    public async Task Summary_DelegatesToRepositoryAfterValidation()
+    public async Task Summary_DelegatesToRepository()
     {
+        var handler = new GetDashboardSummaryQueryHandler(fakeRepo);
         var request = new AdminDashboardFilterRequest
         {
             Level = "school",
             DepartmentId = "all"
         };
 
-        var result = await service.GetSummaryAsync(request);
+        var result = await handler.Handle(new GetDashboardSummaryQuery(request), CancellationToken.None);
 
         Assert.Equal(1248, result.TotalRegistered);
         Assert.Equal(1011, result.TotalSubmitted);
@@ -34,25 +33,30 @@ public sealed class AdminDashboardServiceTests
     [Fact]
     public async Task DepartmentRanking_DelegatesToRepository()
     {
-        var rows = await service.GetDepartmentRankingAsync(
-            new AdminDashboardFilterRequest { DepartmentId = "it" });
+        var handler = new GetDepartmentRankingQueryHandler(fakeRepo);
+        var rows = await handler.Handle(
+            new GetDepartmentRankingQuery(new AdminDashboardFilterRequest { DepartmentId = "it" }),
+            CancellationToken.None);
 
         var row = Assert.Single(rows);
         Assert.Equal("it", row.DepartmentId);
     }
 
     [Fact]
-    public async Task InvalidLevel_IsRejectedByValidator()
+    public void InvalidLevel_IsRejectedByValidator()
     {
-        await Assert.ThrowsAsync<UseCaseException>(() =>
-            service.GetSummaryAsync(
-                new AdminDashboardFilterRequest { Level = "invalid" }));
+        var validator = new GetDashboardSummaryQueryValidator(new AdminDashboardFilterRequestValidator());
+        var query = new GetDashboardSummaryQuery(new AdminDashboardFilterRequest { Level = "invalid" });
+
+        var validationResult = validator.Validate(query);
+        Assert.False(validationResult.IsValid);
     }
 
     [Fact]
     public async Task StatusBreakdown_DelegatesToRepository()
     {
-        var result = await service.GetStatusBreakdownAsync(new AdminDashboardFilterRequest());
+        var handler = new GetStatusBreakdownQueryHandler(fakeRepo);
+        var result = await handler.Handle(new GetStatusBreakdownQuery(new AdminDashboardFilterRequest()), CancellationToken.None);
         Assert.Equal(2, result.Count);
         Assert.Equal("draft", result[0].Status);
     }
@@ -60,7 +64,8 @@ public sealed class AdminDashboardServiceTests
     [Fact]
     public async Task StandardGroupRates_DelegatesToRepository()
     {
-        var result = await service.GetStandardGroupRatesAsync(new AdminDashboardFilterRequest());
+        var handler = new GetStandardGroupRatesQueryHandler(fakeRepo);
+        var result = await handler.Handle(new GetStandardGroupRatesQuery(new AdminDashboardFilterRequest()), CancellationToken.None);
         var ethics = Assert.Single(result);
         Assert.Equal("ETHICS", ethics.GroupCode);
         Assert.Equal(93m, ethics.PassRate);
@@ -69,7 +74,8 @@ public sealed class AdminDashboardServiceTests
     [Fact]
     public async Task LevelFunnel_DelegatesToRepository()
     {
-        var result = await service.GetLevelFunnelAsync(new AdminDashboardFilterRequest());
+        var handler = new GetLevelFunnelQueryHandler(fakeRepo);
+        var result = await handler.Handle(new GetLevelFunnelQuery(new AdminDashboardFilterRequest()), CancellationToken.None);
         var school = Assert.Single(result);
         Assert.Equal("school", school.Level);
         Assert.Equal(1248, school.Submitted);
@@ -78,7 +84,8 @@ public sealed class AdminDashboardServiceTests
     [Fact]
     public async Task UrgentItems_DelegatesToRepository()
     {
-        var result = await service.GetUrgentItemsAsync(new AdminDashboardFilterRequest());
+        var handler = new GetUrgentItemsQueryHandler(fakeRepo);
+        var result = await handler.Handle(new GetUrgentItemsQuery(new AdminDashboardFilterRequest()), CancellationToken.None);
         var item = Assert.Single(result);
         Assert.Equal("HS-2026-0182", item.ApplicationId);
     }
@@ -86,7 +93,8 @@ public sealed class AdminDashboardServiceTests
     [Fact]
     public async Task RecentActivity_DelegatesToRepository()
     {
-        var result = await service.GetRecentActivityAsync(new AdminDashboardFilterRequest());
+        var handler = new GetRecentActivityQueryHandler(fakeRepo);
+        var result = await handler.Handle(new GetRecentActivityQuery(new AdminDashboardFilterRequest()), CancellationToken.None);
         var item = Assert.Single(result);
         Assert.Equal("Trần Anh", item.ReviewerName);
     }
@@ -94,7 +102,8 @@ public sealed class AdminDashboardServiceTests
     [Fact]
     public async Task CollectiveSummary_DelegatesToRepository()
     {
-        var result = await service.GetCollectiveSummaryAsync(new AdminDashboardFilterRequest());
+        var handler = new GetCollectiveSummaryQueryHandler(fakeRepo);
+        var result = await handler.Handle(new GetCollectiveSummaryQuery(new AdminDashboardFilterRequest()), CancellationToken.None);
         Assert.Equal(24, result.TotalUnits);
         Assert.Equal(18, result.QualifiedUnits);
     }
@@ -186,5 +195,3 @@ public sealed class AdminDashboardServiceTests
             Task.FromResult(new CollectiveSummaryResponse(24, 18));
     }
 }
-
-

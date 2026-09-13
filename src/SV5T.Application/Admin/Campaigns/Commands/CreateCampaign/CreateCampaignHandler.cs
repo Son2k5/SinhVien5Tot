@@ -1,7 +1,5 @@
-using FluentValidation;
 using MediatR;
 using SV5T.Application.Admin.Dtos;
-using SV5T.Application.Auth.Support;
 using SV5T.Application.Campaigns.Abstractions;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
@@ -17,14 +15,11 @@ public sealed class CreateCampaignHandler(
     ICampaignRepository campaignRepository,
     IStandardSetRepository standardSetRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser,
-    IValidator<CreateCampaignRequest> createCampaignValidator
+    ICurrentUser currentUser
 ) : IRequestHandler<CreateCampaignCommand, CampaignDetailResponse>
 {
     public async Task<CampaignDetailResponse> Handle(CreateCampaignCommand request, CancellationToken cancellationToken)
     {
-        await AuthServiceSupport.ValidateAsync(createCampaignValidator, request.Request, cancellationToken);
-
         var actorId = RequireAdminUserId();
 
         var nameExists = await campaignRepository.ExistsByNameAndSchoolYearAsync(
@@ -36,8 +31,7 @@ public sealed class CreateCampaignHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Ten chien dich '{request.Request.Name.Trim()}' "
-                    + $"da ton tai trong nam hoc '{request.Request.SchoolYear.Trim()}'.",
+                $"Tên chiến dịch '{request.Request.Name.Trim()}' đã tồn tại trong năm học '{request.Request.SchoolYear.Trim()}'.",
                 "campaign_name_duplicate"
             );
         }
@@ -49,7 +43,7 @@ public sealed class CreateCampaignHandler(
             )
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan duoc gan vao dot xet.",
+                "Không tìm thấy bộ tiêu chuẩn được gắn vào đợt xét.",
                 "standard_set_not_found"
             );
 
@@ -57,7 +51,7 @@ public sealed class CreateCampaignHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Bo tieu chuan gan vao dot xet bat buoc phai o trang thai da cong bo (Published).",
+                "Bộ tiêu chuẩn gắn vào đợt xét bắt buộc phải ở trạng thái đã công bố (Published).",
                 "standard_set_not_published"
             );
         }
@@ -66,7 +60,7 @@ public sealed class CreateCampaignHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Cap xet duyet hoac Loai danh hieu cua bo tieu chuan khong khop voi chien dich.",
+                "Cấp xét duyệt hoặc Loại danh hiệu của bộ tiêu chuẩn không khớp với chiến dịch.",
                 "standard_set_mismatch"
             );
         }
@@ -114,7 +108,7 @@ public sealed class CreateCampaignHandler(
                 {
                     throw new UseCaseException(
                         ApplicationErrorKind.Validation,
-                        "Chien dich cap Truong (School) la cap co so, " + "khong duoc gan chien dich tien quyet.",
+                        "Chiến dịch cấp Trường (School) là cấp cơ sở, không được gắn chiến dịch tiên quyết.",
                         "invalid_prerequisite_school"
                     );
                 }
@@ -124,8 +118,7 @@ public sealed class CreateCampaignHandler(
                 {
                     throw new UseCaseException(
                         ApplicationErrorKind.Validation,
-                        "Chien dich cap Thanh pho/Tinh (City) bat buoc "
-                            + "phai chon chien dich dieu kien tien quyet cap Truong (School).",
+                        "Chiến dịch cấp Thành phố/Tỉnh (City) bắt buộc phải chọn chiến dịch điều kiện tiên quyết cấp Trường (School).",
                         "missing_prerequisite_city"
                     );
                 }
@@ -133,14 +126,14 @@ public sealed class CreateCampaignHandler(
                     await campaignRepository.GetByIdAsync(prerequisiteCampaignId.Value, cancellationToken: ct)
                     ?? throw new UseCaseException(
                         ApplicationErrorKind.NotFound,
-                        "Khong tim thay chien dich dieu kien tien quyet.",
+                        "Không tìm thấy chiến dịch điều kiện tiên quyết.",
                         "prerequisite_not_found"
                     );
                 if (cityPrereq.Level != AwardLevel.School)
                 {
                     throw new UseCaseException(
                         ApplicationErrorKind.Validation,
-                        "Chien dich dieu kien tien quyet cho cap Thanh pho/Tinh " + "phai la cap Truong (School).",
+                        "Chiến dịch điều kiện tiên quyết cho cấp Thành phố/Tỉnh phải là cấp Trường (School).",
                         "invalid_prerequisite_level"
                     );
                 }
@@ -150,8 +143,7 @@ public sealed class CreateCampaignHandler(
                 {
                     throw new UseCaseException(
                         ApplicationErrorKind.Validation,
-                        "Chien dich cap Trung uong (Central) bat buoc "
-                            + "phai chon chien dich dieu kien tien quyet cap Thanh pho/Tinh (City).",
+                        "Chiến dịch cấp Trung ương (Central) bắt buộc phải chọn chiến dịch điều kiện tiên quyết cấp Thành phố/Tỉnh (City).",
                         "missing_prerequisite_central"
                     );
                 }
@@ -159,14 +151,14 @@ public sealed class CreateCampaignHandler(
                     await campaignRepository.GetByIdAsync(prerequisiteCampaignId.Value, cancellationToken: ct)
                     ?? throw new UseCaseException(
                         ApplicationErrorKind.NotFound,
-                        "Khong tim thay chien dich dieu kien tien quyet.",
+                        "Không tìm thấy chiến dịch điều kiện tiên quyết.",
                         "prerequisite_not_found"
                     );
                 if (centralPrereq.Level != AwardLevel.City)
                 {
                     throw new UseCaseException(
                         ApplicationErrorKind.Validation,
-                        "Chien dich dieu kien tien quyet cho cap Trung uong " + "phai la cap Thanh pho/Tinh (City).",
+                        "Chiến dịch điều kiện tiên quyết cho cấp Trung ương phải là cấp Thành phố/Tỉnh (City).",
                         "invalid_prerequisite_level"
                     );
                 }
@@ -200,6 +192,6 @@ public sealed class CreateCampaignHandler(
         currentUser.UserId
         ?? throw new UseCaseException(
             ApplicationErrorKind.Unauthorized,
-            "Khong xac dinh duoc danh tinh nguoi dung hien tai."
+            "Không xác định được danh tính người dùng hiện tại."
         );
 }

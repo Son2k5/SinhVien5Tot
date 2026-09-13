@@ -1,9 +1,127 @@
 using FluentValidation;
+using SV5T.Application.Auth.Commands.ForgotPassword;
+using SV5T.Application.Auth.Commands.Login;
+using SV5T.Application.Auth.Commands.RefreshToken;
+using SV5T.Application.Auth.Commands.Register;
+using SV5T.Application.Auth.Commands.ResendOtp;
+using SV5T.Application.Auth.Commands.ResetPassword;
+using SV5T.Application.Auth.Commands.VerifyOtp;
+using SV5T.Application.Auth.Commands.VerifyResetOtp;
 using SV5T.Application.Auth.Dtos;
 using SV5T.Application.Common.Abstractions;
 
 namespace SV5T.Application.Auth.Validators;
 
+public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand>
+{
+    public RegisterCommandValidator(ISchoolEmailValidator schoolEmailValidator)
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Họ và tên không được để trống.")
+            .MaximumLength(100).WithMessage("Họ và tên không được vượt quá 100 ký tự.");
+
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email không được để trống.")
+            .MaximumLength(255).WithMessage("Email không được vượt quá 255 ký tự.")
+            .EmailAddress().WithMessage("Định dạng email không hợp lệ.")
+            .Must(schoolEmailValidator.IsAllowed)
+            .WithMessage("Email phải thuộc tên miền của trường.");
+
+        RuleFor(x => x.Password)
+            .NotEmpty().WithMessage("Mật khẩu không được để trống.")
+            .MinimumLength(8).WithMessage("Mật khẩu phải có ít nhất 8 ký tự.")
+            .MaximumLength(128).WithMessage("Mật khẩu không được vượt quá 128 ký tự.")
+            .Matches("[A-Za-z]").WithMessage("Mật khẩu phải chứa ít nhất một chữ cái.")
+            .Matches("[0-9]").WithMessage("Mật khẩu phải chứa ít nhất một chữ số.");
+    }
+}
+
+public sealed class LoginCommandValidator : AbstractValidator<LoginCommand>
+{
+    public LoginCommandValidator()
+    {
+        RuleFor(x => x.Request.Email)
+            .NotEmpty().WithMessage("Email không được để trống.")
+            .MaximumLength(255).WithMessage("Email không được vượt quá 255 ký tự.")
+            .EmailAddress().WithMessage("Định dạng email không hợp lệ.");
+        RuleFor(x => x.Request.Password)
+            .NotEmpty().WithMessage("Mật khẩu không được để trống.")
+            .MaximumLength(128).WithMessage("Mật khẩu không được vượt quá 128 ký tự.");
+    }
+}
+
+public sealed class RefreshTokenCommandValidator : AbstractValidator<RefreshTokenCommand>
+{
+    public RefreshTokenCommandValidator()
+    {
+        RuleFor(x => x.RefreshToken)
+            .NotEmpty().WithMessage("Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
+    }
+}
+
+public sealed class VerifyOtpCommandValidator : AbstractValidator<VerifyOtpCommand>
+{
+    public VerifyOtpCommandValidator()
+    {
+        RuleFor(x => x.RegistrationId)
+            .NotEmpty().WithMessage("Mã đăng ký không hợp lệ.");
+        RuleFor(x => x.Otp)
+            .NotEmpty().WithMessage("Mã OTP không được để trống.")
+            .Matches("^\\d{6}$").WithMessage("Mã OTP phải gồm đúng 6 chữ số.");
+    }
+}
+
+public sealed class ResendOtpCommandValidator : AbstractValidator<ResendOtpCommand>
+{
+    public ResendOtpCommandValidator()
+    {
+        RuleFor(x => x.RegistrationId)
+            .NotEmpty().WithMessage("Mã đăng ký không hợp lệ.");
+    }
+}
+
+public sealed class ForgotPasswordCommandValidator : AbstractValidator<ForgotPasswordCommand>
+{
+    public ForgotPasswordCommandValidator()
+    {
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email không được để trống.")
+            .MaximumLength(255).WithMessage("Email không được vượt quá 255 ký tự.")
+            .EmailAddress().WithMessage("Định dạng email không hợp lệ.");
+    }
+}
+
+public sealed class VerifyResetOtpCommandValidator : AbstractValidator<VerifyResetOtpCommand>
+{
+    public VerifyResetOtpCommandValidator()
+    {
+        RuleFor(x => x.ResetId)
+            .NotEmpty().WithMessage("Mã yêu cầu không hợp lệ.");
+        RuleFor(x => x.Otp)
+            .NotEmpty().WithMessage("Mã OTP không được để trống.")
+            .Matches("^\\d{6}$").WithMessage("Mã OTP phải gồm đúng 6 chữ số.");
+    }
+}
+
+public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordCommand>
+{
+    public ResetPasswordCommandValidator()
+    {
+        RuleFor(x => x.ResetId)
+            .NotEmpty().WithMessage("Mã yêu cầu không hợp lệ.");
+        RuleFor(x => x.Otp)
+            .NotEmpty().WithMessage("Mã OTP không được để trống.")
+            .Matches("^\\d{6}$").WithMessage("Mã OTP phải gồm đúng 6 chữ số.");
+        RuleFor(x => x.NewPassword)
+            .NotEmpty().WithMessage("Mật khẩu mới không được để trống.")
+            .MinimumLength(8).WithMessage("Mật khẩu mới phải có ít nhất 8 ký tự.")
+            .MaximumLength(128).WithMessage("Mật khẩu mới không được vượt quá 128 ký tự.")
+            .Matches("[A-Za-z]").WithMessage("Mật khẩu phải chứa ít nhất một chữ cái.")
+            .Matches("[0-9]").WithMessage("Mật khẩu phải chứa ít nhất một chữ số.");
+    }
+}
+
+// Keep Request validators for backward compatibility
 public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 {
     public RegisterRequestValidator(ISchoolEmailValidator schoolEmailValidator)

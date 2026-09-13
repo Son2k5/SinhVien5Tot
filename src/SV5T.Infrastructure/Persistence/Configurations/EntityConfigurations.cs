@@ -236,6 +236,7 @@ public sealed class StandardSetConfiguration : IEntityTypeConfiguration<Standard
         builder.ToTable("standard_sets");
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Name).HasMaxLength(255).IsRequired();
         builder.Property(x => x.AcademicYear).HasMaxLength(20).IsRequired();
         builder.HasIndex(x => new
         {

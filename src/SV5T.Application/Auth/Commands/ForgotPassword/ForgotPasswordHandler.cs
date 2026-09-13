@@ -1,6 +1,5 @@
-using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using SV5T.Application.Auth.Dtos;
 using SV5T.Application.Auth.Support;
 using SV5T.Application.Auth.Templates;
 using SV5T.Application.Common.Abstractions;
@@ -11,7 +10,7 @@ using SV5T.Domain.Users;
 
 namespace SV5T.Application.Auth.Commands.ForgotPassword;
 
-public sealed record ForgotPasswordCommand(ForgotPasswordRequest Request);
+public sealed record ForgotPasswordCommand(string Email) : IRequest<Guid>;
 
 public sealed class ForgotPasswordHandler(
     IUserRepository userRepository,
@@ -20,15 +19,11 @@ public sealed class ForgotPasswordHandler(
     ISha256Hasher sha256Hasher,
     IAuthRedisStore throttleStore,
     IEmailQueue emailQueue,
-    ILogger<ForgotPasswordHandler> logger,
-    IValidator<ForgotPasswordRequest> forgotPasswordValidator) : ICommandHandler<ForgotPasswordCommand, Guid>
+    ILogger<ForgotPasswordHandler> logger) : IRequestHandler<ForgotPasswordCommand, Guid>
 {
-    public async Task<Guid> HandleAsync(ForgotPasswordCommand command, CancellationToken cancellationToken = default)
+    public async Task<Guid> Handle(ForgotPasswordCommand command, CancellationToken cancellationToken)
     {
-        var request = command.Request;
-        await AuthServiceSupport.ValidateAsync(
-            forgotPasswordValidator, request, cancellationToken);
-        var email = AuthServiceSupport.NormalizeEmail(request.Email);
+        var email = AuthServiceSupport.NormalizeEmail(command.Email);
         var user = await userRepository.GetByNormalizedEmailAsync(
             email.ToUpperInvariant(), false, cancellationToken);
         if (user is null || !user.IsVerified || !user.IsActive ||

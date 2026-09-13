@@ -1,8 +1,10 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SV5T.Application.Admin.Dtos;
-using SV5T.Application.Admin.Services;
-using SV5T.Domain.Evidences;
+using SV5T.Application.Admin.Evidences.Commands.ReviewEvidence;
+using SV5T.Application.Admin.Evidences.Queries.GetEvidenceById;
+using SV5T.Application.Admin.Evidences.Queries.GetEvidencesPaged;
 using SV5T.Domain.Submissions.Enums;
 
 namespace SV5T.Api.Controllers;
@@ -10,9 +12,7 @@ namespace SV5T.Api.Controllers;
 [ApiController]
 [Authorize(Roles = "Admin,Mentor")]
 [Route("api/admin/evidences")]
-public sealed class AdminEvidencesController(
-    IAdminEvidenceReviewService evidenceReviewService)
-    : ControllerBase
+public sealed class AdminEvidencesController(ISender sender) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<PagedResponse<EvidenceResponse>>(StatusCodes.Status200OK)]
@@ -25,13 +25,12 @@ public sealed class AdminEvidencesController(
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default) =>
-        Ok(await evidenceReviewService.GetPagedAsync(
+        Ok(await sender.Send(new GetEvidencesPagedQuery(
             campaignId,
             status,
             applicationId,
             pageIndex,
-            pageSize,
-            cancellationToken));
+            pageSize), cancellationToken));
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType<EvidenceResponse>(StatusCodes.Status200OK)]
@@ -40,7 +39,7 @@ public sealed class AdminEvidencesController(
         Guid id,
         CancellationToken cancellationToken)
     {
-        var result = await evidenceReviewService.GetByIdAsync(id, cancellationToken);
+        var result = await sender.Send(new GetEvidenceByIdQuery(id), cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
 
@@ -53,8 +52,5 @@ public sealed class AdminEvidencesController(
         Guid id,
         ReviewEvidenceRequest request,
         CancellationToken cancellationToken) =>
-        Ok(await evidenceReviewService.ReviewAsync(
-            id,
-            request,
-            cancellationToken));
+        Ok(await sender.Send(new ReviewEvidenceCommand(id, request), cancellationToken));
 }

@@ -11,6 +11,7 @@ public sealed class StandardSet : Entity<Guid>, IAuditableEntity
         Id = Guid.NewGuid();
     }
 
+    public string Name { get; set; } = string.Empty;
     public string AcademicYear { get; set; } = string.Empty; // 2025-2026
     public AwardLevel Level { get; set; }
     public AwardType AwardType { get; set; }

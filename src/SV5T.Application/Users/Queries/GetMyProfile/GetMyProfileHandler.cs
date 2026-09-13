@@ -1,17 +1,18 @@
-using SV5T.Application.Common.Exceptions;
+using MediatR;
 using SV5T.Application.Common.Abstractions;
+using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Users.Dtos;
 using SV5T.Domain.Users;
 
 namespace SV5T.Application.Users.Queries.GetMyProfile;
 
-public sealed record GetMyProfileQuery(Guid UserId);
+public sealed record GetMyProfileQuery(Guid UserId) : IRequest<UserProfileDto?>;
 
 public sealed class GetMyProfileHandler(
     ICurrentUser currentUser,
-    IUserRepository userRepository) : IQueryHandler<GetMyProfileQuery, UserProfileDto?>
+    IUserRepository userRepository) : IRequestHandler<GetMyProfileQuery, UserProfileDto?>
 {
-    public async Task<UserProfileDto?> HandleAsync(GetMyProfileQuery query, CancellationToken cancellationToken = default)
+    public async Task<UserProfileDto?> Handle(GetMyProfileQuery query, CancellationToken cancellationToken)
     {
         var userId = query.UserId;
         EnsureOwnUser(userId);
@@ -61,12 +62,11 @@ public sealed class GetMyProfileHandler(
             profile.PhoneNumber,
             profile.UnionPosition,
             profile.PoliticalStatus,
-            (addresses ?? [])
-                .OrderBy(item => item.AddressType)
+            addresses?.OrderBy(item => item.AddressType)
                 .Select(item => new UserAddressDto(
                     item.AddressType,
                     item.ProvinceOrCity,
                     item.District,
                     item.StreetAddress))
-                .ToArray());
+                .ToArray() ?? []);
 }

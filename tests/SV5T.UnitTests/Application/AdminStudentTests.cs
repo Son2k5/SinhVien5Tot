@@ -261,6 +261,9 @@ public sealed class AdminStudentTests
         public Task<User?> GetByIdAsync(Guid id, bool t = false, bool d = false, CancellationToken ct = default) =>
             Task.FromResult(Users.FirstOrDefault(u => u.Id == id));
 
+        public Task<IReadOnlyList<User>> GetByIdsAsync(IEnumerable<Guid> ids, bool tracking = false, bool includeDetails = false, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<User>>(Users.Where(u => ids.Contains(u.Id)).ToList());
+
         public Task<IReadOnlyList<SubmissionApplication>> GetApplicationsAsync(
             Guid s,
             CancellationToken ct = default

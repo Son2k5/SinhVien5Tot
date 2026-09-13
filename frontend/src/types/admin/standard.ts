@@ -170,6 +170,7 @@ export interface UpdateStandardRequest {
 
 export interface StandardSetResponse {
   id: string;
+  name: string;
   academicYear: string;
   level: AwardLevel;
   awardType: AwardType;
@@ -182,6 +183,7 @@ export interface StandardSetResponse {
 }
 
 export interface CreateStandardSetRequest {
+  name: string;
   academicYear: string;
   level: AwardLevel;
   awardType: AwardType;
@@ -189,6 +191,7 @@ export interface CreateStandardSetRequest {
 }
 
 export interface UpdateStandardSetRequest {
+  name: string;
   academicYear: string;
   level: AwardLevel;
   awardType: AwardType;

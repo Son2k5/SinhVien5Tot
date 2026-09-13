@@ -19,7 +19,7 @@ public sealed class UpdateCampaignStatusHandler(
     )
     {
         var actorId =
-            currentUser.UserId ?? throw new UseCaseException(ApplicationErrorKind.Unauthorized, "Khong xac dinh user.");
+            currentUser.UserId ?? throw new UseCaseException(ApplicationErrorKind.Unauthorized, "Không xác định được danh tính người dùng hiện tại.");
 
         var campaign =
             await campaignRepository.GetByIdAsync(
@@ -30,7 +30,7 @@ public sealed class UpdateCampaignStatusHandler(
             )
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay chien dich.",
+                "Không tìm thấy chiến dịch.",
                 "campaign_not_found"
             );
         campaign.Status = request.Request.Status;

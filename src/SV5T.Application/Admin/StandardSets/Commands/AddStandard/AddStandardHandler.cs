@@ -1,8 +1,6 @@
-using FluentValidation;
 using MediatR;
 using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Admin.StandardSets.Common;
-using SV5T.Application.Auth.Support;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Standards.Abstractions;
@@ -15,34 +13,33 @@ public sealed class AddStandardHandler(
     IStandardSetRepository standardSetRepository,
     IStandardRepository standardRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser,
-    IValidator<CreateStandardRequest> validator
+    ICurrentUser currentUser
 ) : IRequestHandler<AddStandardCommand, StandardResponse>
 {
-    public async Task<StandardResponse> Handle(AddStandardCommand request, CancellationToken cancellationToken)
+    public async Task<StandardResponse> Handle(AddStandardCommand command, CancellationToken cancellationToken)
     {
-        await AuthServiceSupport.ValidateAsync(validator, request.Request, cancellationToken);
+        var createRequest = command.Request;
         var standardSet =
             await standardSetRepository.GetByIdAsync(
-                request.StandardSetId,
+                command.StandardSetId,
                 tracking: false,
                 cancellationToken: cancellationToken
             )
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
+                "Không tìm thấy bộ tiêu chuẩn.",
                 "standard_set_not_found"
             );
         if (standardSet.Status != StandardSetStatus.Draft)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Khong the them tieu chuan vao bo tieu chuan da cong bo (Published).",
+                "Không thể thêm tiêu chuẩn vào bộ tiêu chuẩn đã công bố (Published).",
                 "standard_set_not_editable"
             );
-        string finalCode = request.Request.Code?.Trim() ?? string.Empty;
+        string finalCode = createRequest.Code?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(finalCode))
         {
-            finalCode = request.Request.GroupCode switch
+            finalCode = createRequest.GroupCode switch
             {
                 StandardGroupCode.Ethics => "TC_DAODUC",
                 StandardGroupCode.Study => "TC_HOCTAP",
@@ -53,27 +50,27 @@ public sealed class AddStandardHandler(
             };
         }
         var codeExists = await standardRepository.ExistsCodeInStandardSetAsync(
-            request.StandardSetId,
+            command.StandardSetId,
             finalCode,
             cancellationToken: cancellationToken
         );
         if (codeExists)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Ma tieu chuan '{finalCode}' da ton tai trong bo tieu chuan nay.",
+                $"Mã tiêu chuẩn '{finalCode}' đã tồn tại trong bộ tiêu chuẩn này.",
                 "standard_code_duplicate"
             );
         var actorId = RequireAdminUserId();
         var standard = new Standard
         {
-            StandardSetId = request.StandardSetId,
-            GroupCode = request.Request.GroupCode,
+            StandardSetId = command.StandardSetId,
+            GroupCode = createRequest.GroupCode,
             Code = finalCode,
-            Title = request.Request.Title.Trim(),
-            Description = request.Request.Description?.Trim(),
-            DisplayOrder = request.Request.DisplayOrder,
-            Operator = request.Request.Operator,
-            MinimumSatisfied = request.Request.MinimumSatisfied,
+            Title = createRequest.Title.Trim(),
+            Description = createRequest.Description?.Trim(),
+            DisplayOrder = createRequest.DisplayOrder,
+            Operator = createRequest.Operator,
+            MinimumSatisfied = createRequest.MinimumSatisfied,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = actorId.ToString(),
         };
@@ -86,6 +83,7 @@ public sealed class AddStandardHandler(
         currentUser.UserId
         ?? throw new UseCaseException(
             ApplicationErrorKind.Unauthorized,
-            "Khong xac dinh duoc danh tinh nguoi dung hien tai."
+            "Không xác định được danh tính người dùng hiện tại."
         );
 }
+

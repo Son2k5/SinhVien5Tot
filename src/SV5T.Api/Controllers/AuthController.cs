@@ -1,18 +1,28 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
 using SV5T.Api.Security;
+using SV5T.Application.Auth.Commands.ForgotPassword;
+using SV5T.Application.Auth.Commands.Login;
+using SV5T.Application.Auth.Commands.Logout;
+using SV5T.Application.Auth.Commands.RefreshToken;
+using SV5T.Application.Auth.Commands.Register;
+using SV5T.Application.Auth.Commands.ResendOtp;
+using SV5T.Application.Auth.Commands.ResetPassword;
+using SV5T.Application.Auth.Commands.VerifyOtp;
+using SV5T.Application.Auth.Commands.VerifyResetOtp;
 using SV5T.Application.Auth.Dtos;
-using SV5T.Application.Auth.Services;
 using SV5T.Application.Common.Exceptions;
 
 namespace SV5T.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(ISender sender) : ControllerBase
 {
     private const string RefreshTokenCookieName = "refreshToken";
     private const string RefreshTokenCookiePath = "/api/auth";
@@ -26,7 +36,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        var registrationId = await authService.RegisterAsync(request, cancellationToken);
+        var registrationId = await sender.Send(
+            new RegisterCommand(request.Name, request.Email, request.Password),
+            cancellationToken);
         return Accepted(new RegistrationStartedResponse(
             registrationId,
             "Nếu yêu cầu hợp lệ, OTP đã được gửi đến email của bạn."));
@@ -41,7 +53,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         VerifyOtpRequest request,
         CancellationToken cancellationToken)
     {
-        await authService.VerifyOtpAsync(request, cancellationToken);
+        await sender.Send(
+            new VerifyOtpCommand(request.RegistrationId, request.Otp),
+            cancellationToken);
         return Ok(new MessageResponse("Xác thực email thành công."));
     }
 
@@ -54,7 +68,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         ResendOtpRequest request,
         CancellationToken cancellationToken)
     {
-        await authService.ResendOtpAsync(request, cancellationToken);
+        await sender.Send(
+            new ResendOtpCommand(request.RegistrationId),
+            cancellationToken);
         return Ok(new MessageResponse("OTP mới đã được gửi."));
     }
 
@@ -69,8 +85,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         CancellationToken cancellationToken)
     {
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var tokens = await authService.LoginAsync(
-            request, ipAddress, cancellationToken);
+        var tokens = await sender.Send(
+            new LoginCommand(request, ipAddress),
+            cancellationToken);
         SetRefreshCookie(
             tokens.RefreshToken,
             tokens.RefreshTokenExpiresAtUtc,
@@ -86,9 +103,26 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<AuthTokenResponse>> Refresh(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefreshRequest? body,
         CancellationToken cancellationToken)
     {
-        if (!Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken))
+        string? refreshToken = null;
+        if (Request.Cookies.TryGetValue(RefreshTokenCookieName, out var cookieToken) &&
+            !string.IsNullOrWhiteSpace(cookieToken))
+        {
+            refreshToken = cookieToken;
+        }
+        else if (!string.IsNullOrWhiteSpace(body?.RefreshToken))
+        {
+            refreshToken = body.RefreshToken;
+        }
+        else if (Request.Headers.TryGetValue("X-Refresh-Token", out var headerToken) &&
+                 !string.IsNullOrWhiteSpace(headerToken))
+        {
+            refreshToken = headerToken.ToString();
+        }
+
+        if (string.IsNullOrWhiteSpace(refreshToken))
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
@@ -99,8 +133,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         AuthTokens tokens;
         try
         {
-            tokens = await authService.RefreshAsync(
-                refreshToken, cancellationToken);
+            tokens = await sender.Send(
+                new RefreshTokenCommand(refreshToken),
+                cancellationToken);
         }
         catch (UseCaseException exception)
             when (exception.Kind == ApplicationErrorKind.Unauthorized)
@@ -125,7 +160,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         ForgotPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        var resetId = await authService.ForgotPasswordAsync(request, cancellationToken);
+        var resetId = await sender.Send(
+            new ForgotPasswordCommand(request.Email),
+            cancellationToken);
         return Accepted(new PasswordResetStartedResponse(
             resetId,
             "Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi."));
@@ -140,7 +177,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         VerifyResetOtpRequest request,
         CancellationToken cancellationToken)
     {
-        await authService.VerifyResetOtpAsync(request, cancellationToken);
+        await sender.Send(
+            new VerifyResetOtpCommand(request.ResetId, request.Otp),
+            cancellationToken);
         return Ok(new MessageResponse("OTP hợp lệ. Bạn có thể tạo mật khẩu mới."));
     }
 
@@ -153,7 +192,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         ResetPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        await authService.ResetPasswordAsync(request, cancellationToken);
+        await sender.Send(
+            new ResetPasswordCommand(request.ResetId, request.Otp, request.NewPassword),
+            cancellationToken);
         DeleteRefreshCookie();
         return Ok(new MessageResponse("Đặt lại mật khẩu thành công."));
     }
@@ -163,9 +204,11 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefreshRequest? body,
         CancellationToken cancellationToken)
     {
-        var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (!Guid.TryParse(sub, out var userId))
         {
@@ -174,12 +217,24 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
                 "Access token không hợp lệ.");
         }
 
-        Request.Cookies.TryGetValue(
-            RefreshTokenCookieName,
-            out var refreshToken);
-        await authService.LogoutAsync(
-            userId,
-            refreshToken,
+        string? refreshToken = null;
+        if (Request.Cookies.TryGetValue(RefreshTokenCookieName, out var cookieToken) &&
+            !string.IsNullOrWhiteSpace(cookieToken))
+        {
+            refreshToken = cookieToken;
+        }
+        else if (!string.IsNullOrWhiteSpace(body?.RefreshToken))
+        {
+            refreshToken = body.RefreshToken;
+        }
+        else if (Request.Headers.TryGetValue("X-Refresh-Token", out var headerToken) &&
+                 !string.IsNullOrWhiteSpace(headerToken))
+        {
+            refreshToken = headerToken.ToString();
+        }
+
+        await sender.Send(
+            new LogoutCommand(userId, refreshToken),
             cancellationToken);
         DeleteRefreshCookie();
         return NoContent();
@@ -193,8 +248,8 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         Response.Cookies.Append(RefreshTokenCookieName, token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
             Path = RefreshTokenCookiePath,
             Expires = isPersistent ? expiresAtUtc : null,
             IsEssential = true
@@ -206,8 +261,8 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         Response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
             Path = RefreshTokenCookiePath
         });
     }

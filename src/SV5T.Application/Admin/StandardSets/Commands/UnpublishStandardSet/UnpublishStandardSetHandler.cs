@@ -17,33 +17,33 @@ public sealed class UnpublishStandardSetHandler(
 ) : IRequestHandler<UnpublishStandardSetCommand, StandardSetResponse>
 {
     public async Task<StandardSetResponse> Handle(
-        UnpublishStandardSetCommand request,
+        UnpublishStandardSetCommand command,
         CancellationToken cancellationToken
     )
     {
         var standardSet =
-            await standardSetRepository.GetByIdAsync(request.StandardSetId, true, true, true, cancellationToken)
+            await standardSetRepository.GetByIdAsync(command.StandardSetId, true, true, true, cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
+                "Không tìm thấy bộ tiêu chuẩn.",
                 "standard_set_not_found"
             );
         if (standardSet.Status != StandardSetStatus.Published)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Chi co the hoan lai bo tieu chuan dang o trang thai Da cong bo (Published).",
+                "Chỉ có thể hoàn lại bộ tiêu chuẩn đang ở trạng thái Đã công bố (Published).",
                 "standard_set_not_published"
             );
         var allCampaigns = await campaignRepository.GetAllAsync(cancellationToken: cancellationToken);
-        var usingCampaign = allCampaigns.FirstOrDefault(c => c.StandardSetId == request.StandardSetId);
+        var usingCampaign = allCampaigns.FirstOrDefault(campaign => campaign.StandardSetId == command.StandardSetId);
         if (usingCampaign is not null)
         {
             var campaignName = usingCampaign.Name;
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Khong the huy cong bo vi bo tieu chuan dang duoc su dung " +
-                $"boi chien dich '{campaignName}'. " +
-                "Vui long go hoac chinh sua chien dich truoc.",
+                $"Không thể hủy công bố vì bộ tiêu chuẩn đang được sử dụng " +
+                $"bởi chiến dịch '{campaignName}'. " +
+                "Vui lòng gỡ hoặc chỉnh sửa chiến dịch trước.",
                 "standard_set_in_use"
             );
         }
@@ -62,6 +62,7 @@ public sealed class UnpublishStandardSetHandler(
         currentUser.UserId
         ?? throw new UseCaseException(
             ApplicationErrorKind.Unauthorized,
-            "Khong xac dinh duoc danh tinh nguoi dung hien tai."
+            "Không xác định được danh tính người dùng hiện tại."
         );
 }
+

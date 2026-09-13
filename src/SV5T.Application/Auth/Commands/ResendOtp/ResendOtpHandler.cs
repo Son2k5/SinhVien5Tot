@@ -1,5 +1,4 @@
-using FluentValidation;
-using SV5T.Application.Auth.Dtos;
+using MediatR;
 using SV5T.Application.Auth.Support;
 using SV5T.Application.Auth.Templates;
 using SV5T.Application.Common.Exceptions;
@@ -9,20 +8,17 @@ using SV5T.Domain.Auth.Enums;
 
 namespace SV5T.Application.Auth.Commands.ResendOtp;
 
-public sealed record ResendOtpCommand(Guid RegistrationId);
+public sealed record ResendOtpCommand(Guid RegistrationId) : IRequest;
 
 public sealed class ResendOtpHandler(
     IAuthChallengeStore challengeStore,
     IOtpService otpService,
     IAuthRedisStore throttleStore,
-    IEmailQueue emailQueue,
-    IValidator<ResendOtpRequest> resendOtpValidator) : ICommandHandler<ResendOtpCommand>
+    IEmailQueue emailQueue) : IRequestHandler<ResendOtpCommand>
 {
-    public async Task HandleAsync(ResendOtpCommand command, CancellationToken cancellationToken = default)
+    public async Task Handle(ResendOtpCommand command, CancellationToken cancellationToken)
     {
-        var request = new ResendOtpRequest(command.RegistrationId);
-        await AuthServiceSupport.ValidateAsync(resendOtpValidator, request, cancellationToken);
-        var challenge = await challengeStore.GetAsync(request.RegistrationId, cancellationToken);
+        var challenge = await challengeStore.GetAsync(command.RegistrationId, cancellationToken);
         AuthServiceSupport.EnsureChallengeUsable(
             challenge,
             AuthChallengePurpose.Registration,

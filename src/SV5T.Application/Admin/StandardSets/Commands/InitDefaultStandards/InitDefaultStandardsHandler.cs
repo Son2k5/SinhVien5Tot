@@ -17,51 +17,51 @@ public sealed class InitDefaultStandardsHandler(
 ) : IRequestHandler<InitDefaultStandardsCommand, IReadOnlyList<StandardResponse>>
 {
     public async Task<IReadOnlyList<StandardResponse>> Handle(
-        InitDefaultStandardsCommand request,
+        InitDefaultStandardsCommand command,
         CancellationToken cancellationToken
     )
     {
         var standardSet =
-            await standardSetRepository.GetByIdAsync(request.StandardSetId, true, true, false, cancellationToken)
+            await standardSetRepository.GetByIdAsync(command.StandardSetId, true, true, false, cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay bo tieu chuan.",
+                "Không tìm thấy bộ tiêu chuẩn.",
                 "standard_set_not_found"
             );
         if (standardSet.Status != StandardSetStatus.Draft)
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Khong the khoi tao tieu chuan cho bo tieu chuan da cong bo.",
+                "Không thể khởi tạo tiêu chuẩn cho bộ tiêu chuẩn đã công bố.",
                 "standard_set_not_editable"
             );
         var existingGroupCodes = standardSet
-            .Standards.Where(s => s.GroupCode.HasValue)
-            .Select(s => s.GroupCode!.Value)
+            .Standards.Where(standard => standard.GroupCode.HasValue)
+            .Select(standard => standard.GroupCode!.Value)
             .ToHashSet();
         var actorId = RequireAdminUserId();
         var now = DateTime.UtcNow;
-        foreach (var def in AdminStandardMappings.DefaultIndividualStandards)
+        foreach (var definition in AdminStandardMappings.DefaultIndividualStandards)
         {
-            if (!existingGroupCodes.Contains(def.GroupCode))
+            if (!existingGroupCodes.Contains(definition.GroupCode))
             {
-                var std = new Standard
+                var standard = new Standard
                 {
-                    StandardSetId = request.StandardSetId,
-                    GroupCode = def.GroupCode,
-                    Code = def.Code,
-                    Title = def.Title,
-                    Description = def.Description,
-                    DisplayOrder = def.DisplayOrder,
+                    StandardSetId = command.StandardSetId,
+                    GroupCode = definition.GroupCode,
+                    Code = definition.Code,
+                    Title = definition.Title,
+                    Description = definition.Description,
+                    DisplayOrder = definition.DisplayOrder,
                     Operator = CriterionOperator.All,
                     CreatedAt = now,
                     CreatedBy = actorId.ToString(),
                 };
-                await standardRepository.AddAsync(std, cancellationToken);
+                await standardRepository.AddAsync(standard, cancellationToken);
             }
         }
         await unitOfWork.SaveChangesAsync(cancellationToken);
         var allStandards = await standardRepository.GetByStandardSetIdAsync(
-            request.StandardSetId,
+            command.StandardSetId,
             true,
             cancellationToken
         );
@@ -72,6 +72,7 @@ public sealed class InitDefaultStandardsHandler(
         currentUser.UserId
         ?? throw new UseCaseException(
             ApplicationErrorKind.Unauthorized,
-            "Khong xac dinh duoc danh tinh nguoi dung hien tai."
+            "Không xác định được danh tính người dùng hiện tại."
         );
 }
+

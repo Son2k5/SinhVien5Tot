@@ -1,9 +1,13 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
+using SV5T.Application.Users.Commands.UpdateAvatar;
+using SV5T.Application.Users.Commands.UpdateProfile;
 using SV5T.Application.Users.Dtos;
-using SV5T.Application.Users.Services;
+using SV5T.Application.Users.Queries.GetMyProfile;
+using SV5T.Application.Users.Queries.GetUserById;
 
 namespace SV5T.Api.Controllers;
 
@@ -11,7 +15,7 @@ namespace SV5T.Api.Controllers;
 [Authorize]
 [Route("api/users")]
 public sealed class UsersController(
-    IUserService userService,
+    ISender sender,
     ICurrentUser currentUser) : ControllerBase
 {
     private const long MaxAvatarBytes = 5 * 1024 * 1024;
@@ -31,8 +35,8 @@ public sealed class UsersController(
                 "invalid_session");
         }
 
-        var user = await userService.GetByIdAsync(
-            currentUser.UserId.Value,
+        var user = await sender.Send(
+            new GetUserByIdQuery(currentUser.UserId.Value),
             cancellationToken);
 
         if (user is null)
@@ -53,8 +57,8 @@ public sealed class UsersController(
     public async Task<ActionResult<UserProfileDto>> GetMyProfile(
         CancellationToken cancellationToken)
     {
-        var profile = await userService.GetMyProfileAsync(
-            RequireUserId(), cancellationToken);
+        var profile = await sender.Send(
+            new GetMyProfileQuery(RequireUserId()), cancellationToken);
         if (profile is null)
         {
             throw new UseCaseException(
@@ -76,8 +80,8 @@ public sealed class UsersController(
         UpdateUserProfileRequest request,
         CancellationToken cancellationToken)
     {
-        var profile = await userService.UpdateMyProfileAsync(
-            RequireUserId(), request, cancellationToken);
+        var profile = await sender.Send(
+            new UpdateProfileCommand(RequireUserId(), request), cancellationToken);
         return Ok(profile);
     }
 
@@ -106,9 +110,10 @@ public sealed class UsersController(
         await using var content = new MemoryStream((int)avatar.Length);
         await avatar.CopyToAsync(content, cancellationToken);
         content.Position = 0;
-        var user = await userService.UpdateMyAvatarAsync(
-            RequireUserId(),
-            new UpdateUserAvatarRequest(content, avatar.FileName, avatar.Length),
+        var user = await sender.Send(
+            new UpdateAvatarCommand(
+                RequireUserId(),
+                new UpdateUserAvatarRequest(content, avatar.FileName, avatar.Length)),
             cancellationToken);
         return Ok(user);
     }

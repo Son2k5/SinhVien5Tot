@@ -1,4 +1,4 @@
-using FluentValidation;
+using MediatR;
 using SV5T.Application.Auth.Dtos;
 using SV5T.Application.Auth.Support;
 using SV5T.Application.Common.Exceptions;
@@ -9,7 +9,7 @@ using RefreshTokenEntity = SV5T.Domain.Auth.RefreshToken;
 
 namespace SV5T.Application.Auth.Commands.Login;
 
-public sealed record LoginCommand(LoginRequest Request, string IpAddress);
+public sealed record LoginCommand(LoginRequest Request, string IpAddress) : IRequest<AuthTokens>;
 
 public sealed class LoginHandler(
     IUserRepository userRepository,
@@ -18,15 +18,13 @@ public sealed class LoginHandler(
     IPasswordHasher passwordHasher,
     IAuthRedisStore throttleStore,
     IJwtService jwtService,
-    IRefreshTokenFactory refreshTokenFactory,
-    IValidator<LoginRequest> loginValidator) : ICommandHandler<LoginCommand, AuthTokens>
+    IRefreshTokenFactory refreshTokenFactory) : IRequestHandler<LoginCommand, AuthTokens>
 {
-    public async Task<AuthTokens> HandleAsync(LoginCommand command, CancellationToken cancellationToken = default)
+    public async Task<AuthTokens> Handle(LoginCommand command, CancellationToken cancellationToken)
     {
         var request = command.Request;
         var ipAddress = command.IpAddress;
 
-        await AuthServiceSupport.ValidateAsync(loginValidator, request, cancellationToken);
         var email = AuthServiceSupport.NormalizeEmail(request.Email);
         if (await throttleStore.IsLoginBlockedAsync(email, ipAddress))
         {

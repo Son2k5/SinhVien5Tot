@@ -144,4 +144,22 @@ public sealed class JwtSecurityEventsTests
         // Success
         Assert.Null(context.Result);
     }
+
+    [Fact]
+    public async Task JwtBearer_AcceptsToken_WhenSubIsMappedToNameIdentifier()
+    {
+        var userId = Guid.NewGuid();
+        var (events, context, redis, _) = SetupJwtBearerTest(userId: Guid.Empty, svClaim: "3");
+
+        // Simulate .NET mapping 'sub' to ClaimTypes.NameIdentifier
+        var identity = (ClaimsIdentity)context.Principal!.Identity!;
+        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId.ToString()));
+
+        redis.CurrentSv = 3;
+
+        await events.TokenValidated(context);
+
+        // Success
+        Assert.Null(context.Result);
+    }
 }

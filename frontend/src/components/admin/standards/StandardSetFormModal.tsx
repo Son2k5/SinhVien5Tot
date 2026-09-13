@@ -33,6 +33,7 @@ export interface StandardSetFormModalProps {
 const EMPTY_SETS: StandardSetResponse[] = [];
 
 interface StandardSetFormState {
+  name: string;
   academicYear: string;
   level: AwardLevel;
   awardType: AwardType;
@@ -52,6 +53,7 @@ function getInitialStandardSetState(
 ): StandardSetFormState {
   if (standardSet) {
     return {
+      name: standardSet.name || '',
       academicYear: standardSet.academicYear,
       level: standardSet.level,
       awardType: standardSet.awardType,
@@ -61,6 +63,7 @@ function getInitialStandardSetState(
     };
   }
   return {
+    name: '',
     academicYear: '2025-2026',
     level: AwardLevel.School,
     awardType: AwardType.Individual,
@@ -108,7 +111,7 @@ export function StandardSetFormModal({
     getInitialStandardSetState,
   );
 
-  const { academicYear, level, awardType, templateStandardSetId, formError, fieldErrors } = state;
+  const { name, academicYear, level, awardType, templateStandardSetId, formError, fieldErrors } = state;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -125,6 +128,10 @@ export function StandardSetFormModal({
 
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
+
+    if (name.length > 255) {
+      errors.name = 'Tên bộ tiêu chuẩn không được quá 255 ký tự.';
+    }
 
     if (!academicYear.trim()) {
       errors.academicYear = 'Năm học không được để trống.';
@@ -146,6 +153,7 @@ export function StandardSetFormModal({
     }
 
     const payload: CreateStandardSetRequest = {
+      name: name.trim(),
       academicYear: academicYear.trim(),
       level,
       awardType,
@@ -197,6 +205,29 @@ export function StandardSetFormModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="standard-set-name-input" className="text-xs font-bold text-slate-700 block mb-1">
+              Tên bộ tiêu chuẩn <span className="text-slate-400 font-normal text-[11px]">(Tùy chọn)</span>
+            </label>
+            <input
+              id="standard-set-name-input"
+              type="text"
+              value={name}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
+              placeholder="Ví dụ: Bộ tiêu chuẩn Sinh viên 5 Tốt cấp Trường 2025-2026"
+              className={`w-full h-10 px-3.5 text-xs border rounded-xl bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 ${
+                fieldErrors.name
+                  ? 'border-rose-400 focus:ring-rose-200'
+                  : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100'
+              }`}
+            />
+            {fieldErrors.name && (
+              <p className="text-[11px] text-rose-600 mt-1 font-medium">
+                {fieldErrors.name}
+              </p>
+            )}
+          </div>
+
           <div>
             <label htmlFor="standard-set-year-input" className="text-xs font-bold text-slate-700 block mb-1">
               Năm học áp dụng <span className="text-rose-500">*</span>

@@ -1,5 +1,7 @@
 using SV5T.Application.Admin.Dtos;
-using SV5T.Application.Admin.Services;
+using SV5T.Application.Admin.StandardSets.Commands.CreateStandardSet;
+using SV5T.Application.Admin.StandardSets.Commands.PublishStandardSet;
+using SV5T.Application.Admin.StandardSets.Commands.UnpublishStandardSet;
 using SV5T.Application.Admin.Validators;
 using SV5T.Application.Campaigns.Abstractions;
 using SV5T.Application.Common.Abstractions;
@@ -16,7 +18,7 @@ using Xunit;
 
 namespace SV5T.UnitTests.Application;
 
-public sealed class AdminStandardServiceTests
+public sealed class AdminStandardSetHandlerTests
 {
     private readonly FakeStandardSetRepository _standardSetRepo = new();
     private readonly FakeStandardRepository _standardRepo = new();
@@ -24,26 +26,24 @@ public sealed class AdminStandardServiceTests
     private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly FakeCurrentUser _currentUser = new(Guid.NewGuid());
 
-    private AdminStandardService CreateService() =>
-        new(
-            _standardSetRepo,
-            _standardRepo,
-            _campaignRepo,
-            _unitOfWork,
-            _currentUser,
-            new CreateStandardSetRequestValidator(),
-            new UpdateStandardSetRequestValidator(),
-            new CreateStandardRequestValidator(),
-            new UpdateStandardRequestValidator());
+    private CreateStandardSetHandler CreateCreateHandler() =>
+        new(_standardSetRepo, _unitOfWork, _currentUser);
+
+    private PublishStandardSetHandler CreatePublishHandler() =>
+        new(_standardSetRepo, _unitOfWork, _currentUser);
+
+    private UnpublishStandardSetHandler CreateUnpublishHandler() =>
+        new(_standardSetRepo, _campaignRepo, _unitOfWork, _currentUser);
 
     [Fact]
     public async Task CreateAsync_WithoutTemplateIndividual_CreatesDraftStandardSetWith5DefaultStandards()
     {
-        var service = CreateService();
-        var request = new CreateStandardSetRequest("2026-2027", AwardLevel.School, AwardType.Individual, null);
+        var handler = CreateCreateHandler();
+        var request = new CreateStandardSetRequest("Bộ tiêu chuẩn ĐH 2026-2027", "2026-2027", AwardLevel.School, AwardType.Individual, null);
 
-        var result = await service.CreateAsync(request);
+        var result = await handler.Handle(new CreateStandardSetCommand(request), CancellationToken.None);
 
+        Assert.Equal("Bộ tiêu chuẩn ĐH 2026-2027", result.Name);
         Assert.Equal("2026-2027", result.AcademicYear);
         Assert.Equal(StandardSetStatus.Draft, result.Status);
         Assert.Equal(1, result.Version);
@@ -102,11 +102,12 @@ public sealed class AdminStandardServiceTests
 
         _standardSetRepo.Items.Add(sourceStandardSet);
 
-        var service = CreateService();
-        var request = new CreateStandardSetRequest("2026-2027", AwardLevel.School, AwardType.Individual, sourceStandardSetId);
+        var handler = CreateCreateHandler();
+        var request = new CreateStandardSetRequest("Bộ tiêu chuẩn ĐH 2026-2027", "2026-2027", AwardLevel.School, AwardType.Individual, sourceStandardSetId);
 
-        var result = await service.CreateAsync(request);
+        var result = await handler.Handle(new CreateStandardSetCommand(request), CancellationToken.None);
 
+        Assert.Equal("Bộ tiêu chuẩn ĐH 2026-2027", result.Name);
         Assert.Equal("2026-2027", result.AcademicYear);
         Assert.Equal(sourceStandardSetId, result.PreviousVersionId);
         Assert.NotNull(result.Standards);
@@ -150,8 +151,8 @@ public sealed class AdminStandardServiceTests
 
         _standardSetRepo.Items.Add(standardSet);
 
-        var service = CreateService();
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.PublishAsync(standardSetId));
+        var handler = CreatePublishHandler();
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(new PublishStandardSetCommand(standardSetId), CancellationToken.None));
 
         Assert.Equal(ApplicationErrorKind.Validation, ex.Kind);
         Assert.Equal("missing_standard_groups", ex.ErrorCode);
@@ -224,7 +225,6 @@ public sealed class AdminStandardServiceTests
     [Fact]
     public async Task UnpublishAsync_WhenPublishedAndNotInUse_RevertsToDraft()
     {
-        var service = CreateService();
         var set = new StandardSet
         {
             Id = Guid.NewGuid(),
@@ -238,7 +238,8 @@ public sealed class AdminStandardServiceTests
         };
         await _standardSetRepo.AddAsync(set);
 
-        var result = await service.UnpublishAsync(set.Id);
+        var handler = CreateUnpublishHandler();
+        var result = await handler.Handle(new UnpublishStandardSetCommand(set.Id), CancellationToken.None);
 
         Assert.Equal(StandardSetStatus.Draft, result.Status);
         Assert.Null(result.PublishedAt);
@@ -247,7 +248,6 @@ public sealed class AdminStandardServiceTests
     [Fact]
     public async Task UnpublishAsync_WhenInUseByCampaign_ThrowsConflict()
     {
-        var service = CreateService();
         var standardSetId = Guid.NewGuid();
         var set = new StandardSet
         {
@@ -272,7 +272,8 @@ public sealed class AdminStandardServiceTests
             AwardType = AwardType.Individual
         });
 
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.UnpublishAsync(standardSetId));
+        var handler = CreateUnpublishHandler();
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(new UnpublishStandardSetCommand(standardSetId), CancellationToken.None));
         Assert.Equal(ApplicationErrorKind.Conflict, ex.Kind);
     }
 
@@ -282,6 +283,9 @@ public sealed class AdminStandardServiceTests
 
         public Task<Campaign?> GetByIdAsync(Guid id, bool includeDetails = false, bool tracking = false, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.FirstOrDefault(x => x.Id == id));
+
+        public Task<IReadOnlyList<Campaign>> GetByIdsAsync(IEnumerable<Guid> ids, bool includeDetails = false, bool tracking = false, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Campaign>>(Items.Where(x => ids.Contains(x.Id)).ToList());
 
         public Task<IReadOnlyList<Campaign>> GetAllAsync(AwardLevel? level = null, CampaignStatus? status = null, string? schoolYear = null, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Campaign>>(Items);
@@ -304,6 +308,12 @@ public sealed class AdminStandardServiceTests
         public Task RemoveAsync(Campaign campaign, CancellationToken cancellationToken = default)
         {
             Items.Remove(campaign);
+            return Task.CompletedTask;
+        }
+
+        public Task RemoveRangeAsync(IEnumerable<Campaign> campaigns, CancellationToken cancellationToken = default)
+        {
+            foreach (var c in campaigns) Items.Remove(c);
             return Task.CompletedTask;
         }
     }

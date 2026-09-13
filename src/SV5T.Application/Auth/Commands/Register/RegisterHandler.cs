@@ -1,5 +1,4 @@
-using FluentValidation;
-using SV5T.Application.Auth.Dtos;
+using MediatR;
 using SV5T.Application.Auth.Support;
 using SV5T.Application.Auth.Templates;
 using SV5T.Application.Common.Exceptions;
@@ -10,7 +9,7 @@ using SV5T.Domain.Users;
 
 namespace SV5T.Application.Auth.Commands.Register;
 
-public sealed record RegisterCommand(string Name, string Email, string Password);
+public sealed record RegisterCommand(string Name, string Email, string Password) : IRequest<Guid>;
 
 public sealed class RegisterHandler(
     IUserRepository userRepository,
@@ -18,18 +17,15 @@ public sealed class RegisterHandler(
     IPasswordHasher passwordHasher,
     IOtpService otpService,
     IAuthRedisStore throttleStore,
-    IEmailQueue emailQueue,
-    IValidator<RegisterRequest> registerValidator) : ICommandHandler<RegisterCommand, Guid>
+    IEmailQueue emailQueue) : IRequestHandler<RegisterCommand, Guid>
 {
-    public async Task<Guid> HandleAsync(RegisterCommand command, CancellationToken cancellationToken = default)
+    public async Task<Guid> Handle(RegisterCommand command, CancellationToken cancellationToken)
     {
-        var request = new RegisterRequest(command.Name, command.Email, command.Password);
-        await AuthServiceSupport.ValidateAsync(registerValidator, request, cancellationToken);
-        var displayName = request.Name.Trim();
-        var email = AuthServiceSupport.NormalizeEmail(request.Email);
+        var displayName = command.Name.Trim();
+        var email = AuthServiceSupport.NormalizeEmail(command.Email);
         var normalizedEmail = email.ToUpperInvariant();
         await EnsureOtpCanBeIssuedAsync(email);
-        var passwordHash = passwordHasher.Hash(request.Password);
+        var passwordHash = passwordHasher.Hash(command.Password);
         var existing = await userRepository.GetByNormalizedEmailAsync(
             normalizedEmail, false, cancellationToken);
         if (existing?.IsVerified == true)

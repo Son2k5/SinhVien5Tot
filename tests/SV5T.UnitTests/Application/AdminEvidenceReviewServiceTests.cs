@@ -1,5 +1,6 @@
+using FluentValidation;
 using SV5T.Application.Admin.Dtos;
-using SV5T.Application.Admin.Services;
+using SV5T.Application.Admin.Evidences.Commands.ReviewEvidence;
 using SV5T.Application.Admin.Validators;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Models;
@@ -17,18 +18,18 @@ using Xunit;
 
 namespace SV5T.UnitTests.Application;
 
-public sealed class AdminEvidenceReviewServiceTests
+public sealed class AdminEvidenceReviewHandlerTests
 {
     private readonly FakeEvidenceRepository _evidenceRepo = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly FakeCurrentUser _currentUser = new(Guid.NewGuid());
+    private readonly ReviewEvidenceCommandValidator _commandValidator = new(new ReviewEvidenceRequestValidator());
 
-    private AdminEvidenceReviewService CreateService() =>
+    private ReviewEvidenceHandler CreateHandler() =>
         new(
             _evidenceRepo,
             _unitOfWork,
-            _currentUser,
-            new ReviewEvidenceRequestValidator());
+            _currentUser);
 
     [Fact]
     public async Task ReviewAsync_RowVersionMismatch_ThrowsConcurrencyConflict()
@@ -55,10 +56,11 @@ public sealed class AdminEvidenceReviewServiceTests
 
         _evidenceRepo.Items.Add(evidence);
 
-        var service = CreateService();
+        var handler = CreateHandler();
         var request = new ReviewEvidenceRequest(EvidenceStatus.Approved, "Duyệt đạt", staleClientRowVersion);
 
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.ReviewAsync(evidenceId, request));
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() =>
+            handler.Handle(new ReviewEvidenceCommand(evidenceId, request), CancellationToken.None));
 
         Assert.Equal(ApplicationErrorKind.Conflict, ex.Kind);
         Assert.Equal("concurrency_conflict", ex.ErrorCode);
@@ -93,10 +95,10 @@ public sealed class AdminEvidenceReviewServiceTests
 
         _evidenceRepo.Items.Add(evidence);
 
-        var service = CreateService();
+        var handler = CreateHandler();
         var request = new ReviewEvidenceRequest(EvidenceStatus.Approved, "Minh chứng bổ sung hợp lệ", clientRowVersionBase64);
 
-        var result = await service.ReviewAsync(evidenceId, request);
+        var result = await handler.Handle(new ReviewEvidenceCommand(evidenceId, request), CancellationToken.None);
 
         Assert.Equal(EvidenceStatus.Approved, result.Status);
         Assert.Equal(SubmissionStatus.UnderReview, application.Status); // Đã auto sync từ Resubmitted -> UnderReview
@@ -129,23 +131,25 @@ public sealed class AdminEvidenceReviewServiceTests
 
         _evidenceRepo.Items.Add(evidence);
 
-        var service = CreateService();
+        var handler = CreateHandler();
         var request = new ReviewEvidenceRequest(EvidenceStatus.Approved, "Duyệt", Convert.ToBase64String(rowVersion));
 
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.ReviewAsync(evidenceId, request));
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() =>
+            handler.Handle(new ReviewEvidenceCommand(evidenceId, request), CancellationToken.None));
 
         Assert.Equal(ApplicationErrorKind.Conflict, ex.Kind);
         Assert.Equal("campaign_review_deadline_passed", ex.ErrorCode);
     }
 
     [Fact]
-    public async Task ReviewAsync_RejectWithoutNote_ThrowsValidationException()
+    public void ReviewAsync_RejectWithoutNote_ValidatorFails()
     {
-        var service = CreateService();
         var request = new ReviewEvidenceRequest(EvidenceStatus.Rejected, null, "AQIDBA==");
+        var command = new ReviewEvidenceCommand(Guid.NewGuid(), request);
 
-        var ex = await Assert.ThrowsAsync<UseCaseException>(() => service.ReviewAsync(Guid.NewGuid(), request));
-        Assert.Equal(ApplicationErrorKind.Validation, ex.Kind);
+        var validationResult = _commandValidator.Validate(command);
+        Assert.False(validationResult.IsValid);
+        Assert.Contains(validationResult.Errors, e => e.PropertyName.Contains("Note"));
     }
 
     private sealed class FakeEvidenceRepository : IEvidenceRepository

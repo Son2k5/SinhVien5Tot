@@ -1,8 +1,6 @@
-using FluentValidation;
 using MediatR;
 using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Admin.StandardSets.Common;
-using SV5T.Application.Auth.Support;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Standards.Abstractions;
@@ -15,69 +13,69 @@ namespace SV5T.Application.Admin.StandardSets.Commands.CreateStandardSet;
 public sealed class CreateStandardSetHandler(
     IStandardSetRepository standardSetRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser,
-    IValidator<CreateStandardSetRequest> validator
+    ICurrentUser currentUser
 ) : IRequestHandler<CreateStandardSetCommand, StandardSetResponse>
 {
-    public async Task<StandardSetResponse> Handle(CreateStandardSetCommand request, CancellationToken cancellationToken)
+    public async Task<StandardSetResponse> Handle(CreateStandardSetCommand command, CancellationToken cancellationToken)
     {
-        await AuthServiceSupport.ValidateAsync(validator, request.Request, cancellationToken);
         var actorId = RequireAdminUserId();
+        var createRequest = command.Request;
         var exists = await standardSetRepository.ExistsByAcademicYearAndLevelAsync(
-            request.Request.AcademicYear.Trim(),
-            request.Request.Level,
-            request.Request.AwardType,
+            createRequest.AcademicYear.Trim(),
+            createRequest.Level,
+            createRequest.AwardType,
             1,
             cancellationToken: cancellationToken
         );
-        if (exists && !request.Request.TemplateStandardSetId.HasValue)
+        if (exists && !createRequest.TemplateStandardSetId.HasValue)
         {
-            var academicYear = request.Request.AcademicYear;
-            var level = request.Request.Level;
-            var awardType = request.Request.AwardType;
+            var academicYear = createRequest.AcademicYear;
+            var level = createRequest.Level;
+            var awardType = createRequest.AwardType;
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Bo tieu chuan cho nam hoc '{academicYear}', " +
-                $"cap '{level}' va loai '{awardType}' da ton tai.",
+                $"Bộ tiêu chuẩn cho năm học '{academicYear}', " +
+                $"cấp '{level}' và loại '{awardType}' đã tồn tại.",
                 "standard_set_duplicate"
             );
         }
         var standardSet = new StandardSet
         {
-            AcademicYear = request.Request.AcademicYear.Trim(),
-            Level = request.Request.Level,
-            AwardType = request.Request.AwardType,
+            Name = createRequest.Name.Trim(),
+            AcademicYear = createRequest.AcademicYear.Trim(),
+            Level = createRequest.Level,
+            AwardType = createRequest.AwardType,
             Status = StandardSetStatus.Draft,
             Version = 1,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = actorId.ToString(),
         };
-        if (request.Request.TemplateStandardSetId.HasValue)
+        if (createRequest.TemplateStandardSetId.HasValue)
         {
             var source =
                 await standardSetRepository.GetByIdAsync(
-                    request.Request.TemplateStandardSetId.Value,
+                    createRequest.TemplateStandardSetId.Value,
                     includeStandards: true,
                     includeCriteria: true,
                     cancellationToken: cancellationToken
                 )
                 ?? throw new UseCaseException(
                     ApplicationErrorKind.NotFound,
-                    "Khong tim thay bo tieu chuan mau de sao chep.",
+                    "Không tìm thấy bộ tiêu chuẩn mẫu để sao chép.",
                     "standard_template_not_found"
                 );
-            if (source.Level != request.Request.Level || source.AwardType != request.Request.AwardType)
+            if (source.Level != createRequest.Level || source.AwardType != createRequest.AwardType)
             {
                 throw new UseCaseException(
                     ApplicationErrorKind.Validation,
-                    "Bo tieu chuan mau phai co cung Cap xet duyet (Level) va Loai danh hieu (AwardType).",
+                    "Bộ tiêu chuẩn mẫu phải có cùng Cấp xét duyệt (Level) và Loại danh hiệu (AwardType).",
                     "invalid_standard_template"
                 );
             }
             standardSet.PreviousVersionId = source.Id;
             standardSet.Standards = AdminStandardMappings.CloneStandards(source.Standards, standardSet.Id, actorId);
         }
-        else if (request.Request.AwardType == AwardType.Individual)
+        else if (createRequest.AwardType == AwardType.Individual)
         {
             var now = DateTime.UtcNow;
             standardSet.Standards = AdminStandardMappings
@@ -96,10 +94,10 @@ public sealed class CreateStandardSetHandler(
                 .ToList();
         }
         await unitOfWork.ExecuteInTransactionAsync(
-            async ct =>
+            async nestedCancellationToken =>
             {
-                await standardSetRepository.AddAsync(standardSet, ct);
-                await unitOfWork.SaveChangesAsync(ct);
+                await standardSetRepository.AddAsync(standardSet, nestedCancellationToken);
+                await unitOfWork.SaveChangesAsync(nestedCancellationToken);
             },
             cancellationToken
         );
@@ -110,6 +108,7 @@ public sealed class CreateStandardSetHandler(
         currentUser.UserId
         ?? throw new UseCaseException(
             ApplicationErrorKind.Unauthorized,
-            "Khong xac dinh duoc danh tinh nguoi dung hien tai."
+            "Không xác định được danh tính người dùng hiện tại."
         );
 }
+

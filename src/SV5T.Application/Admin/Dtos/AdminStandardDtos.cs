@@ -13,18 +13,21 @@ namespace SV5T.Application.Admin.Dtos;
 // ==========================================
 
 public sealed record CreateStandardSetRequest(
+    string Name,
     string AcademicYear,
     AwardLevel Level,
     AwardType AwardType,
     Guid? TemplateStandardSetId);
 
 public sealed record UpdateStandardSetRequest(
+    string Name,
     string AcademicYear,
     AwardLevel Level,
     AwardType AwardType);
 
 public sealed record StandardSetResponse(
     Guid Id,
+    string Name,
     string AcademicYear,
     AwardLevel Level,
     AwardType AwardType,
@@ -148,6 +151,9 @@ public sealed record UpdateCampaignRequest(
 
 public sealed record UpdateCampaignStatusRequest(
     CampaignStatus Status);
+
+public sealed record BatchDeleteCampaignsRequest(
+    IReadOnlyList<Guid> Ids);
 
 public sealed record CampaignResponse(
     Guid Id,

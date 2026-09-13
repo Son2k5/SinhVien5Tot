@@ -20,24 +20,24 @@ public sealed class DeleteCampaignHandler(ICampaignRepository campaignRepository
             )
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay chien dich.",
+                "Không tìm thấy chiến dịch.",
                 "campaign_not_found"
             );
-        if (campaign.Status != CampaignStatus.Draft)
-        {
-            throw new UseCaseException(
-                ApplicationErrorKind.Conflict,
-                "Chi co the xoa chien dich dang o trang thai Nhap (Draft).",
-                "campaign_not_deletable"
-            );
-        }
-
         if (campaign.Applications.Count > 0)
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Khong the xoa chien dich da co ho so dang ky.",
+                "Không thể xóa chiến dịch đã có hồ sơ đăng ký.",
                 "campaign_has_applications"
+            );
+        }
+
+        if (campaign.DependentCampaigns.Count > 0)
+        {
+            throw new UseCaseException(
+                ApplicationErrorKind.Conflict,
+                "Không thể xóa chiến dịch đang là điều kiện tiên quyết của chiến dịch khác.",
+                "campaign_has_dependents"
             );
         }
         await campaignRepository.RemoveAsync(campaign, cancellationToken);

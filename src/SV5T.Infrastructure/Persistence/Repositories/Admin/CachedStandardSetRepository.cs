@@ -128,6 +128,7 @@ public sealed class CachedStandardSetRepository(
     private static CachedStandardSetModel ToCacheModel(StandardSet set) =>
         new(
             set.Id,
+            set.Name,
             set.AcademicYear,
             set.Level,
             set.AwardType,
@@ -177,6 +178,7 @@ public sealed class CachedStandardSetRepository(
         var set = new StandardSet
         {
             Id = model.Id,
+            Name = model.Name,
             AcademicYear = model.AcademicYear,
             Level = model.Level,
             AwardType = model.AwardType,
@@ -239,6 +241,7 @@ public sealed class CachedStandardSetRepository(
 
     private sealed record CachedStandardSetModel(
         Guid Id,
+        string Name,
         string AcademicYear,
         AwardLevel Level,
         AwardType AwardType,

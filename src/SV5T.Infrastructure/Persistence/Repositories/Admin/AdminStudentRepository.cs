@@ -112,6 +112,29 @@ public sealed class AdminStudentRepository(ApplicationDbContext db) : IAdminStud
         return q.FirstOrDefaultAsync(u => u.Id == id, ct);
     }
 
+    public async Task<IReadOnlyList<User>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        bool tracking = false,
+        bool includeDeleted = false,
+        CancellationToken ct = default
+    )
+    {
+        IQueryable<User> q = db.Users.Include(u => u.Profile).Include(u => u.Addresses);
+
+        if (!tracking)
+        {
+            q = q.AsNoTracking();
+        }
+
+        if (!includeDeleted)
+        {
+            q = q.Where(u => !u.IsDeleted);
+        }
+
+        var idList = ids.ToList();
+        return await q.Where(u => idList.Contains(u.Id)).ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<SubmissionApplication>> GetApplicationsAsync(
         Guid sid,
         CancellationToken ct = default

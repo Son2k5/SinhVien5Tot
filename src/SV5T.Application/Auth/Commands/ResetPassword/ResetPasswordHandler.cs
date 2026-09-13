@@ -1,5 +1,4 @@
-using FluentValidation;
-using SV5T.Application.Auth.Dtos;
+using MediatR;
 using SV5T.Application.Auth.Support;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Domain.Auth;
@@ -8,7 +7,7 @@ using SV5T.Domain.Users;
 
 namespace SV5T.Application.Auth.Commands.ResetPassword;
 
-public sealed record ResetPasswordCommand(ResetPasswordRequest Request);
+public sealed record ResetPasswordCommand(Guid ResetId, string Otp, string NewPassword) : IRequest;
 
 public sealed class ResetPasswordHandler(
     IUserRepository userRepository,
@@ -17,24 +16,21 @@ public sealed class ResetPasswordHandler(
     IUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher,
     IOtpService otpService,
-    IAuthRedisStore throttleStore,
-    IValidator<ResetPasswordRequest> resetPasswordValidator) : ICommandHandler<ResetPasswordCommand>
+    IAuthRedisStore throttleStore) : IRequestHandler<ResetPasswordCommand>
 {
-    public async Task HandleAsync(ResetPasswordCommand command, CancellationToken cancellationToken = default)
+    public async Task Handle(ResetPasswordCommand command, CancellationToken cancellationToken)
     {
-        var request = command.Request;
-        await AuthServiceSupport.ValidateAsync(resetPasswordValidator, request, cancellationToken);
         var now = DateTime.UtcNow;
-        var challenge = await challengeStore.GetAsync(request.ResetId, cancellationToken);
+        var challenge = await challengeStore.GetAsync(command.ResetId, cancellationToken);
         AuthServiceSupport.EnsureChallengeUsable(
             challenge,
             AuthChallengePurpose.PasswordReset,
             now);
-        var submittedHash = otpService.Hash(request.Otp);
+        var submittedHash = otpService.Hash(command.Otp);
         if (!otpService.FixedTimeEquals(submittedHash, challenge!.OtpHash))
         {
             _ = await challengeStore.IncrementFailureAsync(
-                request.ResetId,
+                command.ResetId,
                 AuthChallengePurpose.PasswordReset,
                 now,
                 cancellationToken);
@@ -46,7 +42,7 @@ public sealed class ResetPasswordHandler(
             {
                 var transNow = DateTime.UtcNow;
                 var currentChallenge = await challengeStore.GetAsync(
-                    request.ResetId,
+                    command.ResetId,
                     transactionCancellationToken);
                 AuthServiceSupport.EnsureChallengeUsable(
                     currentChallenge,
@@ -68,7 +64,7 @@ public sealed class ResetPasswordHandler(
                     true,
                     transactionCancellationToken) ??
                     throw AuthServiceSupport.InvalidChallenge();
-                user.PasswordHash = passwordHasher.Hash(request.NewPassword);
+                user.PasswordHash = passwordHasher.Hash(command.NewPassword);
                 user.SecurityVersion++;
                 user.UpdatedAt = transNow;
                 await refreshTokenRepository.RevokeAllActiveAsync(

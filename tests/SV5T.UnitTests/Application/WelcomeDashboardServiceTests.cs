@@ -3,7 +3,7 @@ using Xunit;
 
 namespace SV5T.UnitTests.Application;
 
-public sealed class WelcomeDashboardServiceTests
+public sealed class WelcomeDashboardHandlerTests
 {
     [Fact]
     public async Task Get_ReturnsProfileAndSeparatesPortalContent()
@@ -22,14 +22,14 @@ public sealed class WelcomeDashboardServiceTests
             }
         };
         user.DisplayName = user.Email;
-        var service = new WelcomeDashboardService(
+        var handler = new GetWelcomeDashboardHandler(
             new FakeCurrentUser(user.Id),
             new FakeUserRepository(user),
             new FakeContentRepository(
                 Content(PortalContentType.Notification),
                 Content(PortalContentType.News)));
 
-        var response = await service.GetAsync();
+        var response = await handler.Handle(new GetWelcomeDashboardQuery(), CancellationToken.None);
 
         Assert.Equal("Nguyễn Minh Anh", response.User.DisplayName);
         Assert.Equal("Công nghệ thông tin", response.User.Faculty);
@@ -41,13 +41,13 @@ public sealed class WelcomeDashboardServiceTests
     [Fact]
     public async Task Get_RejectsMissingAuthenticatedSession()
     {
-        var service = new WelcomeDashboardService(
+        var handler = new GetWelcomeDashboardHandler(
             new FakeCurrentUser(null),
             new FakeUserRepository(),
             new FakeContentRepository());
 
         var exception = await Assert.ThrowsAsync<UseCaseException>(
-            () => service.GetAsync());
+            () => handler.Handle(new GetWelcomeDashboardQuery(), CancellationToken.None));
 
         Assert.Equal("invalid_session", exception.ErrorCode);
     }
@@ -61,13 +61,13 @@ public sealed class WelcomeDashboardServiceTests
             IsActive = true,
             IsVerified = false
         };
-        var service = new WelcomeDashboardService(
+        var handler = new GetWelcomeDashboardHandler(
             new FakeCurrentUser(user.Id),
             new FakeUserRepository(user),
             new FakeContentRepository());
 
         var exception = await Assert.ThrowsAsync<UseCaseException>(
-            () => service.GetAsync());
+            () => handler.Handle(new GetWelcomeDashboardQuery(), CancellationToken.None));
 
         Assert.Equal(ApplicationErrorKind.NotFound, exception.Kind);
     }

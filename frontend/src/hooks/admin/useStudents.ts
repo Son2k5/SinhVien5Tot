@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { studentService } from '../../services/admin/studentService';
-import type { DeleteStudentRequest, LockStudentRequest, ReviewStudentEvidenceRequest, StudentFilterParams, UnlockStudentRequest } from '../../types/admin/student';
+import type {
+  BatchDeleteStudentsRequest,
+  DeleteStudentRequest,
+  LockStudentRequest,
+  ReviewStudentEvidenceRequest,
+  StudentFilterParams,
+  UnlockStudentRequest,
+} from '../../types/admin/student';
 
 export const studentQueryKeys = {
   all: ['admin', 'students'] as const,
@@ -53,5 +60,15 @@ export function useStudentMutations() {
       void qc.invalidateQueries({ queryKey: studentQueryKeys.detail(v.id) });
     },
   });
-  return { deleteStudent: del, reviewEvidence: review, lockStudent: lock, unlockStudent: unlock };
+  const batchDel = useMutation({
+    mutationFn: (body: BatchDeleteStudentsRequest) => studentService.batchDelete(body),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: studentQueryKeys.all }); },
+  });
+  return {
+    deleteStudent: del,
+    batchDeleteStudents: batchDel,
+    reviewEvidence: review,
+    lockStudent: lock,
+    unlockStudent: unlock,
+  };
 }

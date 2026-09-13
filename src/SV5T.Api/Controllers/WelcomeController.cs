@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SV5T.Application.Welcome.Dtos;
@@ -8,8 +9,7 @@ namespace SV5T.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/welcome")]
-public sealed class WelcomeController(IWelcomeDashboardService welcomeService)
-    : ControllerBase
+public sealed class WelcomeController(ISender sender) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<WelcomeDashboardResponse>(StatusCodes.Status200OK)]
@@ -18,7 +18,7 @@ public sealed class WelcomeController(IWelcomeDashboardService welcomeService)
     public async Task<ActionResult<WelcomeDashboardResponse>> Get(
         CancellationToken cancellationToken)
     {
-        var response = await welcomeService.GetAsync(cancellationToken);
+        var response = await sender.Send(new GetWelcomeDashboardQuery(), cancellationToken);
         return Ok(response);
     }
 }

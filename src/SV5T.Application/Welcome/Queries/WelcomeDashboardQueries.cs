@@ -1,3 +1,4 @@
+using MediatR;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Users.Abstractions;
@@ -8,26 +9,19 @@ using SV5T.Domain.Welcome;
 
 namespace SV5T.Application.Welcome.Queries;
 
-public sealed record GetWelcomeDashboardQuery;
+public sealed record GetWelcomeDashboardQuery : IRequest<WelcomeDashboardResponse>;
 
-public interface IWelcomeDashboardService
-{
-    Task<WelcomeDashboardResponse> GetAsync(CancellationToken cancellationToken = default);
-}
-
-public sealed class WelcomeDashboardService(
+public sealed class GetWelcomeDashboardHandler(
     ICurrentUser currentUser,
     IUserRepository userRepository,
     IPortalContentRepository contentRepository)
-    : IWelcomeDashboardService, IQueryHandler<GetWelcomeDashboardQuery, WelcomeDashboardResponse>
+    : IRequestHandler<GetWelcomeDashboardQuery, WelcomeDashboardResponse>
 {
     private const int ContentQueryLimit = 20;
 
-    public Task<WelcomeDashboardResponse> HandleAsync(GetWelcomeDashboardQuery query, CancellationToken cancellationToken = default) =>
-        GetAsync(cancellationToken);
-
-    public async Task<WelcomeDashboardResponse> GetAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<WelcomeDashboardResponse> Handle(
+        GetWelcomeDashboardQuery query,
+        CancellationToken cancellationToken)
     {
         if (!currentUser.UserId.HasValue)
         {
