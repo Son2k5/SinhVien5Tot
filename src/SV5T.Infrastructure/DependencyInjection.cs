@@ -19,6 +19,7 @@ using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Criteria.Abstractions;
 using SV5T.Application.Evidences.Abstractions;
 using SV5T.Application.Standards.Abstractions;
+using SV5T.Application.Student.Abstractions;
 using SV5T.Domain.Auth;
 using SV5T.Domain.Users;
 using SV5T.Domain.Welcome;
@@ -30,6 +31,7 @@ using SV5T.Infrastructure.Persistence.Context;
 using SV5T.Infrastructure.Persistence.Repositories.Admin;
 using SV5T.Infrastructure.Persistence.Repositories.Auth;
 using SV5T.Infrastructure.Persistence.Repositories.Users;
+using SV5T.Infrastructure.Persistence.Repositories.Student;
 using SV5T.Infrastructure.Persistence.Repositories.Welcome;
 using SV5T.Infrastructure.Persistence.UnitOfWork;
 using SV5T.Infrastructure.Security.Hashing;
@@ -208,6 +210,12 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAvatarStorage, CloudinaryAvatarStorage>();
+        services.AddScoped<IEvidenceFileStorage, CloudinaryEvidenceFileStorage>();
+        services.AddScoped<IStudentApplicationRepository, StudentApplicationRepository>();
+        services.AddScoped<IStudentCampaignRepository, StudentCampaignRepository>();
+        services.AddScoped<IStudentCriterionRepository, StudentCriterionRepository>();
+        services.AddScoped<IStudentEvidenceRepository, StudentEvidenceRepository>();
+        services.AddScoped<IStudentStandardSetRepository, StudentStandardSetRepository>();
         services.AddScoped<IPortalContentRepository, PortalContentRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

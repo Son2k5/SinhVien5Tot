@@ -40,5 +40,6 @@ public enum ReviewAction
     ApplicationRejected = 9,
     ApplicationRevisionRequested = 10,
     ApplicationResubmitted = 11,
-    RecommendedForNextLevel = 12
+    RecommendedForNextLevel = 12,
+    ApplicationWithdrawn = 13
 }

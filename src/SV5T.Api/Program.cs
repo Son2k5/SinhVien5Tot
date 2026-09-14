@@ -23,7 +23,9 @@ if (!builder.Environment.IsDevelopment())
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.AddServerHeader = false;
-    options.Limits.MaxRequestBodySize = 64 * 1024;
+    // 64KB quá nhỏ -> avatar 5MB / evidence 10MB đều bị 413 trước khi vào controller.
+    // Nâng lên 12MB; từng endpoint file vẫn giới hạn chặt bằng [RequestSizeLimit].
+    options.Limits.MaxRequestBodySize = 12 * 1024 * 1024;
 });
 
 builder.Logging.ClearProviders();
