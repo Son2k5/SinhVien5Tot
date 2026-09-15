@@ -10,6 +10,7 @@ namespace SV5T.Application.Student.Campaigns.Queries.GetOpenCampaigns;
 public sealed record GetOpenCampaignsQuery(
     AwardLevel? Level,
     string? SchoolYear,
+    AwardType? AwardType = null,
     int PageIndex = 1,
     int PageSize = 20) : IRequest<PagedResult<StudentCampaignListItemResponse>>;
 
@@ -27,12 +28,13 @@ public sealed class GetOpenCampaignsHandler(IStudentCampaignRepository repositor
         var pageSize = request.PageSize is < 1 or > MaxPageSize ? DefaultPageSize : request.PageSize;
 
         // Repo chi tra ve campaign Open + trong window dang ky.
-        // Loc them theo Level/SchoolYear tai handler de giu repo don gian.
+        // Loc them theo Level/SchoolYear/AwardType tai handler de giu repo don gian.
         var paged = await repository.GetOpenPagedAsync(pageIndex, pageSize, cancellationToken);
 
         var items = paged.Items
             .Where(c =>
                 (!request.Level.HasValue || c.Level == request.Level.Value) &&
+                (!request.AwardType.HasValue || c.AwardType == request.AwardType.Value) &&
                 (string.IsNullOrWhiteSpace(request.SchoolYear) ||
                  string.Equals(c.SchoolYear, request.SchoolYear.Trim(), StringComparison.OrdinalIgnoreCase)))
             .Select(c => new StudentCampaignListItemResponse(

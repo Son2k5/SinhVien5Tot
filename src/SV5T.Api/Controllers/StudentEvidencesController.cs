@@ -63,7 +63,7 @@ public sealed class StudentEvidencesController(ISender sender) : ControllerBase
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "File minh chung phai co dung luong tu 1 byte den 10 MB.",
+                "Tập tin minh chứng phải có dung lượng từ 1 byte đến 10 MB.",
                 "invalid_evidence_size");
         }
 

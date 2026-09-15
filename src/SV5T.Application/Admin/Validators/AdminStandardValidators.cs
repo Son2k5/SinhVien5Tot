@@ -13,6 +13,7 @@ public sealed class CreateStandardSetRequestValidator : AbstractValidator<Create
     public CreateStandardSetRequestValidator()
     {
         RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Tên bộ tiêu chuẩn không được để trống.")
             .MaximumLength(255).WithMessage("Tên bộ tiêu chuẩn không được quá 255 ký tự.");
 
         RuleFor(x => x.AcademicYear)
@@ -29,6 +30,7 @@ public sealed class UpdateStandardSetRequestValidator : AbstractValidator<Update
     public UpdateStandardSetRequestValidator()
     {
         RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Tên bộ tiêu chuẩn không được để trống.")
             .MaximumLength(255).WithMessage("Tên bộ tiêu chuẩn không được quá 255 ký tự.");
 
         RuleFor(x => x.AcademicYear)

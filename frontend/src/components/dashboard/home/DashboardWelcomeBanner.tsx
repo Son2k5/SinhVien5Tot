@@ -57,7 +57,7 @@ export function DashboardWelcomeBanner({
               <button
                 type="button"
                 onClick={onOpenLauncher}
-                className="inline-flex items-center justify-center gap-2 h-10 px-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-sm cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shadow-sm cursor-pointer"
               >
                 <LayoutGrid className="w-4 h-4 " />
                 <span>Khám phá chức năng</span>

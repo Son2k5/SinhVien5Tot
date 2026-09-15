@@ -221,6 +221,10 @@ public sealed class AdminCampaignHandlerTests
         public Task<IReadOnlyList<StandardSet>> GetAllAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<StandardSet>>(Items);
 
+        public Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.Any(x => string.Equals(x.Name.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase) && x.Id != excludeId));
+
+        [Obsolete("Kept for backward compatibility with the old composite unique.")]
         public Task<bool> ExistsByAcademicYearAndLevelAsync(string academicYear, AwardLevel level, AwardType awardType, int version, Guid? excludeId = null, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.Any(x => x.AcademicYear == academicYear && x.Level == level && x.AwardType == awardType && x.Version == version && x.Id != excludeId));
 

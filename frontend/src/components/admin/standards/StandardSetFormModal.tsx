@@ -45,7 +45,7 @@ interface StandardSetFormState {
 type StandardSetFormAction =
   | { type: 'RESET'; standardSet?: StandardSetResponse | null }
   | { type: 'SET_FIELD'; field: keyof StandardSetFormState; value: unknown }
-  | { type: 'SET_ERRORS'; fieldErrors: Record<string, string>; formError?: string | null }
+  | { type: 'SET_ERRORS'; fieldErrors: Record<string, string> }
   | { type: 'SET_FORM_ERROR'; formError: string | null };
 
 function getInitialStandardSetState(
@@ -86,7 +86,6 @@ function standardSetFormReducer(
       return {
         ...state,
         fieldErrors: action.fieldErrors,
-        formError: action.formError ?? state.formError,
       };
     case 'SET_FORM_ERROR':
       return { ...state, formError: action.formError };
@@ -129,8 +128,18 @@ export function StandardSetFormModal({
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (name.length > 255) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      errors.name = 'Tên bộ tiêu chuẩn không được để trống.';
+    } else if (name.length > 255) {
       errors.name = 'Tên bộ tiêu chuẩn không được quá 255 ký tự.';
+    } else {
+      const duplicate = existingSets.some(
+        (s) => s.name.trim().toLowerCase() === trimmedName.toLowerCase() && s.id !== standardSet?.id,
+      );
+      if (duplicate) {
+        errors.name = 'Tên bộ tiêu chuẩn đã tồn tại. Vui lòng chọn tên khác.';
+      }
     }
 
     if (!academicYear.trim()) {
@@ -139,7 +148,10 @@ export function StandardSetFormModal({
       errors.academicYear = 'Năm học không được quá 20 ký tự.';
     }
 
-    dispatch({ type: 'SET_ERRORS', fieldErrors: errors });
+    dispatch({
+      type: 'SET_ERRORS',
+      fieldErrors: errors,
+    });
     return Object.keys(errors).length === 0;
   };
 
@@ -207,7 +219,7 @@ export function StandardSetFormModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="standard-set-name-input" className="text-xs font-bold text-slate-700 block mb-1">
-              Tên bộ tiêu chuẩn <span className="text-slate-400 font-normal text-[11px]">(Tùy chọn)</span>
+              Tên bộ tiêu chuẩn <span className="text-rose-500">*</span>
             </label>
             <input
               id="standard-set-name-input"

@@ -15,8 +15,6 @@ public static class EvidenceReviewMappings
             evidence.Criterion?.Title ?? string.Empty,
             evidence.Application?.CampaignId ?? Guid.Empty,
             evidence.Application?.Campaign?.Name ?? string.Empty,
-            evidence.EvidenceTypeTemplateId,
-            evidence.EvidenceTypeTemplate?.Name ?? string.Empty,
             evidence.DataJson,
             evidence.AttachmentsJson,
             evidence.NumericValue,

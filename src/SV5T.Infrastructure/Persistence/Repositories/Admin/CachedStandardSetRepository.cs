@@ -86,6 +86,13 @@ public sealed class CachedStandardSetRepository(
     public Task<IReadOnlyList<StandardSet>> GetAllAsync(CancellationToken cancellationToken = default) =>
         innerRepository.GetAllAsync(cancellationToken);
 
+    public Task<bool> ExistsByNameAsync(
+        string name,
+        Guid? excludeId = null,
+        CancellationToken cancellationToken = default) =>
+        innerRepository.ExistsByNameAsync(name, excludeId, cancellationToken);
+
+    [Obsolete("Composite (AcademicYear, Level, AwardType, Version) is no longer unique. Use ExistsByNameAsync instead.")]
     public Task<bool> ExistsByAcademicYearAndLevelAsync(
         string academicYear,
         AwardLevel level,

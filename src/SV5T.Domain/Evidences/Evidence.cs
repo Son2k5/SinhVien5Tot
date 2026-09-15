@@ -18,9 +18,6 @@ public sealed class Evidence : Entity<Guid>, IAuditableEntity
     public Guid CriterionId { get; set; }
     public Criterion Criterion { get; set; } = null!;
 
-    public Guid EvidenceTypeTemplateId { get; set; }
-    public EvidenceTypeTemplate EvidenceTypeTemplate { get; set; } = null!;
-
     public string DataJson { get; set; } = "{}";
     public string AttachmentsJson { get; set; } = "[]";
     public decimal? NumericValue { get; set; }

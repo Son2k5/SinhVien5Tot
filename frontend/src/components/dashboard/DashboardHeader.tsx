@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Bell, ChevronDown, LogOut, Menu, MessageCircle, Search, Settings, UserRound, X } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Menu, MessageCircle, Search, Settings, UserRound, X } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 
 interface DashboardHeaderProps {
@@ -74,15 +74,12 @@ export function DashboardHeader({
         <button
           type="button"
           onClick={onOpenLauncher}
-          className="hidden md:flex items-center justify-between w-72 lg:w-96 h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80 hover:border-slate-300 text-slate-400 hover:text-slate-600 text-xs transition-colors shadow-sm cursor-pointer"
+          className="hidden md:flex items-center w-72 lg:w-96 h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80 hover:border-slate-300 text-slate-400 hover:text-slate-600 text-xs transition-colors shadow-sm cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
             <Search className="w-4 h-4 text-slate-400" />
             <span>Tìm chức năng, tin tức...</span>
           </div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-            <ArrowRight className="w-3 h-3" />
-          </span>
         </button>
 
         {/* Right Side: Quick Actions & Profile Menu */}

@@ -24,14 +24,14 @@ public sealed class SubmitApplicationHandler(
         var userId = currentUser.UserId
             ?? throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Phien dang nhap khong hop le.",
+                "Phiên đăng nhập không hợp lệ.",
                 "invalid_session");
 
         var app = await applications.GetByIdForUserAsync(
                 request.ApplicationId, userId, tracking: true, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay ho so.",
+                "Không tìm thấy hồ sơ.",
                 "application_not_found");
 
         EnsureRowVersionMatch(app.RowVersion, request.RowVersion);
@@ -41,7 +41,7 @@ public sealed class SubmitApplicationHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Ho so thieu thong tin dot xet.",
+                "Hồ sơ thiếu thông tin đợt xét.",
                 "campaign_not_found");
         }
 
@@ -49,8 +49,11 @@ public sealed class SubmitApplicationHandler(
 
         var requirements = await criteria.GetRequirementsByStandardSetIdAsync(
             app.StandardSetId, cancellationToken);
+        var allCriteriaById = requirements.ToDictionary(r => r.Id);
+
         var requiredIds = requirements
-            .Where(c => c.Type == Domain.Standards.Enums.CriterionType.Requirement)
+            .Where(c => c.Type == Domain.Standards.Enums.CriterionType.Requirement &&
+                        CriterionRequirementHelper.IsRequired(c, allCriteriaById))
             .Select(c => c.Id)
             .ToHashSet();
 
@@ -65,7 +68,7 @@ public sealed class SubmitApplicationHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                $"Ho so thieu {missing.Count} minh chung bat buoc.",
+                $"Hồ sơ thiếu {missing.Count} minh chứng bắt buộc.",
                 "application_missing_evidences");
         }
 
@@ -138,7 +141,7 @@ public sealed class SubmitApplicationHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "RowVersion sai dinh dang.",
+                "Phiên bản dữ liệu không hợp lệ. Vui lòng tải lại và thử lại.",
                 "validation_error");
         }
 
@@ -146,7 +149,7 @@ public sealed class SubmitApplicationHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Du lieu da doi. Tai lai va thu lai.",
+                "Dữ liệu đã thay đổi. Vui lòng tải lại và thử lại.",
                 "concurrency_conflict");
         }
     }

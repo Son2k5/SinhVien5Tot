@@ -90,7 +90,6 @@ public sealed class AdminEvidenceReviewHandlerTests
             RowVersion = validRowVersion,
             Application = application,
             Criterion = new Criterion { Title = "Tiêu chí điểm rèn luyện" },
-            EvidenceTypeTemplate = new EvidenceTypeTemplate { Name = "Bảng điểm rèn luyện" }
         };
 
         _evidenceRepo.Items.Add(evidence);

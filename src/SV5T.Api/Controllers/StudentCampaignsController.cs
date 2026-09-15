@@ -21,10 +21,11 @@ public sealed class StudentCampaignsController(ISender sender) : ControllerBase
     public async Task<ActionResult<PagedResult<StudentCampaignListItemResponse>>> GetOpen(
         [FromQuery] AwardLevel? level,
         [FromQuery] string? schoolYear,
+        [FromQuery] AwardType? awardType,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default) =>
-        Ok(await sender.Send(new GetOpenCampaignsQuery(level, schoolYear, pageIndex, pageSize), cancellationToken));
+        Ok(await sender.Send(new GetOpenCampaignsQuery(level, schoolYear, awardType, pageIndex, pageSize), cancellationToken));
 
     [HttpGet("{campaignId:guid}")]
     [ProducesResponseType<StudentCampaignDetailResponse>(StatusCodes.Status200OK)]

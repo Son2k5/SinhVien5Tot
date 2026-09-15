@@ -4,6 +4,9 @@ import { AuthPage } from './pages/AuthPage';
 import { HomePage } from './pages/HomePage';
 import { NewsDetailPage } from './pages/NewsDetailPage';
 import { UserProfilePage } from './pages/UserProfilePage';
+import { StudentCampaignsPage } from './pages/student/StudentCampaignsPage';
+import { StudentMyApplicationsPage } from './pages/student/StudentMyApplicationsPage';
+import { StudentEvidenceSubmissionPage } from './pages/student/StudentEvidenceSubmissionPage';
 import { LandingPage } from './pages/LandingPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminFeaturePage } from './pages/admin/AdminFeaturePage';
@@ -30,6 +33,10 @@ export function App() {
       <Route path="/forgot-password" element={isAuthenticated ? <Navigate to={authenticatedHome(user)} replace /> : <AuthPage view="forgot-password" onLoginSuccess={loginSuccess} />} />
       <Route path="/dashboard" element={isAuthenticated && user ? (canAccessAdmin(user) ? <Navigate to="/admin" replace /> : <HomePage user={user} onLogout={logout} />) : <Navigate to="/login" replace />} />
       <Route path="/dashboard/profile" element={isAuthenticated && user ? <UserProfilePage user={user} onLogout={logout} /> : <Navigate to="/login" replace />} />
+      <Route path="/dashboard/campaigns" element={isAuthenticated && user ? <StudentCampaignsPage user={user} onLogout={logout} /> : <Navigate to="/login" replace />} />
+      <Route path="/dashboard/applications" element={isAuthenticated && user ? <StudentMyApplicationsPage user={user} onLogout={logout} /> : <Navigate to="/login" replace />} />
+      <Route path="/dashboard/applications/:id" element={isAuthenticated && user ? <StudentEvidenceSubmissionPage user={user} onLogout={logout} /> : <Navigate to="/login" replace />} />
+      <Route path="/dashboard/evidence" element={<Navigate to="/dashboard/applications" replace />} />
       <Route element={isAuthenticated && user && canAccessAdmin(user) ? <Outlet /> : <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}>
         <Route path="/admin" element={<AdminLayout user={user!} onLogout={logout} />}>
           <Route index element={<AdminDashboardPage />} />

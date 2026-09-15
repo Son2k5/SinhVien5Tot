@@ -14,7 +14,7 @@ public static class DbUniqueConstraintMapper
         ("IX_user_addresses_UserId_AddressType", "Địa chỉ cho loại này đã tồn tại trong hồ sơ của bạn.", "address_type_duplicate"),
         ("IX_refresh_tokens_Token", "Token đã tồn tại trong hệ thống.", "token_duplicate"),
         ("IX_standard_sets_AcademicYear_Level_AwardType_Version", "Bộ tiêu chuẩn cho năm học, cấp và phiên bản này đã tồn tại.", "standard_set_duplicate"),
-        ("IX_evidence_type_templates_Code_Version", "Biểu mẫu minh chứng cho mã và phiên bản này đã tồn tại.", "evidence_template_duplicate"),
+        ("IX_standard_sets_Name", "Tên bộ tiêu chuẩn đã tồn tại. Vui lòng chọn tên khác.", "standard_set_name_duplicate"),
         ("IX_applications_ApplicationCode", "Mã hồ sơ đã tồn tại trong hệ thống.", "application_code_duplicate")
     ];
 

@@ -52,10 +52,6 @@ public sealed record StudentCriterionItemResponse(
     string? Description,
     string GroupCode,
     bool IsRequired,
-    Guid EvidenceTemplateId,
-    string? EvidenceTemplateName,
-    string? FieldSchemaJson,
-    string? AttachmentPolicyJson,
     int SortOrder,
     int ExistingEvidenceCount,
     string? ExistingEvidenceStatus);

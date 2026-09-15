@@ -27,8 +27,8 @@ export const mockSystemFeatures: SystemFeature[] = [
   { key: 'profile', title: 'Hồ sơ cá nhân', description: 'Cập nhật thông tin và ảnh đại diện', route: '/dashboard/profile', icon: 'user-round', group: 'Cá nhân', isAvailable: true },
   { key: 'feed', title: 'Bảng tin', description: 'Theo dõi hoạt động cộng đồng SV5T', route: '/dashboard?view=feed', icon: 'newspaper', group: 'Tổng quan', isAvailable: false, badge: 'Sắp mở' },
   { key: 'achievements', title: 'Thành tích', description: 'Quản lý tiến độ 5 tiêu chí', route: '/dashboard?view=achievements', icon: 'award', group: 'Hồ sơ 5 tốt', isAvailable: false, badge: 'Sắp mở' },
-  { key: 'evidence', title: 'Minh chứng', description: 'Nộp và theo dõi minh chứng', route: '/dashboard?view=evidence', icon: 'file-check', group: 'Hồ sơ 5 tốt', isAvailable: false, badge: 'Sắp mở' },
-  { key: 'campaigns', title: 'Chiến dịch', description: 'Tham gia các đợt xét duyệt', route: '/dashboard?view=campaigns', icon: 'flag', group: 'Hoạt động', isAvailable: false, badge: 'Sắp mở' },
+  { key: 'evidence', title: 'Hồ sơ đã nộp', description: 'Quản lý hồ sơ đã nộp & xem feedback của Mentor', route: '/dashboard/applications', icon: 'file-check', group: 'Hồ sơ 5 tốt', isAvailable: true },
+  { key: 'campaigns', title: 'Chiến dịch', description: 'Chọn cấp xét & nộp hồ sơ danh hiệu', route: '/dashboard/campaigns', icon: 'flag', group: 'Hoạt động', isAvailable: true },
   { key: 'clubs', title: 'Nhóm & CLB', description: 'Kết nối cộng đồng sinh viên', route: '/dashboard?view=clubs', icon: 'users', group: 'Cộng đồng', isAvailable: false, badge: 'Sắp mở' },
 ];
 

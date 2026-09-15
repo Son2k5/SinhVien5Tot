@@ -6,7 +6,7 @@ public sealed class SubmitApplicationCommandValidator : AbstractValidator<Submit
 {
     public SubmitApplicationCommandValidator()
     {
-        RuleFor(x => x.ApplicationId).NotEmpty().WithMessage("Thieu dinh danh ho so.");
-        RuleFor(x => x.RowVersion).NotEmpty().WithMessage("Thieu RowVersion de kiem soat dong thoi.");
+        RuleFor(x => x.ApplicationId).NotEmpty().WithMessage("Thiếu định danh hồ sơ.");
+        RuleFor(x => x.RowVersion).NotEmpty().WithMessage("Thiếu thông tin phiên bản. Vui lòng tải lại và thử lại.");
     }
 }

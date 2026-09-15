@@ -23,14 +23,14 @@ public sealed class WithdrawApplicationHandler(
         var userId = currentUser.UserId
             ?? throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Phien dang nhap khong hop le.",
+                "Phiên đăng nhập không hợp lệ.",
                 "invalid_session");
 
         var app = await applications.GetByIdForUserAsync(
                 request.ApplicationId, userId, tracking: true, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay ho so.",
+                "Không tìm thấy hồ sơ.",
                 "application_not_found");
 
         EnsureRowVersionMatch(app.RowVersion, request.RowVersion);
@@ -100,7 +100,7 @@ public sealed class WithdrawApplicationHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "RowVersion sai dinh dang.",
+                "Phiên bản dữ liệu không hợp lệ. Vui lòng tải lại và thử lại.",
                 "validation_error");
         }
 
@@ -108,7 +108,7 @@ public sealed class WithdrawApplicationHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Du lieu da doi. Tai lai va thu lai.",
+                "Dữ liệu đã thay đổi. Vui lòng tải lại và thử lại.",
                 "concurrency_conflict");
         }
     }

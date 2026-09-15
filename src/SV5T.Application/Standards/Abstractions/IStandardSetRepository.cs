@@ -15,6 +15,12 @@ public interface IStandardSetRepository
     Task<IReadOnlyList<StandardSet>> GetAllAsync(
         CancellationToken cancellationToken = default);
 
+    Task<bool> ExistsByNameAsync(
+        string name,
+        Guid? excludeId = null,
+        CancellationToken cancellationToken = default);
+
+    [Obsolete("Composite (AcademicYear, Level, AwardType, Version) is no longer unique. Use ExistsByNameAsync instead.")]
     Task<bool> ExistsByAcademicYearAndLevelAsync(
         string academicYear,
         AwardLevel level,

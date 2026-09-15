@@ -43,6 +43,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.IsDeleted).HasDefaultValue(false);
         builder.Property(user => user.DeleteReason).HasMaxLength(500);
         builder.HasIndex(user => user.NormalizedEmail).IsUnique();
+        builder.HasIndex(user => user.IsDeleted);
+        builder.HasIndex(user => new { user.Role, user.IsDeleted });
     }
 }
 
@@ -244,7 +246,9 @@ public sealed class StandardSetConfiguration : IEntityTypeConfiguration<Standard
             x.Level,
             x.AwardType,
             x.Version
-        }).IsUnique();
+        });
+
+        builder.HasIndex(x => x.Name).IsUnique();
 
         builder.HasOne(x => x.PreviousVersion)
             .WithMany(x => x.LaterVersions)
@@ -304,22 +308,6 @@ public sealed class CriterionConfiguration : IEntityTypeConfiguration<Criterion>
             .WithMany(x => x.Children)
             .HasForeignKey(x => x.ParentCriterionId)
             .OnDelete(DeleteBehavior.Restrict);
-    }
-}
-
-public sealed class EvidenceTypeTemplateConfiguration : IEntityTypeConfiguration<EvidenceTypeTemplate>
-{
-    public void Configure(EntityTypeBuilder<EvidenceTypeTemplate> builder)
-    {
-        builder.ToTable("evidence_type_templates");
-        builder.HasKey(x => x.Id);
-
-        builder.Property(x => x.Code).HasMaxLength(100).IsRequired();
-        builder.Property(x => x.Name).HasMaxLength(250).IsRequired();
-        builder.Property(x => x.FieldSchemaJson).HasColumnType("longtext");
-        builder.Property(x => x.AttachmentPolicyJson).HasColumnType("longtext");
-
-        builder.HasIndex(x => new { x.Code, x.Version }).IsUnique();
     }
 }
 
@@ -417,11 +405,6 @@ public sealed class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
         builder.HasOne(x => x.Criterion)
             .WithMany()
             .HasForeignKey(x => x.CriterionId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.EvidenceTypeTemplate)
-            .WithMany()
-            .HasForeignKey(x => x.EvidenceTypeTemplateId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

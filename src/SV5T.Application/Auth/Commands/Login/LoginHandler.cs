@@ -30,7 +30,8 @@ public sealed class LoginHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.RateLimited,
-                "Đăng nhập bị tạm khóa. Vui lòng thử lại sau.");
+                "Đăng nhập bị tạm khóa. Vui lòng thử lại sau.",
+                "rate_limited");
         }
 
         var user = await userRepository.GetByNormalizedEmailAsync(
@@ -42,7 +43,8 @@ public sealed class LoginHandler(
             await throttleStore.RecordLoginFailureAsync(email, ipAddress);
             throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Email hoặc mật khẩu không đúng.");
+                "Email hoặc mật khẩu không đúng.",
+                "invalid_credentials");
         }
 
         await throttleStore.ClearAccountLoginFailuresAsync(email);

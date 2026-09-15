@@ -19,7 +19,7 @@ public sealed class UpdateCampaignStatusHandler(
     )
     {
         var actorId =
-            currentUser.UserId ?? throw new UseCaseException(ApplicationErrorKind.Unauthorized, "Không xác định được danh tính người dùng hiện tại.");
+            currentUser.UserId ?? throw new UseCaseException(ApplicationErrorKind.Unauthorized, "Không xác định được danh tính người dùng hiện tại.", "invalid_session");
 
         var campaign =
             await campaignRepository.GetByIdAsync(

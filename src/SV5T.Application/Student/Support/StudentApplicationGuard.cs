@@ -14,7 +14,7 @@ public static class StudentApplicationGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Dot xet khong mo dang ky tai thoi diem hien tai.",
+                "Đợt xét không mở đăng ký tại thời điểm hiện tại.",
                 "campaign_not_open");
         }
     }
@@ -25,7 +25,7 @@ public static class StudentApplicationGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Ban da dang ky ho so cho dot xet nay.",
+                "Bạn đã đăng ký hồ sơ cho đợt xét này.",
                 "application_duplicate");
         }
     }
@@ -36,7 +36,7 @@ public static class StudentApplicationGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Forbidden,
-                "Ban khong co quyen truy cap ho so nay.",
+                "Bạn không có quyền truy cập hồ sơ này.",
                 "application_access_denied");
         }
     }
@@ -47,7 +47,7 @@ public static class StudentApplicationGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Ho so khong o trang thai cho phep chinh sua.",
+                "Hồ sơ không ở trạng thái cho phép chỉnh sửa.",
                 "application_not_editable");
         }
     }
@@ -58,7 +58,7 @@ public static class StudentApplicationGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Ho so khong o trang thai cho phep nop.",
+                "Hồ sơ không ở trạng thái cho phép nộp.",
                 "application_not_submittable");
         }
     }
@@ -72,7 +72,7 @@ public static class StudentApplicationGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Ho so da co ket qua cuoi cung, khong the rut.",
+                "Hồ sơ đã có kết quả cuối cùng, không thể rút.",
                 "application_not_withdrawable");
         }
     }
@@ -83,7 +83,7 @@ public static class StudentApplicationGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Da qua han nop ho so cua dot xet nay.",
+                "Đã quá hạn nộp hồ sơ của đợt xét này.",
                 "campaign_submit_deadline_passed");
         }
     }
@@ -94,7 +94,7 @@ public static class StudentApplicationGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Dot xet da dong, khong the thao tac.",
+                "Đợt xét đã đóng, không thể thao tác.",
                 "campaign_closed");
         }
     }

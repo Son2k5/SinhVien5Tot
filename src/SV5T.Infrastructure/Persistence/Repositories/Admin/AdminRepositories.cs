@@ -55,6 +55,25 @@ public sealed class StandardSetRepository(ApplicationDbContext dbContext)
             .ThenByDescending(x => x.Version)
             .ToListAsync(cancellationToken);
 
+    public Task<bool> ExistsByNameAsync(
+        string name,
+        Guid? excludeId = null,
+        CancellationToken cancellationToken = default)
+    {
+        // MySQL utf8mb4 collation mac dinh case-insensitive nen so sanh truc tiep la du.
+        var query = dbContext.StandardSets
+            .AsNoTracking()
+            .Where(x => x.Name == name);
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeId.Value);
+        }
+
+        return query.AnyAsync(cancellationToken);
+    }
+
+    [Obsolete("Composite (AcademicYear, Level, AwardType, Version) is no longer unique. Use ExistsByNameAsync instead.")]
     public Task<bool> ExistsByAcademicYearAndLevelAsync(
         string academicYear,
         AwardLevel level,
@@ -432,8 +451,7 @@ public sealed class EvidenceRepository(ApplicationDbContext dbContext)
         IQueryable<Evidence> query = dbContext.Evidences
             .Include(x => x.Application)
                 .ThenInclude(x => x.Campaign)
-            .Include(x => x.Criterion)
-            .Include(x => x.EvidenceTypeTemplate);
+            .Include(x => x.Criterion);
 
         if (!tracking)
         {
@@ -474,7 +492,6 @@ public sealed class EvidenceRepository(ApplicationDbContext dbContext)
             .Include(x => x.Application)
                 .ThenInclude(x => x.Campaign)
             .Include(x => x.Criterion)
-            .Include(x => x.EvidenceTypeTemplate)
             .OrderByDescending(x => x.CreatedAt)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)

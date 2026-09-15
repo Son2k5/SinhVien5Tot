@@ -6,6 +6,6 @@ public sealed class GetStudentApplicationDetailQueryValidator : AbstractValidato
 {
     public GetStudentApplicationDetailQueryValidator()
     {
-        RuleFor(x => x.ApplicationId).NotEmpty().WithMessage("Thieu dinh danh ho so.");
+        RuleFor(x => x.ApplicationId).NotEmpty().WithMessage("Thiếu định danh hồ sơ.");
     }
 }

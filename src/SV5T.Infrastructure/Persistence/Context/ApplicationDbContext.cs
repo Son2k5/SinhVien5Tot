@@ -35,7 +35,6 @@ public sealed class ApplicationDbContext(
     public DbSet<StandardSet> StandardSets => Set<StandardSet>();
     public DbSet<Standard> Standards => Set<Standard>();
     public DbSet<Criterion> Criteria => Set<Criterion>();
-    public DbSet<EvidenceTypeTemplate> EvidenceTypeTemplates => Set<EvidenceTypeTemplate>();
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<SubmissionApplication> Applications => Set<SubmissionApplication>();
     public DbSet<Evidence> Evidences => Set<Evidence>();

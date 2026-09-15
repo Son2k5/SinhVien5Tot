@@ -108,7 +108,7 @@ export function HomePage({ user, onLogout }: HomePageProps) {
               onOpenLauncher={openLauncher}
               onRefresh={() => void refetch()}
             />
-            <SystemFeatureSection features={dashboard.features} onOpenAll={openLauncher} />
+            <SystemFeatureSection features={features} onOpenAll={openLauncher} />
             <FiveGoodJourneySection criteria={dashboardCriteria} progressItems={criteriaProgress} onSelect={setSelectedCriterion} />
             <FeaturedActivitiesSection items={newsItems} />
             <NewsSection items={newsItems} />

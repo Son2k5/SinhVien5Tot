@@ -31,27 +31,21 @@ public sealed class UpdateStandardSetHandler(
                 "Chỉ có thể chỉnh sửa thông tin bộ tiêu chuẩn đang ở trạng thái Nháp (Draft).",
                 "standard_set_not_editable"
             );
-        var exists = await standardSetRepository.ExistsByAcademicYearAndLevelAsync(
-            updateRequest.AcademicYear.Trim(),
-            updateRequest.Level,
-            updateRequest.AwardType,
-            standardSet.Version,
+        var name = updateRequest.Name.Trim();
+        var nameExists = await standardSetRepository.ExistsByNameAsync(
+            name,
             excludeId: standardSet.Id,
             cancellationToken: cancellationToken
         );
-        if (exists)
+        if (nameExists)
         {
-            var academicYear = updateRequest.AcademicYear;
-            var level = updateRequest.Level;
-            var awardType = updateRequest.AwardType;
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Đã tồn tại bộ tiêu chuẩn cho năm học '{academicYear}', " +
-                $"cấp '{level}' và loại '{awardType}'.",
-                "standard_set_duplicate"
+                $"Tên bộ tiêu chuẩn '{name}' đã tồn tại. Vui lòng chọn tên khác.",
+                "standard_set_name_duplicate"
             );
         }
-        standardSet.Name = updateRequest.Name.Trim();
+        standardSet.Name = name;
         standardSet.AcademicYear = updateRequest.AcademicYear.Trim();
         standardSet.Level = updateRequest.Level;
         standardSet.AwardType = updateRequest.AwardType;

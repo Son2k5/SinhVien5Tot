@@ -19,7 +19,7 @@ public sealed class GetStudentApplicationDetailHandler(
         var userId = currentUser.UserId
             ?? throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Phien dang nhap khong hop le.",
+                "Phiên đăng nhập không hợp lệ.",
                 "invalid_session");
 
         var app = await repository.GetByIdForUserAsync(

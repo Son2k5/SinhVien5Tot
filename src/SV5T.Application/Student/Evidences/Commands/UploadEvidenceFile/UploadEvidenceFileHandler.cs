@@ -22,14 +22,14 @@ public sealed class UploadEvidenceFileHandler(
         var userId = currentUser.UserId
             ?? throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Phien dang nhap khong hop le.",
+                "Phiên đăng nhập không hợp lệ.",
                 "invalid_session");
 
         var evidence = await evidences.GetByIdForUserAsync(
                 command.EvidenceId, userId, tracking: true, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay minh chung.",
+                "Không tìm thấy minh chứng.",
                 "evidence_not_found");
 
         StudentEvidenceGuard.EnsureEvidenceEditable(evidence);

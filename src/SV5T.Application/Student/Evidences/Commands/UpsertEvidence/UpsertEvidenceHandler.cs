@@ -25,14 +25,14 @@ public sealed class UpsertEvidenceHandler(
         var userId = currentUser.UserId
             ?? throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Phien dang nhap khong hop le.",
+                "Phiên đăng nhập không hợp lệ.",
                 "invalid_session");
 
         var app = await applications.GetByIdForUserAsync(
                 command.ApplicationId, userId, tracking: true, cancellationToken: cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay ho so.",
+                "Không tìm thấy hồ sơ.",
                 "application_not_found");
 
         StudentApplicationGuard.EnsureApplicationEditable(app);
@@ -40,14 +40,14 @@ public sealed class UpsertEvidenceHandler(
         var criterion = await criteria.GetByIdAsync(command.CriterionId, cancellationToken)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay tieu chi.",
+                "Không tìm thấy tiêu chí.",
                 "criterion_not_found");
 
         if (criterion.Type != CriterionType.Requirement)
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "Chi duoc nop minh chung cho tieu chi loai Requirement.",
+                "Chỉ được nộp minh chứng cho tiêu chí bắt buộc.",
                 "criterion_not_requirement");
         }
 
@@ -79,24 +79,20 @@ public sealed class UpsertEvidenceHandler(
         {
             ApplicationId = app.Id,
             CriterionId = criterion.Id,
-            EvidenceTypeTemplateId = ResolveTemplateId(criterion),
             DataJson = command.Request.DataJson,
             AttachmentsJson = "[]",
             Status = EvidenceStatus.Draft,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId.ToString()
+            // NOTE: Không gán Criterion = criterion ở đây.
+            // criterion được load bằng AsNoTracking (Detached) nên nếu gán vào
+            // navigation, EF Core sẽ coi là entity mới (Added) và re-INSERT
+            // bảng criteria -> MySQL 1062 criteria.PRIMARY -> 409 unique_constraint_violation.
         };
 
         await evidences.AddAsync(evidence, cancellationToken);
         await uow.SaveChangesAsync(cancellationToken);
-        return Map(evidence);
-    }
-
-    private static Guid ResolveTemplateId(Domain.Criteria.Criterion criterion)
-    {
-        // TemplateId se duoc resolve day du khi co mapping Criterion->Template.
-        // Tam dung Guid rong de giu flow; se thay bang lookup khi schema co cot lien ket.
-        return Guid.Empty;
+        return Map(evidence, criterion);
     }
 
     private static void EnsureRowVersionMatch(byte[] current, string clientBase64)
@@ -110,7 +106,7 @@ public sealed class UpsertEvidenceHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "RowVersion sai dinh dang.",
+                "Phiên bản dữ liệu không hợp lệ. Vui lòng tải lại và thử lại.",
                 "validation_error");
         }
 
@@ -118,23 +114,27 @@ public sealed class UpsertEvidenceHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Du lieu da doi. Tai lai va thu lai.",
+                "Dữ liệu đã thay đổi. Vui lòng tải lại và thử lại.",
                 "concurrency_conflict");
         }
     }
 
-    private static StudentEvidenceItemResponse Map(Evidence e) => new(
-        e.Id,
-        e.CriterionId,
-        e.Criterion?.Code ?? string.Empty,
-        e.Criterion?.Title ?? string.Empty,
-        e.Criterion?.Standard?.GroupCode.ToString() ?? string.Empty,
-        e.Status,
-        e.DataJson,
-        e.AttachmentsJson,
-        e.ReviewerNote,
-        e.ReviewedAt,
-        Convert.ToBase64String(e.RowVersion),
-        e.CreatedAt,
-        e.UpdatedAt ?? e.CreatedAt);
+    private static StudentEvidenceItemResponse Map(Evidence e, Domain.Criteria.Criterion? criterion = null)
+    {
+        var crit = criterion ?? e.Criterion;
+        return new(
+            e.Id,
+            e.CriterionId,
+            crit?.Code ?? string.Empty,
+            crit?.Title ?? string.Empty,
+            crit?.Standard?.GroupCode.ToString() ?? string.Empty,
+            e.Status,
+            e.DataJson,
+            e.AttachmentsJson,
+            e.ReviewerNote,
+            e.ReviewedAt,
+            Convert.ToBase64String(e.RowVersion),
+            e.CreatedAt,
+            e.UpdatedAt ?? e.CreatedAt);
+    }
 }

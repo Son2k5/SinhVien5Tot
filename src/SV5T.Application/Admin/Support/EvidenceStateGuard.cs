@@ -23,7 +23,7 @@ public static class EvidenceStateGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Không thể chuyển trạng thái minh chứng từ '{current}' sang '{target}'.",
+                "Không thể chuyển trạng thái minh chứng. Vui lòng tải lại và thử lại.",
                 "invalid_state_transition");
         }
     }
@@ -45,7 +45,7 @@ public static class EvidenceStateGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Đợt xét duyệt đang ở trạng thái '{campaign.Status}', không mở cho việc chấm điểm minh chứng.",
+                "Đợt xét hiện không mở xét duyệt minh chứng.",
                 "campaign_not_reviewable");
         }
 
@@ -53,7 +53,7 @@ public static class EvidenceStateGuard
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Đã quá hạn xét duyệt minh chứng của đợt xét này (Hạn chót: {campaign.ReviewDeadline:yyyy-MM-dd HH:mm:ss UTC}).",
+                "Đã quá hạn xét duyệt minh chứng của đợt xét này.",
                 "campaign_review_deadline_passed");
         }
     }

@@ -94,8 +94,8 @@ public sealed class GetWelcomeDashboardHandler(
         new("profile", "Hồ sơ cá nhân", "Cập nhật thông tin và ảnh đại diện", "/dashboard/profile", "user-round", "Cá nhân", true),
         new("feed", "Bảng tin", "Theo dõi hoạt động cộng đồng SV5T", "/dashboard?view=feed", "newspaper", "Tổng quan", false, "Sắp mở"),
         new("achievements", "Thành tích", "Quản lý tiến độ 5 tiêu chí", "/dashboard?view=achievements", "award", "Hồ sơ 5 tốt", false, "Sắp mở"),
-        new("evidence", "Minh chứng", "Nộp và theo dõi minh chứng", "/dashboard?view=evidence", "file-check", "Hồ sơ 5 tốt", false, "Sắp mở"),
-        new("campaigns", "Chiến dịch", "Tham gia các đợt xét duyệt", "/dashboard?view=campaigns", "flag", "Hoạt động", false, "Sắp mở"),
+        new("evidence", "Hồ sơ đã nộp", "Quản lý hồ sơ đã nộp & xem feedback của Mentor", "/dashboard/applications", "file-check", "Hồ sơ 5 tốt", true),
+        new("campaigns", "Chiến dịch", "Chọn cấp xét & nộp hồ sơ danh hiệu", "/dashboard/campaigns", "flag", "Hoạt động", true),
         new("ranking", "Bảng xếp hạng", "Khám phá sinh viên tiêu biểu", "/dashboard?view=ranking", "chart", "Hoạt động", false, "Sắp mở"),
         new("clubs", "Nhóm & CLB", "Kết nối các cộng đồng sinh viên", "/dashboard?view=clubs", "users", "Cộng đồng", false, "Sắp mở"),
         new("saved", "Đã lưu", "Xem lại nội dung bạn quan tâm", "/dashboard?view=saved", "bookmark", "Cá nhân", false, "Sắp mở")

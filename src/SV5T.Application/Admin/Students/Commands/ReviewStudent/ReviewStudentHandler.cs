@@ -29,7 +29,7 @@ public sealed class ReviewStudentHandler(
             user.UserId
             ?? throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Khong xac dinh admin.",
+                "Không xác định được quản trị viên.",
                 "invalid_session"
             );
 
@@ -37,14 +37,14 @@ public sealed class ReviewStudentHandler(
 
         if (student is null || student.Role != SV5T.Domain.Users.Enums.Role.User || student.IsDeleted)
         {
-            throw new UseCaseException(ApplicationErrorKind.NotFound, "Khong tim thay sinh vien.", "student_not_found");
+            throw new UseCaseException(ApplicationErrorKind.NotFound, "Không tìm thấy sinh viên.", "student_not_found");
         }
 
         var e =
             await repository.GetEvidenceForStudentAsync(student.Id, r.Request.EvidenceId, true, ct)
             ?? throw new UseCaseException(
                 ApplicationErrorKind.NotFound,
-                "Khong tim thay minh chung.",
+                "Không tìm thấy minh chứng.",
                 "evidence_not_found"
             );
         byte[] client;
@@ -56,7 +56,7 @@ public sealed class ReviewStudentHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Validation,
-                "RowVersion sai dinh dang.",
+                "Phiên bản dữ liệu không hợp lệ. Vui lòng tải lại và thử lại.",
                 "validation_error"
             );
         }
@@ -65,7 +65,7 @@ public sealed class ReviewStudentHandler(
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Du lieu da doi. Tai lai va thu lai.",
+                "Dữ liệu đã thay đổi. Vui lòng tải lại và thử lại.",
                 "concurrency_conflict"
             );
         }

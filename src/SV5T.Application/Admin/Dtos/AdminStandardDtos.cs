@@ -201,8 +201,6 @@ public sealed record EvidenceResponse(
     string CriterionTitle,
     Guid CampaignId,
     string CampaignName,
-    Guid EvidenceTypeTemplateId,
-    string EvidenceTypeTemplateName,
     string DataJson,
     string AttachmentsJson,
     decimal? NumericValue,

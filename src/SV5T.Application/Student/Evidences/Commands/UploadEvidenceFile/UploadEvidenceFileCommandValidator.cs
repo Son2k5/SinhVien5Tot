@@ -6,9 +6,9 @@ public sealed class UploadEvidenceFileCommandValidator : AbstractValidator<Uploa
 {
     public UploadEvidenceFileCommandValidator()
     {
-        RuleFor(x => x.EvidenceId).NotEmpty().WithMessage("Thieu dinh danh minh chung.");
-        RuleFor(x => x.Request).NotNull().WithMessage("Thieu file minh chung.");
-        RuleFor(x => x.Request.FileName).NotEmpty().WithMessage("Thieu ten file.");
-        RuleFor(x => x.Request.Length).GreaterThan(0).WithMessage("File rong.");
+        RuleFor(x => x.EvidenceId).NotEmpty().WithMessage("Thiếu định danh minh chứng.");
+        RuleFor(x => x.Request).NotNull().WithMessage("Thiếu tập tin minh chứng.");
+        RuleFor(x => x.Request.FileName).NotEmpty().WithMessage("Thiếu tên tập tin.");
+        RuleFor(x => x.Request.Length).GreaterThan(0).WithMessage("Tập tin rỗng.");
     }
 }

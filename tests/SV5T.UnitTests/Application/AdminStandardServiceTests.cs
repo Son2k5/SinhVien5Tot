@@ -2,6 +2,7 @@ using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Admin.StandardSets.Commands.CreateStandardSet;
 using SV5T.Application.Admin.StandardSets.Commands.PublishStandardSet;
 using SV5T.Application.Admin.StandardSets.Commands.UnpublishStandardSet;
+using SV5T.Application.Admin.StandardSets.Commands.UpdateStandardSet;
 using SV5T.Application.Admin.Validators;
 using SV5T.Application.Campaigns.Abstractions;
 using SV5T.Application.Common.Abstractions;
@@ -34,6 +35,112 @@ public sealed class AdminStandardSetHandlerTests
 
     private UnpublishStandardSetHandler CreateUnpublishHandler() =>
         new(_standardSetRepo, _campaignRepo, _unitOfWork, _currentUser);
+
+    private UpdateStandardSetHandler CreateUpdateHandler() =>
+        new(_standardSetRepo, _unitOfWork, _currentUser);
+
+    [Fact]
+    public async Task CreateAsync_SameAcademicYearLevelAwardTypeDifferentNames_AllowsMultiple()
+    {
+        var handler = CreateCreateHandler();
+
+        var first = await handler.Handle(
+            new CreateStandardSetCommand(new CreateStandardSetRequest("Bo A 2025-2026", "2025-2026", AwardLevel.School, AwardType.Individual, null)),
+            CancellationToken.None);
+        var second = await handler.Handle(
+            new CreateStandardSetCommand(new CreateStandardSetRequest("Bo B 2025-2026", "2025-2026", AwardLevel.School, AwardType.Individual, null)),
+            CancellationToken.None);
+
+        Assert.NotEqual(first.Id, second.Id);
+        Assert.Equal(2, _standardSetRepo.Items.Count);
+    }
+
+    [Theory]
+    [InlineData("Bo Tieu Chuan A", "  bo tieu chuan a  ")]
+    [InlineData("Bo Tieu Chuan A", "BO TIEU CHUAN A")]
+    public async Task CreateAsync_DuplicateName_ThrowsNameDuplicateConflict(string existingName, string newName)
+    {
+        _standardSetRepo.Items.Add(new StandardSet
+        {
+            Id = Guid.NewGuid(),
+            Name = existingName,
+            AcademicYear = "2025-2026",
+            Level = AwardLevel.School,
+            AwardType = AwardType.Individual,
+            Status = StandardSetStatus.Draft,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        var handler = CreateCreateHandler();
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(
+            new CreateStandardSetCommand(new CreateStandardSetRequest(newName, "2026-2027", AwardLevel.City, AwardType.Collective, null)),
+            CancellationToken.None));
+
+        Assert.Equal(ApplicationErrorKind.Conflict, ex.Kind);
+        Assert.Equal("standard_set_name_duplicate", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DuplicateName_ThrowsNameDuplicateConflict()
+    {
+        var firstId = Guid.NewGuid();
+        var secondId = Guid.NewGuid();
+        _standardSetRepo.Items.Add(new StandardSet
+        {
+            Id = firstId,
+            Name = "Bo Tieu Chuan A",
+            AcademicYear = "2025-2026",
+            Level = AwardLevel.School,
+            AwardType = AwardType.Individual,
+            Status = StandardSetStatus.Draft,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow
+        });
+        _standardSetRepo.Items.Add(new StandardSet
+        {
+            Id = secondId,
+            Name = "Bo Tieu Chuan B",
+            AcademicYear = "2025-2026",
+            Level = AwardLevel.School,
+            AwardType = AwardType.Individual,
+            Status = StandardSetStatus.Draft,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        var handler = CreateUpdateHandler();
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(
+            new UpdateStandardSetCommand(secondId, new UpdateStandardSetRequest("  BO TIEU CHUAN a ", "2025-2026", AwardLevel.School, AwardType.Individual)),
+            CancellationToken.None));
+
+        Assert.Equal(ApplicationErrorKind.Conflict, ex.Kind);
+        Assert.Equal("standard_set_name_duplicate", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SameNameSelf_AllowsUpdate()
+    {
+        var id = Guid.NewGuid();
+        _standardSetRepo.Items.Add(new StandardSet
+        {
+            Id = id,
+            Name = "Bo Tieu Chuan A",
+            AcademicYear = "2025-2026",
+            Level = AwardLevel.School,
+            AwardType = AwardType.Individual,
+            Status = StandardSetStatus.Draft,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        var handler = CreateUpdateHandler();
+        var result = await handler.Handle(
+            new UpdateStandardSetCommand(id, new UpdateStandardSetRequest("Bo Tieu Chuan A", "2026-2027", AwardLevel.School, AwardType.Individual)),
+            CancellationToken.None);
+
+        Assert.Equal("2026-2027", result.AcademicYear);
+    }
 
     [Fact]
     public async Task CreateAsync_WithoutTemplateIndividual_CreatesDraftStandardSetWith5DefaultStandards()
@@ -168,6 +275,10 @@ public sealed class AdminStandardSetHandlerTests
         public Task<IReadOnlyList<StandardSet>> GetAllAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<StandardSet>>(Items);
 
+        public Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.Any(x => string.Equals(x.Name.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase) && x.Id != excludeId));
+
+        [Obsolete("Kept for backward compatibility with the old composite unique.")]
         public Task<bool> ExistsByAcademicYearAndLevelAsync(string academicYear, AwardLevel level, AwardType awardType, int version, Guid? excludeId = null, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.Any(x => x.AcademicYear == academicYear && x.Level == level && x.AwardType == awardType && x.Version == version && x.Id != excludeId));
 

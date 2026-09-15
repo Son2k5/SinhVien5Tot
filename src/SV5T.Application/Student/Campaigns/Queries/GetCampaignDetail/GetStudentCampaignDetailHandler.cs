@@ -3,6 +3,7 @@ using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Student.Abstractions;
 using SV5T.Application.Student.Dtos;
+using SV5T.Application.Student.Support;
 using SV5T.Domain.Standards.Enums;
 
 namespace SV5T.Application.Student.Campaigns.Queries.GetCampaignDetail;
@@ -30,11 +31,12 @@ public sealed class GetStudentCampaignDetailHandler(
         var userId = currentUser.UserId
             ?? throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Phien dang nhap khong hop le.",
+                "Phiên đăng nhập không hợp lệ.",
                 "invalid_session");
 
         var requirements = await criteria.GetRequirementsByStandardSetIdAsync(
             campaign.StandardSetId, cancellationToken);
+        var allCriteriaById = requirements.ToDictionary(r => r.Id);
 
         var existingApp = await applications.GetByCampaignAndUserAsync(
             campaign.Id, userId, cancellationToken: cancellationToken);
@@ -62,11 +64,7 @@ public sealed class GetStudentCampaignDetailHandler(
                     c.Title,
                     c.Description,
                     c.Standard?.GroupCode.ToString() ?? string.Empty,
-                    IsRequiredCriterion(c.DefinitionJson),
-                    Guid.Empty,
-                    null,
-                    null,
-                    null,
+                    CriterionRequirementHelper.IsRequired(c, allCriteriaById),
                     c.DisplayOrder,
                     list?.Count ?? 0,
                     first?.Status.ToString());
@@ -97,25 +95,5 @@ public sealed class GetStudentCampaignDetailHandler(
                     campaign.StandardSet.AwardType,
                     campaign.StandardSet.Version),
             items);
-    }
-
-    private static bool IsRequiredCriterion(string definitionJson)
-    {
-        // Mac dinh Requirement = bat buoc tru khi DefinitionJson ghi isRequired=false.
-        try
-        {
-            using var doc = System.Text.Json.JsonDocument.Parse(
-                string.IsNullOrWhiteSpace(definitionJson) ? "{}" : definitionJson);
-            if (doc.RootElement.TryGetProperty("isRequired", out var el))
-            {
-                return el.ValueKind is not System.Text.Json.JsonValueKind.False;
-            }
-        }
-        catch
-        {
-            // Parse loi -> coi nhu required de khong bo sot.
-        }
-
-        return true;
     }
 }

@@ -6,6 +6,6 @@ public sealed class GetStudentCampaignDetailQueryValidator : AbstractValidator<G
 {
     public GetStudentCampaignDetailQueryValidator()
     {
-        RuleFor(x => x.CampaignId).NotEmpty().WithMessage("Thieu dinh danh dot xet.");
+        RuleFor(x => x.CampaignId).NotEmpty().WithMessage("Thiếu định danh đợt xét.");
     }
 }

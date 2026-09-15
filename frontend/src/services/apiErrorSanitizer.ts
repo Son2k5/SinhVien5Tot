@@ -1,15 +1,21 @@
 import axios from 'axios';
+import { BACKEND_ERROR_CODES } from './errorCodeMap.generated';
 
 /**
- * Bảng ánh xạ Whitelist: Error Code chuẩn từ Backend -> Thông điệp tiếng Việt an toàn
+ * Backend la Single Source of Truth.
+ * - Uu tien 1: `detail` an toan tu backend -> hien thi verbatim.
+ * - Uu tien 2: `code` nam trong danh sach backend -> hien `detail` (da verified) hoac fallback generic.
+ * - Cuoi cung: fallback theo HTTP status. Khong tu bia message 409.
  */
-const KNOWN_ERROR_CODES: Record<string, string> = {
+const GENERIC_BY_CODE: Record<string, string> = {
   invalid_session: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.',
   idle_timeout: 'Phiên đăng nhập đã kết thúc do không hoạt động.',
+  invalid_credentials: 'Email hoặc mật khẩu không đúng.',
   unauthorized: 'Yêu cầu đăng nhập để tiếp tục.',
   forbidden: 'Bạn không có quyền thực hiện thao tác này.',
   not_found: 'Không tìm thấy dữ liệu yêu cầu.',
   user_not_found: 'Không tìm thấy thông tin tài khoản.',
+  student_not_found: 'Không tìm thấy sinh viên.',
   profile_not_found: 'Hồ sơ cá nhân chưa được tạo.',
   student_code_taken: 'Mã sinh viên đã được sử dụng trong hệ thống.',
   invalid_challenge: 'Mã xác thực không hợp lệ hoặc đã hết hạn.',
@@ -20,8 +26,16 @@ const KNOWN_ERROR_CODES: Record<string, string> = {
   email_queue_unavailable: 'Dịch vụ gửi email tạm thời gián đoạn. Vui lòng thử lại sau.',
   avatar_storage_unavailable: 'Dịch vụ lưu trữ ảnh tạm thời không khả dụng. Vui lòng thử lại sau.',
   validation_error: 'Thông tin cung cấp không đúng định dạng yêu cầu.',
+  concurrency_conflict: 'Dữ liệu đã thay đổi. Vui lòng tải lại và thử lại.',
+  application_duplicate: 'Bạn đã đăng ký hồ sơ cho đợt xét này.',
+  standard_set_name_duplicate: 'Tên bộ tiêu chuẩn đã tồn tại. Vui lòng chọn tên khác.',
+  standard_set_duplicate: 'Bộ tiêu chuẩn cho năm học, cấp và phiên bản này đã tồn tại.',
+  unique_constraint_violation: 'Dữ liệu bị trùng lặp trong hệ thống.',
   internal_error: 'Hệ thống đang bảo trì hoặc có sự cố tạm thời. Vui lòng thử lại sau.',
 };
+
+const KNOWN_CODES = new Set<string>([...BACKEND_ERROR_CODES, ...Object.keys(GENERIC_BY_CODE)]);
+
 
 /**
  * Fallback Generic messages an toàn theo HTTP Status Code (ngữ cảnh chung)
@@ -59,26 +73,29 @@ function getGenericStatusMessage(status: number, requestUrl?: string): string {
 function isSafeUserFacingMessage(text: unknown): text is string {
   if (typeof text !== 'string') return false;
   const str = text.trim();
-  if (str.length === 0 || str.length > 250) return false;
+  if (str.length === 0 || str.length > 500) return false;
 
-  // Nếu chứa các ký tự/cấu trúc của file path, code, url, json object, stack trace -> KHÔNG AN TOÀN
+  // Chan chan system leak: stack/SQL/CLR/URL/path/JSON
   const unsafePatterns = [
-    /[\\/{}[\]<>|]/,             // Ký tự path, code, json, tag
-    /at\s+[A-Za-z0-9_.]+\(/i,     // Stack trace: "at Program.Main("
-    /\b(exception|error|stack|trace|nullreference|unhandled|econn|timeout|socket|refused)\b/i,
-    /\b(sql|mysql|npgsql|oracle|ora-|select|insert|update|delete|table|column|database|query)\b/i,
+    /[{}\[\]<>|]/,
+    /\\/u,
+    /at\s+[A-Za-z0-9_.]+\(/i,
+    /\b(exception|stack|trace|nullreference|unhandled|econn|timeout|socket|refused)\b/i,
+    /\b(sql|mysql|npgsql|oracle|ora-|select\s+.*\s+from|insert\s+into|table|column|database|query)\b/i,
     /\b(system\.|microsoft\.|sv5t\.|aspnet|kestrel|efcore|entityframework)\b/i,
-    /https?:\/\//i,               // URL
-    /\bline\s+\d+\b/i,            // "Line 0"
-    /\bbyteposition\b/i,          // "BytePosition"
+    /https?:\/\//i,
+    /\bline\s+\d+\b/i,
+    /\bbyteposition\b/i,
+    /\b(rowversion|datajson|dbupdate|dbcontext)\b/i,
   ];
 
   for (const pattern of unsafePatterns) {
-    if (pattern.test(str)) {
+    try {
+      if (pattern.test(str)) return false;
+    } catch {
       return false;
     }
   }
-
   return true;
 }
 
@@ -97,19 +114,24 @@ export function sanitizeApiError(error: unknown): string {
     const data = error.response.data as Record<string, unknown> | undefined;
     const requestUrl = error.config?.url;
 
-    // 1. Ưu tiên Whitelist theo Error Code chuẩn từ backend
+    // 1. Backend la SSOT: neu `code` da biet -> uu tien `detail` an toan verbatim, fallback generic theo code.
     const errorCode = typeof data?.code === 'string' ? data.code : undefined;
-    if (errorCode && KNOWN_ERROR_CODES[errorCode]) {
-      return KNOWN_ERROR_CODES[errorCode];
+    const detail = typeof data?.detail === 'string' ? data.detail : undefined;
+    const message = typeof data?.message === 'string' ? data.message : undefined;
+
+    if (errorCode && KNOWN_CODES.has(errorCode)) {
+      if (detail && isSafeUserFacingMessage(detail)) return detail;
+      if (message && isSafeUserFacingMessage(message)) return message;
+      if (errorCode in GENERIC_BY_CODE) return GENERIC_BY_CODE[errorCode];
+      // Code da biet nhung detail generic thieu -> dung fallback status (khong bia 409).
+      return getGenericStatusMessage(status, requestUrl);
     }
 
-    // 2. Nếu Backend trả về detail / message thỏa mãn Whitelist an toàn
-    const detail = typeof data?.detail === 'string' ? data.detail : undefined;
+    // 2. Code la nhung van hien detail an toan verbatim (backend co the them code moi).
     if (detail && isSafeUserFacingMessage(detail)) {
       return detail;
     }
 
-    const message = typeof data?.message === 'string' ? data.message : undefined;
     if (message && isSafeUserFacingMessage(message)) {
       return message;
     }

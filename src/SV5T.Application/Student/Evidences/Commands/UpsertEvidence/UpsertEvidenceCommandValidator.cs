@@ -6,9 +6,9 @@ public sealed class UpsertEvidenceCommandValidator : AbstractValidator<UpsertEvi
 {
     public UpsertEvidenceCommandValidator(IValidator<UpsertEvidenceRequest> requestValidator)
     {
-        RuleFor(x => x.ApplicationId).NotEmpty().WithMessage("Thieu dinh danh ho so.");
-        RuleFor(x => x.CriterionId).NotEmpty().WithMessage("Thieu dinh danh tieu chi.");
-        RuleFor(x => x.Request).NotNull().WithMessage("Thieu thong tin minh chung.");
+        RuleFor(x => x.ApplicationId).NotEmpty().WithMessage("Thiếu định danh hồ sơ.");
+        RuleFor(x => x.CriterionId).NotEmpty().WithMessage("Thiếu định danh tiêu chí.");
+        RuleFor(x => x.Request).NotNull().WithMessage("Thiếu thông tin minh chứng.");
         RuleFor(x => x.Request).SetValidator(requestValidator!);
     }
 }
@@ -17,9 +17,9 @@ public sealed class UpsertEvidenceRequestValidator : AbstractValidator<UpsertEvi
 {
     public UpsertEvidenceRequestValidator()
     {
-        RuleFor(x => x.DataJson).NotEmpty().WithMessage("DataJson khong duoc de trong.");
+        RuleFor(x => x.DataJson).NotEmpty().WithMessage("Nội dung minh chứng không được để trống.");
         RuleFor(x => x.DataJson)
-            .Must(BeValidJson).WithMessage("DataJson phai la JSON hop le.")
+            .Must(BeValidJson).WithMessage("Nội dung minh chứng không đúng định dạng.")
             .When(x => !string.IsNullOrWhiteSpace(x.DataJson));
     }
 

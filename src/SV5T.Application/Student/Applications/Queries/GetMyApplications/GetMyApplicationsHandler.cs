@@ -23,7 +23,7 @@ public sealed class GetMyApplicationsHandler(
         var userId = currentUser.UserId
             ?? throw new UseCaseException(
                 ApplicationErrorKind.Unauthorized,
-                "Phien dang nhap khong hop le.",
+                "Phiên đăng nhập không hợp lệ.",
                 "invalid_session");
 
         var pageIndex = request.PageIndex < 1 ? 1 : request.PageIndex;

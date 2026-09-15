@@ -20,23 +20,17 @@ public sealed class CreateStandardSetHandler(
     {
         var actorId = RequireAdminUserId();
         var createRequest = command.Request;
-        var exists = await standardSetRepository.ExistsByAcademicYearAndLevelAsync(
-            createRequest.AcademicYear.Trim(),
-            createRequest.Level,
-            createRequest.AwardType,
-            1,
+        var name = createRequest.Name.Trim();
+        var nameExists = await standardSetRepository.ExistsByNameAsync(
+            name,
             cancellationToken: cancellationToken
         );
-        if (exists && !createRequest.TemplateStandardSetId.HasValue)
+        if (nameExists)
         {
-            var academicYear = createRequest.AcademicYear;
-            var level = createRequest.Level;
-            var awardType = createRequest.AwardType;
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                $"Bộ tiêu chuẩn cho năm học '{academicYear}', " +
-                $"cấp '{level}' và loại '{awardType}' đã tồn tại.",
-                "standard_set_duplicate"
+                $"Tên bộ tiêu chuẩn '{name}' đã tồn tại. Vui lòng chọn tên khác.",
+                "standard_set_name_duplicate"
             );
         }
         var standardSet = new StandardSet
