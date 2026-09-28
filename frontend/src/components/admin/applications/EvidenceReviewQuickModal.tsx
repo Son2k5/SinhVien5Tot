@@ -10,6 +10,14 @@ interface EvidenceReviewQuickModalProps {
   onSubmit: (decision: 'Approved' | 'Rejected' | 'NeedsRevision', note: string) => Promise<void> | void;
 }
 
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  Approved: { label: 'Đạt', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  NeedsRevision: { label: 'Cần bổ sung', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  Rejected: { label: 'Từ chối', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+  Submitted: { label: 'Đã nộp', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+  Draft: { label: 'Bản nháp', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
+};
+
 export const EvidenceReviewQuickModal: React.FC<EvidenceReviewQuickModalProps> = ({
   isOpen,
   evidence,
@@ -65,27 +73,40 @@ export const EvidenceReviewQuickModal: React.FC<EvidenceReviewQuickModalProps> =
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150 antialiased"
+      style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
       role="dialog"
       aria-modal="true"
       aria-label="Đánh giá minh chứng"
     >
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+      <div
+        className="w-full max-w-lg bg-white shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150"
+        style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/50 to-white">
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="text-sm font-bold text-slate-900">Đánh giá minh chứng tiêu chí</h3>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">
-              {evidence.criterionCode} — {evidence.criterionTitle}
+            <p className="text-xs text-slate-600 mt-0.5 line-clamp-2 font-medium" title={evidence.criterionTitle}>
+              {evidence.criterionTitle}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <span
+              className={`text-xs px-2.5 py-0.5 font-semibold border ${
+                STATUS_BADGE[evidence.status]?.cls || 'bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+            >
+              {STATUS_BADGE[evidence.status]?.label || evidence.status}
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Form Body */}

@@ -4,6 +4,8 @@ using SV5T.Application.Student.Abstractions;
 using SV5T.Application.Student.Dtos;
 using SV5T.Application.Student.Evidences.Commands.UpsertEvidence;
 using SV5T.Application.Student.Evidences.Commands.SubmitEvidence;
+using SV5T.Application.Student.Evidences.Commands.ReopenEvidence;
+using SV5T.Application.Student.Evidences.Commands.DeleteEvidenceFile;
 using SV5T.Application.Student.Applications.Commands.SubmitApplication;
 using SV5T.Domain.Campaigns;
 using SV5T.Domain.Campaigns.Enums;
@@ -32,6 +34,57 @@ public sealed class StudentEvidenceServiceTests
             _criterionRepo,
             _unitOfWork,
             new FakeCurrentUser(_currentUserId));
+
+    [Fact]
+    public async Task ReopenSubmittedEvidence_AllowsEditingButRejectsApprovedEvidence()
+    {
+        var app = new SV5T.Domain.Submissions.Application
+        {
+            ApplicantUserId = _currentUserId, Status = SubmissionStatus.Draft,
+            Campaign = new Campaign { Status = CampaignStatus.Open, ReviewDeadline = DateTime.UtcNow.AddDays(7) }
+        };
+        var evidence = new Evidence
+        {
+            ApplicationId = app.Id, Application = app, Status = EvidenceStatus.Submitted,
+            RowVersion = [1, 2, 3]
+        };
+        _evidenceRepo.Evidences.Add(evidence);
+        var handler = new ReopenEvidenceHandler(_evidenceRepo, _applicationRepo,
+            _unitOfWork, new FakeCurrentUser(_currentUserId));
+
+        var result = await handler.Handle(new ReopenEvidenceCommand(evidence.Id, "AQID"), CancellationToken.None);
+        Assert.Equal(EvidenceStatus.Draft, result.Status);
+
+        evidence.Status = EvidenceStatus.Approved;
+        var error = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(
+            new ReopenEvidenceCommand(evidence.Id, "AQID"), CancellationToken.None));
+        Assert.Equal("evidence_not_reopenable", error.ErrorCode);
+    }
+
+    [Fact]
+    public async Task DeleteEvidenceFile_RemovesSelectedAttachmentAndStorageObject()
+    {
+        var app = new SV5T.Domain.Submissions.Application
+        {
+            ApplicantUserId = _currentUserId, Status = SubmissionStatus.Draft,
+            Campaign = new Campaign { Status = CampaignStatus.Open, ReviewDeadline = DateTime.UtcNow.AddDays(7) }
+        };
+        var evidence = new Evidence
+        {
+            ApplicationId = app.Id, Application = app, Status = EvidenceStatus.Draft,
+            RowVersion = [1, 2, 3],
+            AttachmentsJson = "[{\"publicId\":\"one\",\"resourceType\":\"raw\"},{\"publicId\":\"two\",\"resourceType\":\"image\"}]"
+        };
+        _evidenceRepo.Evidences.Add(evidence);
+        var storage = new FakeEvidenceFileStorage();
+        var handler = new DeleteEvidenceFileHandler(_evidenceRepo, storage,
+            _unitOfWork, new FakeCurrentUser(_currentUserId));
+
+        var result = await handler.Handle(new DeleteEvidenceFileCommand(evidence.Id, 0, "AQID"), CancellationToken.None);
+        Assert.DoesNotContain("one", result.AttachmentsJson);
+        Assert.Contains("two", result.AttachmentsJson);
+        Assert.Equal("one", storage.DeletedPublicId);
+    }
 
     [Fact]
     public async Task SubmitSingleEvidence_LeavesDraftApplicationOpenForMoreEvidence()
@@ -80,6 +133,37 @@ public sealed class StudentEvidenceServiceTests
 
         Assert.Equal("application_missing_evidences", ex.ErrorCode);
         Assert.Equal(SubmissionStatus.Draft, application.Status);
+    }
+
+    [Fact]
+    public async Task SubmitApplication_RecordsMacroSubmissionWithoutChangingMicroReviewResults()
+    {
+        var submittedCriterion = new Criterion { Type = CriterionType.Requirement,
+            Code = "STUDY-01", Title = "Study" };
+        var approvedCriterion = new Criterion { Type = CriterionType.Requirement,
+            Code = "ETHICS-01", Title = "Ethics" };
+        _criterionRepo.Criteria.AddRange([submittedCriterion, approvedCriterion]);
+        var application = new SV5T.Domain.Submissions.Application
+        {
+            ApplicantUserId = _currentUserId, Status = SubmissionStatus.Draft, RowVersion = [4, 5, 6],
+            Campaign = new Campaign { Status = CampaignStatus.Open,
+                RegOpenAt = DateTime.UtcNow.AddDays(-1), SubmitDeadline = DateTime.UtcNow.AddDays(7) }
+        };
+        _applicationRepo.Applications.Add(application);
+        var pending = new Evidence { ApplicationId = application.Id,
+            CriterionId = submittedCriterion.Id, Status = EvidenceStatus.Submitted };
+        var approved = new Evidence { ApplicationId = application.Id,
+            CriterionId = approvedCriterion.Id, Status = EvidenceStatus.Approved };
+        _evidenceRepo.Evidences.AddRange([pending, approved]);
+        var handler = new SubmitApplicationHandler(_applicationRepo, _evidenceRepo, _criterionRepo,
+            _unitOfWork, new FakeCurrentUser(_currentUserId));
+
+        var result = await handler.Handle(new SubmitApplicationCommand(application.Id, "BAUG"), CancellationToken.None);
+
+        Assert.Equal(SubmissionStatus.Submitted, result.Status);
+        Assert.NotNull(result.SubmittedAt);
+        Assert.Equal(EvidenceStatus.Submitted, pending.Status);
+        Assert.Equal(EvidenceStatus.Approved, approved.Status);
     }
 
     [Fact]
@@ -327,6 +411,22 @@ public sealed class StudentEvidenceServiceTests
         public Guid? UserId => userId;
         public bool IsAuthenticated => true;
         public bool IsInRole(string role) => true;
+    }
+
+    private sealed class FakeEvidenceFileStorage : IEvidenceFileStorage
+    {
+        public string? DeletedPublicId { get; private set; }
+
+        public Task<StoredEvidenceFile> UploadAsync(Guid userId, Guid applicationId,
+            Stream content, string fileName, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task DeleteAsync(string publicId, string resourceType,
+            CancellationToken cancellationToken = default)
+        {
+            DeletedPublicId = publicId;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeUnitOfWork : IUnitOfWork

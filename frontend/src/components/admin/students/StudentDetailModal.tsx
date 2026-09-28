@@ -103,11 +103,11 @@ export function StudentDetailModal({
       aria-label="Chi tiết sinh viên"
     >
       <div
-        className="w-full max-w-[860px] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-[860px] bg-white shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-4">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0 flex-1">
             <div className="shrink-0">
               {avatarUrl ? (
@@ -121,23 +121,24 @@ export function StudentDetailModal({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 min-w-0">
                 <h3 className="text-[15px] font-normal text-slate-800 truncate">{fullName}</h3>
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <VerifiedBadge verified={isVerified} />
-                  <ActiveBadge active={isActive} />
-                </span>
               </div>
               <p className="mt-0.5 text-[13px] font-normal text-slate-500 truncate">{email}</p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors shrink-0 ml-2"
-            aria-label="Đóng"
-          >
-            <X size={20} />
-          </button>
+          {/* Right side: Trạng thái nằm bên cạnh nút X (phía bên trái nút X) */}
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            <VerifiedBadge verified={isVerified} />
+            <ActiveBadge active={isActive} />
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-9 h-9 text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors shrink-0"
+              aria-label="Đóng"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Tabs Bar */}

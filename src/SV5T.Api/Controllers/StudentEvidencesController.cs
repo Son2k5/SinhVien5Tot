@@ -6,6 +6,8 @@ using SV5T.Application.Student.Dtos;
 using SV5T.Application.Student.Evidences.Commands.UpsertEvidence;
 using SV5T.Application.Student.Evidences.Commands.UploadEvidenceFile;
 using SV5T.Application.Student.Evidences.Commands.SubmitEvidence;
+using SV5T.Application.Student.Evidences.Commands.ReopenEvidence;
+using SV5T.Application.Student.Evidences.Commands.DeleteEvidenceFile;
 
 namespace SV5T.Api.Controllers;
 
@@ -40,6 +42,20 @@ public sealed class StudentEvidencesController(ISender sender) : ControllerBase
     public async Task<ActionResult<StudentEvidenceItemResponse>> Submit(
         Guid evidenceId, SubmitEvidenceBodyRequest request, CancellationToken cancellationToken) =>
         Ok(await sender.Send(new SubmitEvidenceCommand(evidenceId, request.RowVersion), cancellationToken));
+
+    [HttpPost("evidences/{evidenceId:guid}/reopen")]
+    [ProducesResponseType<StudentEvidenceItemResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<StudentEvidenceItemResponse>> Reopen(
+        Guid evidenceId, SubmitEvidenceBodyRequest request, CancellationToken cancellationToken) =>
+        Ok(await sender.Send(new ReopenEvidenceCommand(evidenceId, request.RowVersion), cancellationToken));
+
+    [HttpDelete("evidences/{evidenceId:guid}/files/{fileIndex:int}")]
+    [ProducesResponseType<StudentEvidenceItemResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<StudentEvidenceItemResponse>> DeleteFile(
+        Guid evidenceId, int fileIndex, SubmitEvidenceBodyRequest request, CancellationToken cancellationToken) =>
+        Ok(await sender.Send(new DeleteEvidenceFileCommand(evidenceId, fileIndex, request.RowVersion), cancellationToken));
 
     [HttpPut("applications/{applicationId:guid}/evidences/{criterionId:guid}")]
     [ProducesResponseType<StudentEvidenceItemResponse>(StatusCodes.Status200OK)]

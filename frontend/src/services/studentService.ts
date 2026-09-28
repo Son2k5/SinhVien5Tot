@@ -136,4 +136,30 @@ export const studentService = {
     );
     return response.data;
   },
+
+  async reopenEvidence(evidenceId: string, rowVersion: string): Promise<StudentEvidenceItemResponse> {
+    const response = await apiClient.post<StudentEvidenceItemResponse>(
+      `/student/evidences/${evidenceId}/reopen`, { rowVersion }
+    );
+    return response.data;
+  },
+
+  async deleteEvidenceFile(evidenceId: string, fileIndex: number, rowVersion: string): Promise<StudentEvidenceItemResponse> {
+    const response = await apiClient.delete<StudentEvidenceItemResponse>(
+      `/student/evidences/${evidenceId}/files/${fileIndex}`,
+      { data: { rowVersion } }
+    );
+    return response.data;
+  },
+
+  /**
+   * Nộp riêng lẻ một minh chứng tiêu chí để Mentor/Admin thẩm định trước (Micro Review)
+   */
+  async submitEvidence(evidenceId: string, rowVersion: string): Promise<StudentEvidenceItemResponse> {
+    const response = await apiClient.post<StudentEvidenceItemResponse>(
+      `/student/evidences/${evidenceId}/submit`,
+      { rowVersion }
+    );
+    return response.data;
+  },
 };

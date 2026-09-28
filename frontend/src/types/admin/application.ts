@@ -10,6 +10,7 @@ export interface ApplicantSnapshot {
   email?: string;
   fullName?: string;
   studentCode?: string;
+  avatarUrl?: string | null;
   school?: string;
   faculty?: string;
   major?: string;
@@ -88,10 +89,12 @@ export interface AdminEvidenceItem {
   reviewedAt?: string | null;
   rowVersion: string;
   createdAt: string;
+  applicantSnapshotJson?: string | null;
+  groupCode?: string | null;
 }
 
 export interface ReviewEvidenceRequest {
-  decision: 'Approved' | 'Rejected' | 'NeedsRevision';
+  decision: 'Approved' | 'Rejected' | 'NeedsRevision' | 'Submitted';
   note?: string | null;
   rowVersion: string;
 }

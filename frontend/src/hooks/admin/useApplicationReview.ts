@@ -17,6 +17,7 @@ export function useApplicationsPaged(params: ReviewApplicationFilterParams) {
   return useQuery({
     queryKey: APPLICATION_KEYS.list(params),
     queryFn: () => applicationReviewService.getApplications(params),
+    refetchInterval: 30000,
   });
 }
 
@@ -44,6 +45,19 @@ export function useEvidenceDetail(id: string | null | undefined) {
     queryKey: ['admin-evidence-detail', id],
     queryFn: () => (id ? applicationReviewService.getEvidenceById(id) : null),
     enabled: Boolean(id),
+  });
+}
+
+export function useEvidencesPaged(params: {
+  campaignId?: string;
+  status?: string;
+  applicationId?: string;
+  pageIndex?: number;
+  pageSize?: number;
+}) {
+  return useQuery({
+    queryKey: ['admin-evidences-paged', params],
+    queryFn: () => applicationReviewService.getEvidences(params),
   });
 }
 
@@ -80,6 +94,7 @@ export function useApplicationReviewMutations() {
         queryKey: APPLICATION_KEYS.detail(updated.applicationId),
       });
       void queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: ['admin-evidences-paged'] });
     },
   });
 

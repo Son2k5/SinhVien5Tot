@@ -9,7 +9,7 @@ export function AdminNotificationPopover({ onClose }: AdminNotificationPopoverPr
   const navigate = useNavigate();
 
   return (
-    <div className="absolute z-50 top-full right-0 mt-2 w-80 p-2 bg-white border border-slate-200 rounded-2xl shadow-xl animate-fade-in">
+    <div className="absolute z-50 top-full right-0 mt-2 w-80 p-2 bg-white border border-slate-200 shadow-xl animate-fade-in">
       <div className="p-2.5 flex items-center justify-between border-b border-slate-100">
         <span className="text-xs font-bold text-slate-900">Thông báo mới</span>
         <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-50 text-blue-600">

@@ -26,6 +26,7 @@ export function AdminSidebar({
   const location = useLocation();
   const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
     '/admin/applications': true,
+    '/admin/evidence': true,
   });
 
   const toggleSubMenu = (to: string) => {
@@ -178,8 +179,12 @@ export function AdminSidebar({
                     {hasChildren && !compact && isSubMenuOpen && (
                       <div className="ml-5 pl-3 border-l-2 border-blue-200/80 space-y-1 py-1">
                         {item.children!.map((child) => {
+                          const currentPath = location.pathname + location.search;
                           const childActive =
-                            location.pathname + location.search === child.to;
+                            currentPath === child.to ||
+                            (location.pathname === '/admin/evidence' &&
+                              !location.search &&
+                              child.to === '/admin/evidence?status=Submitted');
                           return (
                             <NavLink
                               key={child.to}

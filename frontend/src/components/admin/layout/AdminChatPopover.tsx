@@ -106,7 +106,7 @@ export function AdminChatPopover({ onClose }: AdminChatPopoverProps) {
   };
 
   return (
-    <div className="absolute z-50 top-full right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200/90 rounded-2xl shadow-2xl animate-fade-in overflow-hidden flex flex-col max-h-[520px]">
+    <div className="absolute z-50 top-full right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200/90 shadow-2xl animate-fade-in overflow-hidden flex flex-col max-h-[520px]">
       {/* Header */}
       <div className="px-4 py-3 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 text-white flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2.5">

@@ -101,27 +101,30 @@ export function CampaignStatusModal({
       aria-modal="true"
       aria-labelledby="campaign-status-modal-title"
     >
-      <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-5 relative">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isLoading}
-          aria-label="Đóng"
-          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-        >
-          <X size={18} />
-        </button>
-
-        <div className="space-y-1">
-          <h3 id="campaign-status-modal-title" className="text-base font-semibold text-slate-800">
-            Chuyển trạng thái đợt xét
-          </h3>
-          <p className="text-xs text-slate-500">
-            Đợt xét: <span className="font-semibold text-slate-700">{campaign.name}</span>
-            <span className="ml-1 text-slate-400">
-              ({CAMPAIGN_STATUS_LABELS[campaign.status]})
+      <div className="w-full max-w-lg bg-white border border-slate-200 shadow-2xl p-6 space-y-5 relative">
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
+            <h3 id="campaign-status-modal-title" className="text-base font-semibold text-slate-800">
+              Chuyển trạng thái đợt xét
+            </h3>
+            <p className="text-xs text-slate-500 truncate">
+              Đợt xét: <span className="font-semibold text-slate-700">{campaign.name}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <span className="text-xs px-2.5 py-0.5 font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              {CAMPAIGN_STATUS_LABELS[campaign.status]}
             </span>
-          </p>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              aria-label="Đóng"
+              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {error && (

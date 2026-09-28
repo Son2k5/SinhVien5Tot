@@ -374,7 +374,7 @@ export function CriterionItemModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-3xl sm:max-w-4xl bg-white rounded-xl border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 relative max-h-[90vh] overflow-y-auto custom-scrollbar overscroll-contain cursor-default"
+        className="w-full max-w-3xl sm:max-w-4xl bg-white border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 relative max-h-[90vh] overflow-y-auto custom-scrollbar overscroll-contain cursor-default"
       >
         {/* Header aligned perfectly with close button */}
         <div className="flex items-start justify-between gap-3">

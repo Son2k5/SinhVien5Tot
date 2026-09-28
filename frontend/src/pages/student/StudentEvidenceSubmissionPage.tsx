@@ -24,6 +24,7 @@ import { formatUserRole } from '../../components/dashboard/home/homeDashboardCon
 import type { User } from '../../types/auth';
 import {
   SubmissionStatus,
+  EvidenceStatus,
   normalizeSubmissionStatus,
   type StudentApplicationDetailResponse,
   type StudentEvidenceItemResponse,
@@ -100,10 +101,13 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
   // Submit Application Mutation
   const submitMutation = useMutation({
     mutationFn: () => studentService.submitApplication(application!.id, application!.rowVersion),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['application-detail', id] });
-      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+    onSuccess: (submittedApplication) => {
+      queryClient.setQueryData(['application-detail', id], submittedApplication);
+      void queryClient.invalidateQueries({ queryKey: ['application-detail', id] });
+      void queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       setIsSubmitModalOpen(false);
+      setAgreementChecked(false);
+      setSuccessNotification('Hồ sơ đã được ghi nhận nộp chính thức. Mentor/Admin có thể xem hồ sơ trong danh sách xét duyệt chiến dịch.');
     },
     onError: (err: any) => {
       const msg = sanitizeApiError(err);
@@ -213,26 +217,34 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
   const isDraft = normStatus === SubmissionStatus.Draft;
   const isNeedsRevision = normStatus === SubmissionStatus.NeedsRevision;
   const isSubmitted = normStatus === SubmissionStatus.Submitted;
+  const isResubmitted = normStatus === SubmissionStatus.Resubmitted;
   const isUnderReview = normStatus === SubmissionStatus.UnderReview;
   const isApproved = normStatus === SubmissionStatus.Approved;
   const isRejected = normStatus === SubmissionStatus.Rejected;
   const isEditable = isDraft || isNeedsRevision;
 
-  // Nut cuoi trang: Luu (dong bo cache) + Nop tong 1 lan gui toan bo ho so cho mentor/admin.
-  // Moi the chi co Huy / Luu (+ Hoan tac sau Luu); khong nop rieng tung the nua.
-  const handleSaveAndSubmit = () => {
+  const requiredForSubmission = allCriteria.filter((criterion) => criterion.isRequired);
+  const isEvidenceSubmitted = (status: StudentEvidenceItemResponse['status']) =>
+    status === EvidenceStatus.Submitted || status === EvidenceStatus.Approved ||
+    String(status).toLowerCase() === 'submitted' || String(status).toLowerCase() === 'approved';
+  const missingForSubmission = requiredForSubmission.filter((criterion) =>
+    !evidences.some((evidence) =>
+      evidence.criterionId === criterion.id && isEvidenceSubmitted(evidence.status))
+  );
+  const campaignOpen = campaign?.status === 2 || String(campaign?.status).toLowerCase() === 'open';
+  const campaignReviewing = campaign?.status === 4 || String(campaign?.status).toLowerCase() === 'reviewing';
+  const reviewDeadline = campaign?.reviewDeadline ? new Date(campaign.reviewDeadline).getTime() : 0;
+  const submitWindowOpen = isNeedsRevision
+    ? (campaignOpen || campaignReviewing) && reviewDeadline >= Date.now()
+    : campaignOpen && Boolean(campaign?.regOpenAt) &&
+      new Date(campaign!.regOpenAt).getTime() <= Date.now() &&
+      new Date(application.submitDeadline).getTime() >= Date.now();
+  const canSubmitApplication = isEditable && submitWindowOpen && missingForSubmission.length === 0;
+
+  const handleSubmitApplication = () => {
+    if (!canSubmitApplication) return;
     setActionError(null);
     setIsSubmitModalOpen(true);
-  };
-
-  const handleSaveAll = () => {
-    setActionError(null);
-    queryClient.invalidateQueries({ queryKey: ['application-detail', id] });
-    queryClient.invalidateQueries({ queryKey: ['my-applications'] });
-    setSuccessNotification(
-      `Đã lưu toàn bộ minh chứng tiêu chuẩn "${activeStandardDef?.name || 'hiện tại'}". Bạn chỉ cần ấn Nộp 1 lần ở cuối trang để gửi toàn bộ hồ sơ cho mentor/admin chấm bài.`
-    );
-    setTimeout(() => setSuccessNotification(null), 4000);
   };
 
   const handleConfirmClear = async () => {
@@ -332,10 +344,10 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>Cần bổ sung minh chứng</span>
               </div>
-            ) : isSubmitted ? (
+            ) : (isSubmitted || isResubmitted) ? (
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
                 <Clock className="w-3.5 h-3.5" />
-                <span>Đã nộp - Chờ duyệt</span>
+                <span>{isResubmitted ? 'Đã nộp lại - Chờ duyệt' : 'Đã nộp - Chờ duyệt'}</span>
               </div>
             ) : isUnderReview ? (
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
@@ -600,37 +612,46 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
           </div>
         </div>
 
-        {/* Nut cuoi trang: Luu (dong bo) + Nop 1 lan gui toan bo ho so cho mentor/admin cham bai */}
-        <div className="mt-8 mb-10 flex flex-wrap items-center justify-end gap-3.5">
-          <button
-            type="button"
-            onClick={() => {
-              setActionError(null);
-              setIsClearModalOpen(true);
-            }}
-            disabled={!isEditable || isClearing}
-            className="px-6 sm:px-8 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white hover:bg-sky-50 text-[#0284c7] border border-[#38bdf8] shadow-2xs transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isClearing ? 'Đang hủy...' : 'Hủy'}
-          </button>
+        {/* Nộp hồ sơ tổng sau khi các minh chứng bắt buộc đã được gửi thẩm định riêng. */}
+        <div className="mt-8 mb-10 rounded-2xl border border-blue-200 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-bold text-slate-900">Nộp hồ sơ chiến dịch chính thức</h2>
+          <p className="mt-1 text-xs text-slate-600">
+            {requiredForSubmission.length - missingForSubmission.length}/{requiredForSubmission.length} tiêu chí bắt buộc đã gửi thẩm định hoặc được duyệt.
+            Kết quả xét từng tiêu chí vẫn được giữ khi nộp hồ sơ tổng.
+          </p>
+          {missingForSubmission.length > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <p className="font-semibold">Còn {missingForSubmission.length} tiêu chí cần gửi thẩm định riêng:</p>
+              <ul className="mt-1 list-disc space-y-1 pl-5">
+                {missingForSubmission.map((criterion) => <li key={criterion.id}>{criterion.title}</li>)}
+              </ul>
+            </div>
+          )}
+          {isEditable && !submitWindowOpen && (
+            <p className="mt-3 text-xs font-medium text-amber-800">Chiến dịch hiện không trong thời gian nhận hồ sơ chính thức.</p>
+          )}
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-3.5">
+            <button
+              type="button"
+              onClick={() => {
+                setActionError(null);
+                setIsClearModalOpen(true);
+              }}
+              disabled={!isEditable || isClearing}
+              className="px-6 sm:px-8 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white hover:bg-sky-50 text-[#0284c7] border border-[#38bdf8] shadow-2xs transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isClearing ? 'Đang xóa...' : 'Xóa minh chứng nhóm này'}
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSaveAll}
-            disabled={!isEditable}
-            className="px-6 sm:px-8 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-sm hover:shadow transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Lưu
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSaveAndSubmit}
-            disabled={!isEditable || submitMutation.isPending}
-            className="px-6 sm:px-8 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[#38bdf8] hover:bg-[#0ea5e9] text-white shadow-sm hover:shadow transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Lưu và gửi
-          </button>
+            <button
+              type="button"
+              onClick={handleSubmitApplication}
+              disabled={!canSubmitApplication || submitMutation.isPending}
+              className="px-6 sm:px-8 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[#38bdf8] hover:bg-[#0ea5e9] text-white shadow-sm hover:shadow transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isNeedsRevision ? 'Nộp lại hồ sơ chính thức' : 'Nộp hồ sơ chính thức'}
+            </button>
+          </div>
         </div>
       </main>
 
@@ -667,7 +688,7 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
 
               <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-100 text-amber-900">
                 <p className="font-semibold mb-1">🔄 3. Lưu & Hoàn tác để nộp lại:</p>
-                <p>Mỗi thẻ chỉ có <strong>Hủy</strong> và <strong>Lưu</strong>. Sau khi <strong>Lưu</strong> sẽ hiện nút <strong>Hoàn tác để nộp lại</strong> nếu cần sửa. Khi đã đẩy đủ minh chứng, bạn chỉ cần ấn <strong>Nộp và gửi admin chấm bài</strong> 1 lần ở cuối trang để gửi toàn bộ hồ sơ.</p>
+                <p>Mỗi tiêu chí có thể <strong>Lưu nháp</strong> hoặc <strong>Gửi thẩm định tiêu chí này</strong>. Khi tất cả tiêu chí bắt buộc đã gửi thẩm định hoặc được duyệt, bấm <strong>Nộp hồ sơ chính thức</strong> ở cuối trang để gửi hồ sơ tổng cho hội đồng.</p>
               </div>
             </div>
 
@@ -698,6 +719,7 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
               Bạn đang gửi hồ sơ <strong>{application.applicationCode}</strong> đến Hội đồng xét duyệt và Mentor. Sau khi nộp, hồ sơ sẽ chuyển sang trạng thái chờ duyệt.
             </p>
+            {actionError && <p role="alert" className="mt-3 text-xs text-rose-700">{actionError}</p>}
 
             <div className="my-4 p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs space-y-1">
               <div className="flex justify-between">

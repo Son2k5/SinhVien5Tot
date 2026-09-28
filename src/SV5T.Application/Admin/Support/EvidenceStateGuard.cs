@@ -11,8 +11,9 @@ public static class EvidenceStateGuard
     private static readonly Dictionary<EvidenceStatus, HashSet<EvidenceStatus>> AllowedTransitions = new()
     {
         [EvidenceStatus.Submitted] = [EvidenceStatus.Approved, EvidenceStatus.Rejected, EvidenceStatus.NeedsRevision],
-        [EvidenceStatus.Approved] = [EvidenceStatus.NeedsRevision, EvidenceStatus.Rejected],
-        [EvidenceStatus.Rejected] = [EvidenceStatus.NeedsRevision, EvidenceStatus.Approved]
+        [EvidenceStatus.Approved] = [EvidenceStatus.NeedsRevision, EvidenceStatus.Rejected, EvidenceStatus.Submitted],
+        [EvidenceStatus.Rejected] = [EvidenceStatus.NeedsRevision, EvidenceStatus.Approved, EvidenceStatus.Submitted],
+        [EvidenceStatus.NeedsRevision] = [EvidenceStatus.Submitted, EvidenceStatus.Approved, EvidenceStatus.Rejected]
     };
 
     public static void EnsureCanTransition(EvidenceStatus current, EvidenceStatus target)

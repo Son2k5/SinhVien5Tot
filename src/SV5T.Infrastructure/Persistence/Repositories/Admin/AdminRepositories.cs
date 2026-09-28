@@ -451,7 +451,8 @@ public sealed class EvidenceRepository(ApplicationDbContext dbContext)
         IQueryable<Evidence> query = dbContext.Evidences
             .Include(x => x.Application)
                 .ThenInclude(x => x.Campaign)
-            .Include(x => x.Criterion);
+            .Include(x => x.Criterion)
+                .ThenInclude(x => x.Standard);
 
         if (!tracking)
         {
@@ -492,6 +493,7 @@ public sealed class EvidenceRepository(ApplicationDbContext dbContext)
             .Include(x => x.Application)
                 .ThenInclude(x => x.Campaign)
             .Include(x => x.Criterion)
+                .ThenInclude(x => x.Standard)
             .OrderByDescending(x => x.CreatedAt)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)

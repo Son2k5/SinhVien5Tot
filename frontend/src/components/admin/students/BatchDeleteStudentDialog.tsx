@@ -50,7 +50,7 @@ export function BatchDeleteStudentDialog({
       aria-modal="true"
       aria-label="Xác nhận xóa hàng loạt sinh viên"
     >
-      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 relative">
+      <div className="w-full max-w-md bg-white border border-slate-200 shadow-2xl p-6 space-y-4 relative">
         <button
           type="button"
           onClick={onClose}

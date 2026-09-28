@@ -1,0 +1,7 @@
+Thông tin đăng nhập mặc định:
+
+Email: admin@ms.hanu.edu
+Mật khẩu: Admin@123
+
+
+dotnet watch --project src/SV5T.Api/SV5T.Api.csproj --launch-profile https

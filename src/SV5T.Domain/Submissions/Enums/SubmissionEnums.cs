@@ -42,5 +42,6 @@ public enum ReviewAction
     ApplicationResubmitted = 11,
     RecommendedForNextLevel = 12,
     ApplicationWithdrawn = 13,
-    EvidenceSubmitted = 14
+    EvidenceSubmitted = 14,
+    EvidenceReopened = 15
 }

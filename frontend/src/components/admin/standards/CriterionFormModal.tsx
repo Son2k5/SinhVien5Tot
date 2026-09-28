@@ -388,7 +388,7 @@ export function CriterionFormModal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-2xl bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-5 relative max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl bg-white border border-slate-200 shadow-2xl p-6 space-y-5 relative max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
         <button
           type="button"

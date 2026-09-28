@@ -50,7 +50,7 @@ export function StudentLockDialog({ isOpen, student, isLoading, onClose, onConfi
       aria-modal="true"
       aria-label="Khóa/mở khóa tài khoản"
     >
-      <div className="w-full max-w-[400px] bg-white rounded-2xl border border-slate-100 shadow-[0_20px_60px_-15px_rgba(15,35,70,0.25)] px-5 py-5 relative">
+      <div className="w-full max-w-[400px] bg-white border border-slate-100 shadow-[0_20px_60px_-15px_rgba(15,35,70,0.25)] px-5 py-5 relative">
         <button
           type="button"
           onClick={onClose}

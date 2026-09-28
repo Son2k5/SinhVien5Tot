@@ -289,8 +289,8 @@ public sealed class ReviewEvidenceRequestValidator : AbstractValidator<ReviewEvi
     public ReviewEvidenceRequestValidator()
     {
         RuleFor(x => x.Decision)
-            .Must(d => d is EvidenceStatus.Approved or EvidenceStatus.Rejected or EvidenceStatus.NeedsRevision)
-            .WithMessage("Trạng thái xét duyệt không hợp lệ (chỉ chấp nhận Approved, Rejected hoặc NeedsRevision).");
+            .Must(d => d is EvidenceStatus.Approved or EvidenceStatus.Rejected or EvidenceStatus.NeedsRevision or EvidenceStatus.Submitted)
+            .WithMessage("Trạng thái xét duyệt không hợp lệ (chỉ chấp nhận Approved, Rejected, NeedsRevision hoặc Submitted).");
 
         RuleFor(x => x.Note)
             .NotEmpty()

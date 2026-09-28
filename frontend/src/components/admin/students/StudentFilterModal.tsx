@@ -58,7 +58,7 @@ export function StudentFilterModal({ isOpen, onClose, initialValues, onApply, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 animate-in fade-in duration-150" onClick={onClose} role="dialog" aria-modal="true" aria-label="Bộ lọc chi tiết">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col animate-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-2xl max-h-[90vh] bg-white shadow-xl border border-slate-200 overflow-hidden flex flex-col animate-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-slate-100">
           <div>
             <h3 className="text-[15px] font-semibold text-slate-800">Bộ lọc chi tiết</h3>

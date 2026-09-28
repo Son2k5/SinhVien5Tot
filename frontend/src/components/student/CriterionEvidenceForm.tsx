@@ -18,6 +18,7 @@ import {
   Check,
   Save,
   RotateCcw,
+  Send,
   X,
 } from 'lucide-react';
 import type {
@@ -77,7 +78,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   // Chỉ còn 1 modal xác nhận duy nhất cho thao tác Lưu (không còn Lưu nháp / Lưu và nộp riêng).
-  const [confirmModalState, setConfirmModalState] = useState<'save' | null>(null);
+  const [confirmModalState, setConfirmModalState] = useState<'save' | 'submit' | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -87,6 +88,11 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
   }, [evidence]);
 
   const attachments = parseAttachments();
+  const evidenceStatus = String(evidence?.status ?? '').toLowerCase();
+  const isSubmittedEvidence = evidenceStatus === 'submitted' || evidenceStatus === '2';
+  const isApprovedEvidence = evidenceStatus === 'approved' || evidenceStatus === '3';
+  const canEdit = !isReadOnly && !isSubmittedEvidence && !isApprovedEvidence;
+  const canReopen = !isReadOnly && isSubmittedEvidence;
   const hasEvidenceContent = Boolean(
     (description && description.trim().length > 0) ||
     (driveLink && driveLink.trim().length > 0) ||
@@ -94,15 +100,11 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
   );
 
   // Trang thai hien thi: "Chưa nộp" / "Đã lưu" (+ giu ket qua duyet mentor/admin).
-  // - Chua co evidence tren server -> "Chưa nộp"
-  // - Da co evidence (da Luu) -> "Đã lưu" (hien nut Hoan tac de nop lai)
-  // Giu hien thi ket qua duyet cua mentor/admin (Dat / Khong dat / Can bo sung / Da gui duyet)
-  // vi do la thong tin review, khong phai nut hanh dong cua the.
   const getStatus = () => {
     const evStatusStr = String(evidence?.status ?? '').toLowerCase();
 
     if (evidence) {
-      if (evStatusStr === 'approved') {
+      if (evStatusStr === 'approved' || evStatusStr === '3') {
         return {
           label: 'Đạt tiêu chí',
           dotColor: 'bg-emerald-500',
@@ -110,7 +112,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
           bgColor: 'bg-emerald-50 border-emerald-200/60',
         };
       }
-      if (evStatusStr === 'rejected') {
+      if (evStatusStr === 'rejected' || evStatusStr === '4') {
         return {
           label: 'Không đạt',
           dotColor: 'bg-rose-500',
@@ -118,7 +120,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
           bgColor: 'bg-rose-50 border-rose-200/60',
         };
       }
-      if (evStatusStr === 'needsrevision') {
+      if (evStatusStr === 'needsrevision' || evStatusStr === '5') {
         return {
           label: 'Cần bổ sung',
           dotColor: 'bg-orange-500',
@@ -126,7 +128,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
           bgColor: 'bg-orange-50 border-orange-200/60',
         };
       }
-      if (evStatusStr === 'submitted') {
+      if (evStatusStr === 'submitted' || evStatusStr === '2') {
         return {
           label: 'Minh chứng đang xét — Đã gửi Mentor/Admin',
           dotColor: 'bg-blue-500',
@@ -135,10 +137,10 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
         };
       }
       return {
-        label: 'Đã lưu',
-        dotColor: 'bg-emerald-500',
-        textColor: 'text-emerald-700',
-        bgColor: 'bg-emerald-50 border-emerald-200/60',
+        label: 'Đã lưu nháp',
+        dotColor: 'bg-slate-500',
+        textColor: 'text-slate-700',
+        bgColor: 'bg-slate-50 border-slate-200/60',
       };
     }
 
@@ -161,12 +163,8 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
 
   const status = getStatus();
 
-  // Da co evidence (da Luu) -> cho phep Hoan tac de nop lai.
-  // Hoan tac o day chi mo lai form voi du lieu da luu (khong tu dong xoa server),
-  // user sua xong bam Luu de ghi de; hoac bam Huy de quay ve ban da luu.
-  const canUndo = Boolean(evidence);
-  // Form chi co Huy / Luu (+ Hoan tac sau khi Luu). Nut nop tong + gui admin
-  // nam o cuoi trang StudentEvidenceSubmissionPage.
+  // Da co evidence (da Luu hoac da Nop) -> cho phep mo sua lai
+  const canUndo = canReopen;
   const canCancel = hasEvidenceContent || canUndo || isExpanded;
 
   const handleCancel = () => {
@@ -178,13 +176,24 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
     if (!evidence && !original.description && !original.driveLink) setIsExpanded(false);
   };
 
-  const handleUndo = () => {
+  const handleUndo = async () => {
     const saved = parseData();
-    if (evidence) {
+    if (evidence && canReopen) {
+      try {
+        setIsSaving(true);
+        const updated = await studentService.reopenEvidence(evidence.id, evidence.rowVersion);
+        onEvidenceUpdated(updated);
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 409) await reloadLatestApplication();
+        setFeedbackMessage({ type: 'error', text: sanitizeApiError(err) });
+        return;
+      } finally {
+        setIsSaving(false);
+      }
       setDescription(saved.description);
       setDriveLink(saved.driveLink);
       setIsExpanded(true);
-      setFeedbackMessage({ type: 'success', text: 'Da mo lai minh chung da luu. Ban hay chinh sua roi bam Luu de nop lai.' });
+      setFeedbackMessage({ type: 'success', text: 'Đã mở lại minh chứng. Bạn có thể chỉnh sửa rồi Lưu nháp hoặc Gửi thẩm định lại.' });
       return;
     }
     setDescription('');
@@ -192,8 +201,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
     setFeedbackMessage(null);
   };
 
-  // Chi 1 loai confirm: Luu (khong con Luu nhap / Luu va nop rieng tren the).
-  const handleOpenConfirm = () => {
+  const handleOpenSaveConfirm = () => {
     if (!description.trim() && !driveLink.trim() && attachments.length === 0) {
       setFeedbackMessage({
         type: 'error',
@@ -204,6 +212,19 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
     if (!isExpanded) setIsExpanded(true);
     setFeedbackMessage(null);
     setConfirmModalState('save');
+  };
+
+  const handleOpenSubmitConfirm = () => {
+    if (!description.trim() && !driveLink.trim() && attachments.length === 0) {
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Vui lòng nhập phần đánh giá hoặc tải lên tệp minh chứng trước khi gửi thẩm định.',
+      });
+      return;
+    }
+    if (!isExpanded) setIsExpanded(true);
+    setFeedbackMessage(null);
+    setConfirmModalState('submit');
   };
 
   // Chuẩn hoá mã lỗi backend từ response (code || detail-safe fallback).
@@ -220,7 +241,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
     await queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
   };
 
-  // Execute confirmed action (chi Luu; nop tong + gui admin o cuoi trang)
+  // Execute confirmed action (Luu nháp hoặc Gửi thẩm định riêng tiêu chí)
   const handleExecuteConfirmedAction = async () => {
     if (!confirmModalState || isSaving || isUploading) return;
 
@@ -235,6 +256,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
         updatedAt: new Date().toISOString(),
       });
 
+      // 1. Luôn lưu dữ liệu mới nhất
       const updated = await studentService.upsertEvidence(
         applicationId,
         criterion.id,
@@ -242,14 +264,30 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
         evidence?.rowVersion
       );
 
-      onEvidenceUpdated(updated);
-      setConfirmModalState(null);
-      setIsExpanded(false);
-      setFeedbackMessage({
-        type: 'success',
-        text: 'Đã lưu minh chứng. Bạn có thể Hoàn tác để nộp lại nếu cần.',
-      });
-      setTimeout(() => setFeedbackMessage(null), 3000);
+      if (confirmModalState === 'save') {
+        onEvidenceUpdated(updated);
+        setConfirmModalState(null);
+        setIsExpanded(false);
+        setFeedbackMessage({
+          type: 'success',
+          text: 'Đã lưu bản nháp minh chứng thành công.',
+        });
+        setTimeout(() => setFeedbackMessage(null), 3000);
+      } else if (confirmModalState === 'submit') {
+        // 2. Nộp riêng tiêu chí cho Mentor thẩm định
+        const submitted = await studentService.submitEvidence(
+          updated.id,
+          updated.rowVersion
+        );
+        onEvidenceUpdated(submitted);
+        setConfirmModalState(null);
+        setIsExpanded(false);
+        setFeedbackMessage({
+          type: 'success',
+          text: 'Đã gửi minh chứng tiêu chí này cho Mentor/Admin thẩm định thành công!',
+        });
+        setTimeout(() => setFeedbackMessage(null), 4000);
+      }
     } catch (err: any) {
       const code = getBackendErrorCode(err);
       // RowVersion đã cũ (lưu trùng / tab khác vừa lưu): tải bản mới rồi báo user thử lại.
@@ -257,7 +295,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
         await reloadLatestApplication();
         setFeedbackMessage({
           type: 'error',
-          text: 'Dữ liệu vừa được cập nhật ở nơi khác. Đã tải bản mới nhất, vui lòng kiểm tra lại rồi lưu.',
+          text: 'Dữ liệu vừa được cập nhật ở nơi khác. Đã tải bản mới nhất, vui lòng kiểm tra lại.',
         });
         setConfirmModalState(null);
       } else if (
@@ -325,6 +363,22 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
     } finally {
       setIsUploading(false);
       e.target.value = '';
+    }
+  };
+
+  const handleFileDelete = async (fileIndex: number) => {
+    if (!evidence || !canEdit || isUploading || isSaving) return;
+    try {
+      setIsUploading(true);
+      setFeedbackMessage(null);
+      const updated = await studentService.deleteEvidenceFile(evidence.id, fileIndex, evidence.rowVersion);
+      onEvidenceUpdated(updated);
+      setFeedbackMessage({ type: 'success', text: 'Đã xóa tệp minh chứng.' });
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 409) await reloadLatestApplication();
+      setFeedbackMessage({ type: 'error', text: sanitizeApiError(err) });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -400,7 +454,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          title={evidence ? 'Chỉnh sửa minh chứng đã lưu' : 'Thêm minh chứng mới'}
+          title={evidence ? 'Xem minh chứng' : 'Thêm minh chứng mới'}
           className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#0047AB] hover:bg-[#003882] text-white shadow-sm transition active:scale-95 cursor-pointer"
         >
           {isExpanded ? (
@@ -411,7 +465,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
           ) : evidence ? (
             <>
               <PenLine className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{isReadOnly ? 'Xem chi tiết' : 'Chỉnh sửa'}</span>
+              <span>{canEdit ? 'Chỉnh sửa' : 'Xem chi tiết'}</span>
             </>
           ) : (
             <>
@@ -433,7 +487,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
             </div>
             <textarea
               rows={3}
-              disabled={isReadOnly}
+              disabled={!canEdit}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Input text"
@@ -449,7 +503,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
             </div>
 
             {/* Drag & Drop Upload Zone (Theo đúng mockup ảnh) */}
-            {!isReadOnly && (
+            {canEdit && (
               <label className="border-2 border-dashed border-sky-300 hover:border-blue-500 bg-sky-50/15 hover:bg-sky-50/30 rounded-2xl p-7 sm:p-9 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
                 <UploadCloud className="w-12 h-12 text-slate-400 group-hover:text-blue-600 stroke-[1.5] mb-2 transition-colors" />
                 <p className="text-sm sm:text-base font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
@@ -466,7 +520,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
                 </span>
                 <input
                   type="file"
-                  disabled={isUploading || isReadOnly}
+                  disabled={isUploading || !canEdit}
                   onChange={handleFileUpload}
                   accept="image/*,application/pdf"
                   className="hidden"
@@ -524,6 +578,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
                           </div>
                         </div>
 
+                        <div className="flex items-center gap-1">
                         <a
                           href={typeof url === 'string' ? url : '#'}
                           target="_blank"
@@ -533,6 +588,15 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
+                        {canEdit && (
+                          <button type="button" onClick={() => handleFileDelete(idx)}
+                            disabled={isUploading || isSaving}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 disabled:opacity-50"
+                            title="Xóa tệp minh chứng" aria-label={`Xóa ${name}`}>
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -561,7 +625,7 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
               </div>
               <input
                 type="url"
-                disabled={isReadOnly}
+                disabled={!canEdit}
                 value={driveLink}
                 onChange={(e) => setDriveLink(e.target.value)}
                 placeholder="https://drive.google.com/file/d/..."
@@ -588,58 +652,75 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
             </div>
           )}
 
-          {/* 5. Chi 2 nut: Huy + Luu. Sau khi Luu -> them nut Hoan tac de nop lai. */}
-          {!isReadOnly && (
-            <div className="flex items-center justify-center sm:justify-end gap-3 pt-4 border-t border-slate-100 flex-wrap">
+          {/* 5. Cụm nút hành động: Hủy, Mở sửa lại, Lưu nháp, Gửi thẩm định tiêu chí này */}
+          {!isReadOnly && !isApprovedEvidence && (
+            <div className="flex items-center justify-center sm:justify-end gap-2.5 pt-4 border-t border-slate-100 flex-wrap">
               {/* Huy: reset ve ban da luu (neu co) */}
-              <button
+              {canEdit && <button
                 type="button"
                 onClick={handleCancel}
                 disabled={!canCancel || isSaving || isUploading}
-                className="px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 transition active:scale-95 cursor-pointer disabled:opacity-50"
               >
                 Hủy
-              </button>
+              </button>}
 
-              {/* Hoan tac: chi hien sau khi da Luu de nop lai */}
+              {/* Hoan tac / Mo sua lai: hien sau khi da Luu hoac Nop */}
               {canUndo && (
                 <button
                   type="button"
                   onClick={handleUndo}
                   disabled={isSaving || isUploading}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition active:scale-95 cursor-pointer shadow-xs disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition active:scale-95 cursor-pointer shadow-2xs disabled:opacity-50"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  Hoàn tác để nộp lại
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Mở sửa lại
                 </button>
               )}
 
-              {/* Luu minh chung the nay (nop tong + gui admin o cuoi trang) */}
-              <button
+              {/* Luu ban nhap */}
+              {canEdit && <button
                 type="button"
-                onClick={handleOpenConfirm}
+                onClick={handleOpenSaveConfirm}
                 disabled={isSaving || isUploading}
-                className="inline-flex items-center gap-1.5 px-6 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#0047AB] hover:bg-[#003882] text-white shadow-md shadow-blue-900/20 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shadow-2xs transition active:scale-95 cursor-pointer disabled:opacity-50"
               >
-                <Save className="w-4 h-4" />
-                Lưu
-              </button>
+                <Save className="w-3.5 h-3.5 text-slate-500" />
+                Lưu nháp
+              </button>}
+
+              {/* Gui tham dinh tieu chi nay (Micro Review) */}
+              {canEdit && <button
+                type="button"
+                onClick={handleOpenSubmitConfirm}
+                disabled={isSaving || isUploading}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow-md shadow-blue-500/25 transition active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Gửi thẩm định tiêu chí này
+              </button>}
             </div>
           )}
         </div>
       )}
 
-      {/* 6. Pop-up xac nhan Luu duy nhat */}
+      {/* 6. Modal xac nhan Luu nhap / Gui tham dinh tieu chi */}
       {confirmModalState && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#0047AB] flex items-center justify-center font-bold">
-                  <Save className="w-5 h-5" />
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold ${
+                  confirmModalState === 'submit'
+                    ? 'bg-blue-100 text-blue-700 shadow-sm shadow-blue-500/20'
+                    : 'bg-slate-100 text-slate-700'
+                }`}>
+                  {confirmModalState === 'submit' ? <Send className="w-5 h-5" /> : <Save className="w-5 h-5" />}
                 </div>
                 <h3 className="text-base font-bold text-slate-900">
-                  Xác nhận lưu minh chứng
+                  {confirmModalState === 'submit'
+                    ? 'Gửi thẩm định tiêu chí'
+                    : 'Lưu bản nháp minh chứng'}
                 </h3>
               </div>
               <button
@@ -652,9 +733,17 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
             </div>
 
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Bạn đang chuẩn bị lưu minh chứng cho tiêu chí 
-              <strong>"{criterion.title}"</strong>. Sau khi lưu, thẻ sẽ hiện nút Hoàn tác để nộp lại nếu cần. 
-              Nút nộp tổng + gửi admin/mentor chấm bài nằm ở cuối trang (ấn 1 lần để gửi toàn bộ hồ sơ).
+              {confirmModalState === 'submit' ? (
+                <>
+                  Bạn đang chuẩn bị gửi thẩm định cho tiêu chí <strong>"{criterion.title}"</strong>. 
+                  Tiêu chí này sẽ được chuyển riêng sang trạng thái <strong>Chờ xét duyệt</strong> để Mentor/Admin có thể thẩm định trực tiếp (Micro Review) và phản hồi nhận xét sớm cho bạn mà không cần đợi nộp toàn bộ hồ sơ.
+                </>
+              ) : (
+                <>
+                  Bạn đang chuẩn bị lưu bản nháp minh chứng cho tiêu chí <strong>"{criterion.title}"</strong>. 
+                  Dữ liệu được lưu an toàn trên hệ thống và bạn có thể tiếp tục chỉnh sửa hoặc gửi thẩm định bất kỳ lúc nào.
+                </>
+              )}
             </p>
 
             <div className="flex items-center justify-end gap-2.5 mt-6 pt-2">
@@ -671,9 +760,13 @@ export const CriterionEvidenceForm: React.FC<CriterionEvidenceFormProps> = ({
                 type="button"
                 onClick={handleExecuteConfirmedAction}
                 disabled={isSaving}
-                className="inline-flex items-center gap-2 px-5 py-2 text-xs sm:text-sm font-bold rounded-xl text-white bg-[#0047AB] hover:bg-[#003882] transition shadow-md shadow-blue-900/20 cursor-pointer disabled:bg-slate-300"
+                className={`inline-flex items-center gap-2 px-5 py-2 text-xs sm:text-sm font-bold rounded-xl text-white transition shadow-md cursor-pointer disabled:bg-slate-300 ${
+                  confirmModalState === 'submit'
+                    ? 'bg-[#0047AB] hover:bg-[#003882] shadow-blue-900/20'
+                    : 'bg-slate-800 hover:bg-slate-900 shadow-slate-900/20'
+                }`}
               >
-                {isSaving ? 'Đang xử lý...' : 'Đồng ý lưu'}
+                {isSaving ? 'Đang xử lý...' : confirmModalState === 'submit' ? 'Đồng ý gửi thẩm định' : 'Đồng ý lưu nháp'}
               </button>
             </div>
           </div>

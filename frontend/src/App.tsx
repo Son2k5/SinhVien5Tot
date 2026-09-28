@@ -15,6 +15,7 @@ import { CampaignDetailPage } from './pages/admin/CampaignDetailPage';
 import { StudentListPage } from './pages/admin/StudentListPage';
 import { StudentDetailPage } from './pages/admin/StudentDetailPage';
 import { ApplicationListPage } from './pages/admin/ApplicationListPage';
+import { EvidenceReviewWorkspacePage } from './pages/admin/EvidenceReviewWorkspacePage';
 import { StandardSetListPage } from './pages/admin/StandardSetListPage';
 import { StandardSetDetailPage } from './pages/admin/StandardSetDetailPage';
 import { AdminLayout } from './components/admin/AdminLayout';
@@ -44,7 +45,7 @@ export function App() {
           <Route path="campaigns" element={<CampaignListPage />} />
           <Route path="campaigns/:id" element={<CampaignDetailPage />} />
           <Route path="applications" element={<ApplicationListPage />} />
-          <Route path="evidence" element={<Navigate to="/admin/applications" replace />} />
+          <Route path="evidence" element={<EvidenceReviewWorkspacePage />} />
           <Route path="students" element={<StudentListPage />} />
           <Route path="students/:id" element={<StudentDetailPage />} />
           <Route path="collectives" element={<AdminFeaturePage section="collectives" />} />

@@ -73,10 +73,11 @@ public sealed class ReviewEvidenceHandler(
         }
 
         var now = DateTime.UtcNow;
+        var isRevert = command.Request.Decision == EvidenceStatus.Submitted;
         evidence.Status = command.Request.Decision;
-        evidence.ReviewerNote = command.Request.Note?.Trim();
-        evidence.ReviewedBy = reviewerId;
-        evidence.ReviewedAt = now;
+        evidence.ReviewerNote = isRevert ? null : command.Request.Note?.Trim();
+        evidence.ReviewedBy = isRevert ? null : reviewerId;
+        evidence.ReviewedAt = isRevert ? null : now;
         evidence.UpdatedAt = now;
         evidence.UpdatedBy = reviewerId.ToString();
 
@@ -95,7 +96,8 @@ public sealed class ReviewEvidenceHandler(
         {
             EvidenceStatus.Approved => ReviewAction.EvidenceApproved,
             EvidenceStatus.Rejected => ReviewAction.EvidenceRejected,
-            _ => ReviewAction.EvidenceRevisionRequested
+            EvidenceStatus.NeedsRevision => ReviewAction.EvidenceRevisionRequested,
+            _ => ReviewAction.ReviewStarted
         };
 
         await evidenceRepository.AddReviewLogAsync(new ReviewLog

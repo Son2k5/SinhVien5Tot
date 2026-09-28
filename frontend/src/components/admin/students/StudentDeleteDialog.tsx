@@ -19,7 +19,7 @@ export function StudentDeleteDialog({ isOpen, student, isLoading, onClose, onCon
   };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Xác nhận xóa sinh viên">
-      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 relative">
+      <div className="w-full max-w-md bg-white border border-slate-200 shadow-2xl p-6 space-y-4 relative">
         <button type="button" onClick={onClose} disabled={isLoading} className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer" aria-label="Đóng"><X size={18} /></button>
         <div className="flex items-start gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0"><AlertTriangle size={20} /></div>

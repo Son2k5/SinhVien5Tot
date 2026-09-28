@@ -56,7 +56,7 @@ export function AdminConfirmDialog({
       aria-labelledby="confirm-dialog-title"
     >
       <div
-        className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 relative animate-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-white border border-slate-200 shadow-2xl p-6 space-y-4 relative animate-in zoom-in-95 duration-150"
       >
         <button
           type="button"

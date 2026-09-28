@@ -15,8 +15,13 @@ import {
   Info,
   Link as LinkIcon,
   Calendar,
+  Loader2,
 } from 'lucide-react';
 import type { AdminEvidenceItem, EvidenceAttachment } from '../../../types/admin/application';
+
+const PdfEvidenceViewer = React.lazy(() =>
+  import('./PdfEvidenceViewer').then(({ PdfEvidenceViewer }) => ({ default: PdfEvidenceViewer }))
+);
 
 interface ViewerFile {
   url: string;
@@ -89,7 +94,7 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
           return [
             {
               url: drive,
-              name: `Liên kết minh chứng — ${ev.criterionCode}`,
+              name: `Liên kết minh chứng — ${ev.criterionTitle || 'Tiêu chí'}`,
               isPdf: false,
               criterionCode: ev.criterionCode,
               criterionTitle: ev.criterionTitle,
@@ -174,8 +179,8 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
 
   // Zoom controls
   const zoomIn = useCallback(() => {
-    setScale((prev) => Math.min(prev + 0.25, 5));
-  }, []);
+    setScale((prev) => Math.min(prev + 0.25, currentFile?.isPdf ? 3 : 5));
+  }, [currentFile?.isPdf]);
 
   const zoomOut = useCallback(() => {
     setScale((prev) => Math.max(prev - 0.25, 0.3));
@@ -205,18 +210,41 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
     }
   }, [currentIndex, files.length, resetTransform]);
 
-  // Download handler
-  const handleDownload = useCallback(() => {
-    if (!currentFile?.url) return;
-    const link = document.createElement('a');
-    link.href = currentFile.url;
-    link.download = currentFile.name || 'minh-chung';
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [currentFile]);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Download handler - Tải trực tiếp về máy không redirect
+  const handleDownload = useCallback(async () => {
+    if (!currentFile?.url || isDownloading) return;
+    try {
+      setIsDownloading(true);
+      const res = await fetch(currentFile.url);
+      if (!res.ok) throw new Error('Không thể tải tệp trực tiếp');
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = currentFile.name || 'minh-chung';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+      console.warn('Lỗi khi fetch blob, chuyển sang phương thức tải kèm fl_attachment', err);
+      // Fallback cho link Cloudinary: thêm cờ fl_attachment để trình duyệt tự động lưu tệp về máy
+      let downloadUrl = currentFile.url;
+      if (downloadUrl.includes('/upload/') && !downloadUrl.includes('/fl_attachment')) {
+        downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+      }
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = currentFile.name || 'minh-chung';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [currentFile, isDownloading]);
 
   // Mouse pan handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -262,7 +290,7 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
         zoomIn();
       } else if (e.key === '-' || e.key === '_') {
         zoomOut();
-      } else if (e.key.toLowerCase() === 'r') {
+      } else if (e.key.toLowerCase() === 'r' && !currentFile?.isPdf) {
         rotateRight();
       } else if (e.key === '0') {
         resetTransform();
@@ -271,7 +299,7 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, prevFile, nextFile, zoomIn, zoomOut, rotateRight, resetTransform]);
+  }, [isOpen, onClose, prevFile, nextFile, zoomIn, zoomOut, rotateRight, resetTransform, currentFile?.isPdf]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -288,69 +316,59 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[100] flex flex-col bg-slate-950/92 backdrop-blur-md text-white select-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex flex-col bg-black text-white select-none animate-in fade-in duration-150 font-inter"
+      style={{ fontFamily: "'Inter', sans-serif" }}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
       {/* Top Header / Action Toolbar */}
-      <header className="h-16 px-4 sm:px-6 bg-slate-900/85 border-b border-slate-800/80 flex items-center justify-between gap-3 shrink-0 z-20">
-        {/* Left: Criterion Info */}
-        <div className="flex items-center gap-3 min-w-0 max-w-md sm:max-w-xl">
-          <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
-            {currentFile?.isPdf ? <FileText size={18} /> : <Maximize2 size={18} />}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 text-[11px] font-mono font-semibold border border-blue-500/30 shrink-0">
-                {currentFile?.criterionCode || evidence.criterionCode}
-              </span>
-              <span className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
-                {currentFile?.name}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 truncate mt-0.5">
-              {currentFile?.criterionTitle || evidence.criterionTitle}
-              {currentFile?.size ? ` • ${formatBytes(currentFile.size)}` : ''}
-            </p>
-          </div>
+      <header className="relative h-16 px-4 sm:px-6 bg-black border-b border-neutral-800 flex items-center justify-between gap-3 shrink-0 z-20">
+        {/* Left: Tên tệp (đã bỏ icon docs, bỏ mã tiêu chí, bỏ thông tin tiêu chí) */}
+        <div className="flex items-center min-w-0 max-w-[35%] sm:max-w-md">
+          <span className="text-xs sm:text-sm font-medium text-neutral-100 truncate" title={currentFile?.name}>
+            {currentFile?.name}
+          </span>
         </div>
 
-        {/* Center: File counter */}
-        <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs font-mono text-slate-300">
+        {/* Center: File counter căn đúng giữa màn hình */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 bg-neutral-900 border border-neutral-800 text-xs font-mono text-neutral-300 pointer-events-none">
           <span className="font-semibold text-white">{currentIndex + 1}</span>
-          <span className="text-slate-500">/</span>
+          <span className="text-neutral-500">/</span>
           <span>{files.length} tệp</span>
         </div>
 
-        {/* Right: Interactive Tools (Rotate, Zoom, Download, Close) */}
+        {/* Right: Interactive Tools (Rotate, Zoom, Download, Close) - Vuông thẳng, không bo góc */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {/* Rotate 90deg left/right */}
-          <button
-            type="button"
-            title="Xoay ngược chiều kim đồng hồ 90° (R)"
-            onClick={rotateLeft}
-            className="w-9 h-9 rounded-xl hover:bg-slate-800/90 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-slate-700"
-          >
-            <RotateCcw size={17} />
-          </button>
-          <button
-            type="button"
-            title="Xoay theo chiều kim đồng hồ 90° (R)"
-            onClick={rotateRight}
-            className="w-9 h-9 rounded-xl hover:bg-slate-800/90 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-slate-700"
-          >
-            <RotateCw size={17} />
-          </button>
-
-          <div className="h-5 w-px bg-slate-800 mx-1 hidden sm:block" />
+          {/* Rotation applies to images only. */}
+          {!currentFile?.isPdf && (
+            <>
+              <button
+                type="button"
+                title="Xoay ngược chiều kim đồng hồ 90° (R)"
+                onClick={rotateLeft}
+                className="w-9 h-9 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-neutral-700"
+              >
+                <RotateCcw size={17} />
+              </button>
+              <button
+                type="button"
+                title="Xoay theo chiều kim đồng hồ 90° (R)"
+                onClick={rotateRight}
+                className="w-9 h-9 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-neutral-700"
+              >
+                <RotateCw size={17} />
+              </button>
+              <div className="h-5 w-px bg-neutral-800 mx-1 hidden sm:block" />
+            </>
+          )}
 
           {/* Zoom controls */}
           <button
             type="button"
             title="Thu nhỏ (-)"
             onClick={zoomOut}
-            className="w-9 h-9 rounded-xl hover:bg-slate-800/90 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-slate-700"
+            className="w-9 h-9 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-neutral-700"
           >
             <ZoomOut size={17} />
           </button>
@@ -359,7 +377,7 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
             type="button"
             title="Đặt lại kích thước chuẩn (0)"
             onClick={resetTransform}
-            className="px-2.5 h-9 rounded-xl hover:bg-slate-800/90 text-xs font-mono text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-slate-700"
+            className="px-2.5 h-9 hover:bg-neutral-800 text-xs font-mono text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-neutral-700"
           >
             {Math.round(scale * 100)}%
           </button>
@@ -368,22 +386,22 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
             type="button"
             title="Phóng to (+)"
             onClick={zoomIn}
-            className="w-9 h-9 rounded-xl hover:bg-slate-800/90 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-slate-700"
+            className="w-9 h-9 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-neutral-700"
           >
             <ZoomIn size={17} />
           </button>
 
-          <div className="h-5 w-px bg-slate-800 mx-1 hidden sm:block" />
+          <div className="h-5 w-px bg-neutral-800 mx-1 hidden sm:block" />
 
           {/* Info toggle */}
           <button
             type="button"
             title="Thông tin chi tiết minh chứng"
             onClick={() => setShowInfo(!showInfo)}
-            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer border ${
+            className={`w-9 h-9 flex items-center justify-center transition-colors cursor-pointer border ${
               showInfo
-                ? 'bg-blue-600/30 text-blue-400 border-blue-500/50'
-                : 'hover:bg-slate-800/90 text-slate-300 hover:text-white border-transparent hover:border-slate-700'
+                ? 'bg-neutral-800 text-blue-400 border-neutral-600'
+                : 'hover:bg-neutral-800 text-neutral-300 hover:text-white border-transparent hover:border-neutral-700'
             }`}
           >
             <Info size={17} />
@@ -392,11 +410,12 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
           {/* Download */}
           <button
             type="button"
-            title="Tải minh chứng về máy"
+            disabled={isDownloading}
+            title={isDownloading ? 'Đang tải tệp về máy...' : 'Tải minh chứng về máy'}
             onClick={handleDownload}
-            className="w-9 h-9 rounded-xl hover:bg-slate-800/90 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-slate-700"
+            className="w-9 h-9 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-neutral-700 disabled:opacity-50"
           >
-            <Download size={17} />
+            {isDownloading ? <Loader2 size={17} className="animate-spin text-blue-400" /> : <Download size={17} />}
           </button>
 
           {/* Open original link */}
@@ -406,7 +425,7 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
               target="_blank"
               rel="noreferrer"
               title="Mở trong tab mới"
-              className="w-9 h-9 rounded-xl hover:bg-slate-800/90 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-slate-700"
+              className="w-9 h-9 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-neutral-700"
             >
               <ExternalLink size={16} />
             </a>
@@ -417,19 +436,19 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
             type="button"
             title={isFullscreen ? 'Thu nhỏ cửa sổ' : 'Toàn màn hình'}
             onClick={toggleFullscreen}
-            className="hidden sm:flex w-9 h-9 rounded-xl hover:bg-slate-800/90 text-slate-300 hover:text-white items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-slate-700"
+            className="hidden sm:flex w-9 h-9 hover:bg-neutral-800 text-neutral-300 hover:text-white items-center justify-center transition-colors cursor-pointer border border-transparent hover:border-neutral-700"
           >
             {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
 
-          <div className="h-5 w-px bg-slate-800 mx-1" />
+          <div className="h-5 w-px bg-neutral-800 mx-1" />
 
           {/* Close */}
           <button
             type="button"
             title="Đóng (Esc)"
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-rose-600/80 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-slate-700/80 hover:border-rose-500"
+            className="w-9 h-9 bg-neutral-800 hover:bg-rose-600 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-neutral-700 hover:border-rose-500"
           >
             <X size={18} />
           </button>
@@ -438,46 +457,44 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
 
       {/* Main Viewing Canvas */}
       <div className="relative flex-1 overflow-hidden flex items-center justify-center">
-        {/* Navigation Arrow Left */}
+        {/* Navigation Arrow Left - Vuông thẳng, không blur */}
         {currentIndex > 0 && (
           <button
             type="button"
             onClick={prevFile}
             title="Minh chứng trước (Phím mũi tên trái)"
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-slate-900/80 hover:bg-blue-600 text-white flex items-center justify-center backdrop-blur shadow-xl border border-slate-700/80 transition-all hover:scale-105 cursor-pointer"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-neutral-900/90 hover:bg-neutral-800 text-white flex items-center justify-center shadow-xl border border-neutral-700 transition-all hover:scale-105 cursor-pointer"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={22} />
           </button>
         )}
 
-        {/* Navigation Arrow Right */}
+        {/* Navigation Arrow Right - Vuông thẳng, không blur */}
         {currentIndex < files.length - 1 && (
           <button
             type="button"
             onClick={nextFile}
             title="Minh chứng tiếp theo (Phím mũi tên phải)"
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-slate-900/80 hover:bg-blue-600 text-white flex items-center justify-center backdrop-blur shadow-xl border border-slate-700/80 transition-all hover:scale-105 cursor-pointer"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-neutral-900/90 hover:bg-neutral-800 text-white flex items-center justify-center shadow-xl border border-neutral-700 transition-all hover:scale-105 cursor-pointer"
           >
-            <ChevronRight size={24} />
+            <ChevronRight size={22} />
           </button>
         )}
 
-        {/* Viewport for Image / PDF */}
+        {/* Viewport for Image / PDF - Vuông thẳng, tập trung khung chính không blur */}
         <div
-          className={`w-full h-full flex items-center justify-center p-6 ${
-            currentFile?.isPdf ? 'overflow-auto' : 'cursor-grab active:cursor-grabbing'
+          className={`w-full h-full flex items-center justify-center p-2 sm:p-4 ${
+            currentFile?.isPdf ? 'overflow-hidden' : 'cursor-grab active:cursor-grabbing'
           }`}
           onMouseDown={!currentFile?.isPdf ? handleMouseDown : undefined}
           onWheel={!currentFile?.isPdf ? handleWheel : undefined}
           onDoubleClick={!currentFile?.isPdf ? () => setScale((s) => (s > 1 ? 1 : 2)) : undefined}
         >
           {currentFile?.isPdf ? (
-            <div className="w-full h-full max-w-5xl rounded-2xl overflow-hidden border border-slate-700 shadow-2xl bg-white">
-              <iframe
-                src={`${currentFile.url}#toolbar=1`}
-                title={currentFile.name}
-                className="w-full h-full"
-              />
+            <div className="w-full h-full max-w-7xl 2xl:max-w-[1440px] overflow-hidden border border-neutral-800 shadow-2xl bg-neutral-950">
+              <React.Suspense fallback={<div className="h-full flex items-center justify-center text-sm text-neutral-400">Đang mở trình xem PDF...</div>}>
+                <PdfEvidenceViewer url={currentFile.url} scale={scale} />
+              </React.Suspense>
             </div>
           ) : (
             <div
@@ -492,16 +509,16 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
                 src={currentFile?.url}
                 alt={currentFile?.name}
                 draggable={false}
-                className="max-h-[82vh] max-w-[85vw] object-contain rounded-lg shadow-2xl pointer-events-none select-none"
+                className="max-h-[88vh] max-w-[92vw] object-contain shadow-2xl pointer-events-none select-none"
               />
             </div>
           )}
         </div>
 
-        {/* Info Slide-Over Panel */}
+        {/* Info Slide-Over Panel - Vuông thẳng, không blur */}
         {showInfo && currentFile && (
-          <aside className="absolute right-4 top-4 bottom-24 w-80 sm:w-96 rounded-2xl bg-slate-900/95 border border-slate-700/90 shadow-2xl backdrop-blur-md p-5 overflow-y-auto space-y-4 z-30 animate-in slide-in-from-right duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <aside className="absolute right-4 top-4 bottom-24 w-80 sm:w-96 bg-neutral-900 border border-neutral-800 shadow-2xl p-5 overflow-y-auto space-y-4 z-30 animate-in slide-in-from-right duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
               <h4 className="text-sm font-bold text-white flex items-center gap-2">
                 <Info size={16} className="text-blue-400" />
                 <span>Chi tiết minh chứng</span>
@@ -509,31 +526,33 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowInfo(false)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800"
               >
                 <X size={15} />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div>
-                <span className="text-slate-400 block font-medium">Tiêu chí:</span>
-                <span className="font-semibold text-slate-200 block mt-0.5">
-                  {currentFile.criterionCode} — {currentFile.criterionTitle}
-                </span>
-              </div>
+              {currentFile.criterionTitle && (
+                <div>
+                  <span className="text-neutral-400 block font-medium">Tiêu chí:</span>
+                  <span className="font-semibold text-neutral-200 block mt-0.5">
+                    {currentFile.criterionTitle}
+                  </span>
+                </div>
+              )}
 
               <div>
-                <span className="text-slate-400 block font-medium">Tên tệp:</span>
-                <span className="font-mono text-slate-300 block mt-0.5 break-all">
+                <span className="text-neutral-400 block font-medium">Tên tệp:</span>
+                <span className="font-mono text-neutral-300 block mt-0.5 break-all">
                   {currentFile.name}
                 </span>
               </div>
 
               {currentFile.size && (
                 <div>
-                  <span className="text-slate-400 block font-medium">Kích thước:</span>
-                  <span className="font-mono text-slate-300 block mt-0.5">
+                  <span className="text-neutral-400 block font-medium">Kích thước:</span>
+                  <span className="font-mono text-neutral-300 block mt-0.5">
                     {formatBytes(currentFile.size)}
                   </span>
                 </div>
@@ -541,26 +560,26 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
 
               {currentFile.createdAt && (
                 <div>
-                  <span className="text-slate-400 block font-medium">Ngày nộp:</span>
-                  <span className="text-slate-300 block mt-0.5 flex items-center gap-1.5">
-                    <Calendar size={13} className="text-slate-400" />
+                  <span className="text-neutral-400 block font-medium">Ngày nộp:</span>
+                  <span className="text-neutral-300 block mt-0.5 flex items-center gap-1.5">
+                    <Calendar size={13} className="text-neutral-400" />
                     {new Date(currentFile.createdAt).toLocaleString('vi-VN')}
                   </span>
                 </div>
               )}
 
               {currentFile.studentNote && (
-                <div className="pt-2 border-t border-slate-800">
-                  <span className="text-slate-400 block font-medium">Mô tả / Đánh giá của sinh viên:</span>
-                  <p className="mt-1 p-3 rounded-xl bg-slate-800/80 text-slate-200 whitespace-pre-wrap leading-relaxed border border-slate-700/60">
+                <div className="pt-2 border-t border-neutral-800">
+                  <span className="text-neutral-400 block font-medium">Mô tả / Đánh giá của sinh viên:</span>
+                  <p className="mt-1 p-3 bg-neutral-800/80 text-neutral-200 whitespace-pre-wrap leading-relaxed border border-neutral-700/60">
                     {currentFile.studentNote}
                   </p>
                 </div>
               )}
 
               {currentFile.driveLink && (
-                <div className="pt-2 border-t border-slate-800">
-                  <span className="text-slate-400 block font-medium">Đường dẫn Google Drive:</span>
+                <div className="pt-2 border-t border-neutral-800">
+                  <span className="text-neutral-400 block font-medium">Đường dẫn Google Drive:</span>
                   <a
                     href={currentFile.driveLink}
                     target="_blank"
@@ -577,9 +596,9 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
         )}
       </div>
 
-      {/* Bottom Thumbnail Strip */}
+      {/* Bottom Thumbnail Strip - Vuông thẳng */}
       {files.length > 1 && (
-        <footer className="h-20 px-4 bg-slate-900/90 border-t border-slate-800/80 flex items-center justify-center gap-2.5 overflow-x-auto shrink-0 z-20">
+        <footer className="h-20 px-4 bg-black border-t border-neutral-800 flex items-center justify-center gap-2.5 overflow-x-auto shrink-0 z-20">
           {files.map((file, idx) => {
             const isActive = idx === currentIndex;
             return (
@@ -590,16 +609,16 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
                   setCurrentIndex(idx);
                   resetTransform();
                 }}
-                className={`relative h-14 w-14 sm:w-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                className={`relative h-14 w-14 sm:w-16 overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
                   isActive
-                    ? 'border-blue-500 scale-105 shadow-md shadow-blue-500/30 ring-2 ring-blue-400/20'
-                    : 'border-slate-700/80 opacity-60 hover:opacity-100 hover:border-slate-500'
+                    ? 'border-blue-500 scale-105 shadow-md shadow-blue-500/30'
+                    : 'border-neutral-800 opacity-60 hover:opacity-100 hover:border-neutral-600'
                 }`}
               >
                 {file.isPdf ? (
-                  <div className="w-full h-full bg-slate-800 flex flex-col items-center justify-center text-rose-400 p-1">
+                  <div className="w-full h-full bg-neutral-900 flex flex-col items-center justify-center text-rose-400 p-1">
                     <FileText size={20} />
-                    <span className="text-[9px] font-bold text-slate-300 truncate w-full text-center mt-0.5">
+                    <span className="text-[9px] font-bold text-neutral-300 truncate w-full text-center mt-0.5">
                       PDF
                     </span>
                   </div>
@@ -610,7 +629,7 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
                     className="w-full h-full object-cover"
                   />
                 )}
-                <span className="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-[9px] font-mono text-white">
+                <span className="absolute bottom-0.5 right-0.5 px-1 bg-black/80 text-[9px] font-mono text-white">
                   {idx + 1}
                 </span>
               </button>

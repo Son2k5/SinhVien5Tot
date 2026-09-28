@@ -209,7 +209,9 @@ public sealed record EvidenceResponse(
     Guid? ReviewedBy,
     DateTime? ReviewedAt,
     string RowVersion,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? ApplicantSnapshotJson = null,
+    string? GroupCode = null);
 
 // 6. Common Pagination DTO
 

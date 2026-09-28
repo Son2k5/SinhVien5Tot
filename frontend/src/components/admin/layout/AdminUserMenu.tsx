@@ -17,7 +17,7 @@ export function AdminUserMenu({
   onClose,
 }: AdminUserMenuProps) {
   return (
-    <div className="absolute z-50 top-full right-0 mt-2 w-64 p-1.5 bg-white border border-slate-200/90 rounded-2xl shadow-2xl animate-fade-in text-xs">
+    <div className="absolute z-50 top-full right-0 mt-2 w-64 p-1.5 bg-white border border-slate-200/90 shadow-2xl animate-fade-in text-xs">
       <div className="p-2.5 border-b border-slate-100 mb-1">
         <div className="font-bold text-slate-900">{displayName}</div>
         <div className="text-[11px] text-slate-400 truncate">{user.email}</div>

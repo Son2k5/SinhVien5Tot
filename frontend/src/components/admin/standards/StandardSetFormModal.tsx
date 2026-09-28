@@ -187,7 +187,7 @@ export function StandardSetFormModal({
       aria-modal="true"
       aria-labelledby="standard-set-modal-title"
     >
-      <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-5 relative">
+      <div className="w-full max-w-lg bg-white border border-slate-200 shadow-2xl p-6 space-y-5 relative">
         <button
           type="button"
           onClick={onClose}

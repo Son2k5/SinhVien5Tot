@@ -23,5 +23,7 @@ public static class EvidenceReviewMappings
             evidence.ReviewedBy,
             evidence.ReviewedAt,
             Convert.ToBase64String(evidence.RowVersion),
-            evidence.CreatedAt);
+            evidence.CreatedAt,
+            evidence.Application?.ApplicantSnapshotJson,
+            evidence.Criterion?.Standard?.GroupCode?.ToString());
 }
