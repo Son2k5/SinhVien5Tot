@@ -1,126 +1,202 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FileEdit, ArrowRight, Clock, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Plus, Trash2, FileText, ArrowRight, AlertTriangle } from 'lucide-react';
 import type { StudentApplicationSummaryResponse } from '../../types/student';
 
 interface DraftApplicationsSectionProps {
   draftApplications: StudentApplicationSummaryResponse[];
   isLoading?: boolean;
+  onDeleteDraft?: (application: StudentApplicationSummaryResponse) => void;
+  isDeleting?: boolean;
 }
+
+/**
+ * Thumbnail minh họa theo đúng hình mẫu mockup:
+ * Đĩa sứ xanh pastel cách điệu cùng kẹo tròn hồng phấn trên nền hồng pastel
+ */
+const MockupThumbnailGraphic: React.FC = () => (
+  <div className="w-32 h-24 sm:w-40 sm:h-28 rounded-2xl bg-[#ffd7dd]/65 border border-pink-200/80 flex items-center justify-center shrink-0 relative overflow-hidden shadow-inner select-none">
+    <svg
+      viewBox="0 0 160 120"
+      className="w-full h-full object-contain p-2 transition-transform hover:scale-105 duration-300"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <ellipse cx="80" cy="68" rx="46" ry="32" fill="#78bde4" fillOpacity="0.85" />
+      <ellipse cx="78" cy="65" rx="42" ry="28" fill="#93ceee" />
+      <ellipse cx="76" cy="62" rx="36" ry="23" fill="#b9e4fa" />
+      <line x1="80" y1="64" x2="80" y2="88" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="80" cy="62" r="10" fill="url(#pinkBallGrad)" filter="drop-shadow(0 2px 4px rgba(244,114,182,0.4))" />
+      <circle cx="77" cy="59" r="3" fill="#ffffff" fillOpacity="0.75" />
+      <defs>
+        <radialGradient id="pinkBallGrad" cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#fbcfe8" />
+          <stop offset="45%" stopColor="#f472b6" />
+          <stop offset="100%" stopColor="#db2777" />
+        </radialGradient>
+      </defs>
+    </svg>
+  </div>
+);
 
 export const DraftApplicationsSection: React.FC<DraftApplicationsSectionProps> = ({
   draftApplications,
   isLoading = false,
+  onDeleteDraft,
+  isDeleting = false,
 }) => {
   const navigate = useNavigate();
+  const [appToDelete, setAppToDelete] = useState<StudentApplicationSummaryResponse | null>(null);
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-4xl mx-auto mt-8 px-4 animate-pulse">
-        <div className="h-6 w-56 bg-slate-200 rounded-lg mb-4" />
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs h-32" />
+      <div className="w-full max-w-5xl mx-auto mt-10 px-4 font-['Inter',_sans-serif]">
+        <div className="h-8 w-64 bg-slate-200 rounded-lg mx-auto mb-6 animate-pulse" />
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm h-36 animate-pulse" />
       </div>
     );
   }
 
-  if (draftApplications.length === 0) {
-    return null;
-  }
-
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return '';
-    try {
-      const d = new Date(dateString);
-      return d.toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dateString;
+  const handleConfirmDelete = () => {
+    if (appToDelete && onDeleteDraft) {
+      onDeleteDraft(appToDelete);
+      setAppToDelete(null);
     }
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto mt-8 px-4">
-      {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
-            <FileEdit className="w-4 h-4" />
-          </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-slate-800 tracking-tight uppercase">
-              HỒ SƠ ĐANG THỰC HIỆN & BẢN NHÁP ({draftApplications.length})
-            </h2>
-            <p className="text-xs text-slate-500">
-              Các hồ sơ bạn đang lưu tạm thời và chưa gửi cho Mentor. Hãy tiếp tục cập nhật và nộp chính thức.
-            </p>
-          </div>
-        </div>
+    <section className="w-full max-w-5xl mx-auto mt-10 sm:mt-12 px-4 font-['Inter',_sans-serif]">
+      {/* Tiêu đề in hoa căn giữa đúng chuẩn mockup: CÁC MINH CHỨNG ĐANG XÉT */}
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1e293b] tracking-tight uppercase">
+          CÁC MINH CHỨNG ĐANG XÉT
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          Lịch sử các hồ sơ đã lưu bản nháp nhưng chưa nộp chính thức. Bạn có thể truy cập nhanh để hoàn thiện hoặc xóa bản nháp.
+        </p>
       </div>
 
-      {/* Cards List */}
-      <div className="space-y-3.5">
-        {draftApplications.map((app) => (
-          <div
-            key={app.id}
-            className="bg-white rounded-3xl p-5 sm:p-6 border border-amber-200/80 hover:border-amber-400/80 shadow-xs hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden group"
-          >
-            {/* Top color indicator line */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
+      {draftApplications.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-xs">
+          <p className="text-sm font-medium text-slate-600">
+            Hiện bạn chưa có bản nháp minh chứng nào đang lưu tạm.
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Hãy chọn cấp độ xét duyệt và nhấn nút <strong>"Tạo hồ sơ mới"</strong> bên dưới để bắt đầu kê khai minh chứng.
+          </p>
+        </div>
+      ) : (
+        /* Danh sách Card bản nháp đúng chuẩn Mockup 1 */
+        <div className="space-y-4">
+          {draftApplications.map((app, index) => (
+            <div
+              key={app.id}
+              className="bg-white rounded-2xl border border-slate-200 hover:border-blue-300 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative"
+            >
+              {/* Cụm thông tin & Thumbnail bên trái */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 w-full md:w-auto flex-1 min-w-0">
+                <MockupThumbnailGraphic />
 
-            {/* Left Content */}
-            <div className="flex items-start sm:items-center gap-4 min-w-0">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-100 border border-amber-200/80 flex items-center justify-center text-amber-700 shrink-0 shadow-inner group-hover:scale-105 transition-transform">
-                <FileText className="w-6 h-6 stroke-[2.2]" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight truncate">
+                    Danh hiệu {index + 1}: {app.campaignName || 'Chiến dịch Sinh viên 5 Tốt'}
+                  </h3>
+
+                  <p className="text-xs sm:text-sm font-medium text-slate-600">
+                    Sinh viên 5 Tốt cá nhân cấp trường.
+                  </p>
+
+                  <p className="text-xs text-slate-400 leading-relaxed pt-0.5">
+                    Mã hồ sơ: <span className="font-semibold text-slate-600">{app.applicationCode}</span> • Năm học: <span className="font-semibold text-slate-600">{app.schoolYear}</span> • Đã lưu: <span className="font-semibold text-blue-600">{app.totalEvidences} minh chứng</span>
+                  </p>
+
+                  {/* Cặp nút thao tác: '+ Truy cập' và 'Xóa' */}
+                  <div className="flex items-center gap-2.5 pt-2.5">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/applications/${app.id}`)}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 rounded-lg bg-[#0052cc] hover:bg-[#0747a6] text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>Truy cập</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setAppToDelete(app)}
+                      disabled={isDeleting}
+                      className="inline-flex items-center justify-center gap-1 px-4 sm:px-5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-[#0052cc] text-[#0052cc] hover:text-[#0747a6] text-xs sm:text-sm font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                    >
+                      <span>Xóa</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 tracking-wider">
-                    {app.applicationCode}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-200/60">
-                    <Clock className="w-3 h-3 text-amber-700" />
-                    Bản nháp / Chưa nộp
-                  </span>
-                </div>
-
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">
-                  {app.campaignName || 'Chiến dịch Sinh viên 5 Tốt'}
-                </h3>
-
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
-                  <span>Năm học: <strong className="text-slate-700">{app.schoolYear}</strong></span>
-                  <span>•</span>
-                  <span>Đã lưu minh chứng: <strong className="text-blue-700">{app.totalEvidences} tiêu chí</strong></span>
-                  {app.updatedAt && (
-                    <>
-                      <span>•</span>
-                      <span>Chỉnh sửa gần nhất: {formatDate(app.updatedAt)}</span>
-                    </>
-                  )}
-                </div>
+              {/* Nhãn TRẠNG THÁI bên phải */}
+              <div className="flex items-center gap-2 self-start md:self-center shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 w-full md:w-auto justify-between md:justify-end">
+                <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-wider uppercase">
+                  TRẠNG THÁI:
+                </span>
+                <span className="px-3 py-1.5 rounded-lg bg-[#fff0db] border border-[#fed7aa] text-[#c05621] text-xs sm:text-sm font-bold shadow-2xs whitespace-nowrap">
+                  Chưa hoàn thành
+                </span>
               </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Right Action Button */}
-            <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
+      {/* Nút tiện ích di chuyển sang trang hồ sơ chiến dịch (yêu cầu của người dùng) */}
+      <div className="mt-6 sm:mt-8 flex justify-center">
+        <Link
+          to="/dashboard/applications"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-300 text-slate-700 hover:text-blue-700 text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all"
+        >
+          <FileText className="w-4 h-4 text-blue-600" />
+          <span>Di chuyển sang trang Quản lý hồ sơ chiến dịch</span>
+          <ArrowRight className="w-4 h-4 ml-0.5" />
+        </Link>
+      </div>
+
+      {/* Modal xác nhận Xóa bản nháp */}
+      {appToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-amber-600 mb-3">
+              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <h4 className="text-base font-bold text-slate-900">Xác nhận xóa bản nháp</h4>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Bạn có chắc chắn muốn xóa bản nháp của chiến dịch{' '}
+              <strong className="text-slate-900">{appToDelete.campaignName}</strong>? Bản nháp này sẽ được rút khỏi danh sách minh chứng đang xét.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 mt-6">
               <button
                 type="button"
-                onClick={() => navigate(`/dashboard/applications/${app.id}`)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-[#0052cc] hover:bg-[#0747a6] text-white shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all active:scale-95 cursor-pointer"
+                onClick={() => setAppToDelete(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
               >
-                <span>Tiếp tục làm hồ sơ</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeleting ? 'Đang xóa...' : 'Đồng ý xóa'}</span>
               </button>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+      )}
+    </section>
   );
 };

@@ -13,7 +13,7 @@ using SV5T.Domain.Submissions.Enums;
 namespace SV5T.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "User")]
 [Route("api/student/applications")]
 public sealed class StudentApplicationsController(ISender sender) : ControllerBase
 {

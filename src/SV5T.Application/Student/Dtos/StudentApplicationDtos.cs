@@ -29,7 +29,9 @@ public sealed record StudentApplicationDetailResponse(
     DateTime? SubmittedAt,
     DateTime? UpdatedAt,
     string RowVersion,
-    IReadOnlyList<StudentEvidenceItemResponse> Evidences);
+    IReadOnlyList<StudentEvidenceItemResponse> Evidences,
+    string? ReviewerGeneralNote = null,
+    string? RejectionReason = null);
 
 public sealed record StudentEvidenceItemResponse(
     Guid Id,

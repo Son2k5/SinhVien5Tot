@@ -5,11 +5,12 @@ using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Student.Dtos;
 using SV5T.Application.Student.Evidences.Commands.UpsertEvidence;
 using SV5T.Application.Student.Evidences.Commands.UploadEvidenceFile;
+using SV5T.Application.Student.Evidences.Commands.SubmitEvidence;
 
 namespace SV5T.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "User")]
 [Route("api/student")]
 public sealed class StudentEvidencesController(ISender sender) : ControllerBase
 {
@@ -27,6 +28,18 @@ public sealed class StudentEvidencesController(ISender sender) : ControllerBase
         [FromForm(Name = "file")]
         public IFormFile? File { get; set; }
     }
+
+    public sealed class SubmitEvidenceBodyRequest
+    {
+        public string RowVersion { get; set; } = string.Empty;
+    }
+
+    [HttpPost("evidences/{evidenceId:guid}/submit")]
+    [ProducesResponseType<StudentEvidenceItemResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<StudentEvidenceItemResponse>> Submit(
+        Guid evidenceId, SubmitEvidenceBodyRequest request, CancellationToken cancellationToken) =>
+        Ok(await sender.Send(new SubmitEvidenceCommand(evidenceId, request.RowVersion), cancellationToken));
 
     [HttpPut("applications/{applicationId:guid}/evidences/{criterionId:guid}")]
     [ProducesResponseType<StudentEvidenceItemResponse>(StatusCodes.Status200OK)]

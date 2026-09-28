@@ -24,6 +24,7 @@ import { formatUserRole } from '../../components/dashboard/home/homeDashboardCon
 import type { User } from '../../types/auth';
 import {
   SubmissionStatus,
+  normalizeSubmissionStatus,
   type StudentApplicationDetailResponse,
   type StudentEvidenceItemResponse,
 } from '../../types/student';
@@ -208,13 +209,13 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
   }).length;
 
   // Status flags (Hỗ trợ cả String enum từ backend như "Draft" và Number enum 1)
-  const statusStr = String(application.status ?? '').toLowerCase();
-  const isDraft = statusStr === 'draft' || application.status === SubmissionStatus.Draft;
-  const isNeedsRevision = statusStr === 'needsrevision' || application.status === SubmissionStatus.NeedsRevision;
-  const isSubmitted = statusStr === 'submitted' || application.status === SubmissionStatus.Submitted;
-  const isUnderReview = statusStr === 'underreview' || application.status === SubmissionStatus.UnderReview;
-  const isApproved = statusStr === 'approved' || application.status === SubmissionStatus.Approved;
-  const isRejected = statusStr === 'rejected' || application.status === SubmissionStatus.Rejected;
+  const normStatus = normalizeSubmissionStatus(application.status);
+  const isDraft = normStatus === SubmissionStatus.Draft;
+  const isNeedsRevision = normStatus === SubmissionStatus.NeedsRevision;
+  const isSubmitted = normStatus === SubmissionStatus.Submitted;
+  const isUnderReview = normStatus === SubmissionStatus.UnderReview;
+  const isApproved = normStatus === SubmissionStatus.Approved;
+  const isRejected = normStatus === SubmissionStatus.Rejected;
   const isEditable = isDraft || isNeedsRevision;
 
   // Nut cuoi trang: Luu (dong bo cache) + Nop tong 1 lan gui toan bo ho so cho mentor/admin.
@@ -301,13 +302,22 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
       {/* Sub Navigation Bar */}
       <div className="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-3 sticky top-0 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <button
-            onClick={() => navigate('/dashboard/applications')}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-700 transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Quay lại danh sách hồ sơ</span>
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => navigate('/dashboard/campaigns')}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-700 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Trang chiến dịch</span>
+            </button>
+            <span className="text-slate-300">/</span>
+            <button
+              onClick={() => navigate('/dashboard/applications')}
+              className="text-xs font-semibold text-slate-500 hover:text-blue-700 transition-colors cursor-pointer"
+            >
+              <span>Quản lý hồ sơ</span>
+            </button>
+          </div>
 
           {/* Status badge & Action buttons */}
           <div className="flex items-center gap-3">
@@ -418,18 +428,34 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
           </div>
         )}
 
-        {/* High priority feedback alert if NeedsRevision */}
-        {isNeedsRevision && (
-          <div className="mb-8 p-5 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 text-orange-900 shadow-sm">
+        {/* High priority feedback alert if NeedsRevision or Rejected */}
+        {(isNeedsRevision || isRejected || application.reviewerGeneralNote || application.rejectionReason) && (
+          <div className={`mb-8 p-5 rounded-2xl border shadow-sm ${
+            isRejected ? 'bg-rose-50 border-rose-200 text-rose-950' : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200 text-orange-950'
+          }`}>
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-orange-600 shrink-0 mt-0.5" />
-              <div>
-                <h3 className="text-sm font-bold uppercase tracking-wide text-orange-900">
-                  Hồ sơ cần bổ sung / chỉnh sửa minh chứng
+              {isRejected ? (
+                <AlertCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertTriangle className="w-6 h-6 text-orange-600 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold uppercase tracking-wide">
+                  {isRejected ? 'Hồ sơ chưa đạt danh hiệu SV5T' : 'Hồ sơ cần bổ sung / chỉnh sửa minh chứng'}
                 </h3>
-                <p className="text-xs text-orange-800 mt-1 leading-relaxed">
-                  Hội đồng xét duyệt hoặc Mentor đã gửi phản hồi nhận xét trên các tiêu chí chưa đạt yêu cầu. Bạn vui lòng kiểm tra các ghi chú màu cam ở từng tiêu chuẩn, cập nhật thông tin và bấm <strong>"Nộp hồ sơ chính thức"</strong> để gửi lại bài chấm.
+                <p className="text-xs mt-1 leading-relaxed opacity-90">
+                  {isRejected
+                    ? 'Hội đồng xét duyệt đã đánh giá hồ sơ và gửi lý do phản hồi dưới đây.'
+                    : 'Hội đồng xét duyệt hoặc Mentor đã gửi phản hồi nhận xét trên các tiêu chí chưa đạt yêu cầu. Bạn vui lòng kiểm tra các ghi chú màu cam ở từng tiêu chuẩn, cập nhật thông tin và bấm "Nộp hồ sơ chính thức" để gửi lại bài chấm.'}
                 </p>
+                {(application.reviewerGeneralNote || application.rejectionReason) && (
+                  <div className="mt-3 p-3.5 rounded-xl bg-white/90 border border-amber-200/80 text-xs text-slate-800 leading-relaxed shadow-2xs space-y-1">
+                    <span className="font-bold text-amber-900 block text-[11px] uppercase tracking-wider">
+                      Ý kiến phản hồi từ Hội đồng / Mentor:
+                    </span>
+                    <p className="whitespace-pre-wrap">{application.reviewerGeneralNote || application.rejectionReason}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

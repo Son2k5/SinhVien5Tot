@@ -58,6 +58,8 @@ public sealed class GetStudentApplicationDetailHandler(
                 e.ReviewedAt,
                 Convert.ToBase64String(e.RowVersion),
                 e.CreatedAt,
-                e.UpdatedAt ?? e.CreatedAt)).ToList());
+                e.UpdatedAt ?? e.CreatedAt)).ToList(),
+            app.ReviewerGeneralNote,
+            app.RejectionReason);
     }
 }

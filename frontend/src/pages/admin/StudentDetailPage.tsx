@@ -9,6 +9,10 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { canAccessAdmin } from '../../utils/authorization';
 import { StudentLockDialog } from '../../components/admin/students/StudentLockDialog';
 import { AdminPageHeader } from '../../components/admin/common/AdminPageHeader';
+import { EvidenceViewerModal } from '../../components/admin/applications/EvidenceViewerModal';
+import { ApplicationDetailModal } from '../../components/admin/applications/ApplicationDetailModal';
+import { applicationReviewService } from '../../services/admin/applicationReviewService';
+import type { AdminEvidenceItem } from '../../types/admin/application';
 import {
   AlertCircle,
   Award,
@@ -134,10 +138,23 @@ export function StudentDetailPage() {
   const m = useStudentMutations();
   const [tab, setTab] = useState('profile');
   const [reviewing, setReviewing] = useState<AdminStudentEvidenceItem | null>(null);
+  const [viewingEvidence, setViewingEvidence] = useState<AdminEvidenceItem | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ ok: boolean; msg: string } | null>(null);
   const [lockOpen, setLockOpen] = useState(false);
   const cur = useAuthStore((s) => s.user);
   const canLock = canAccessAdmin(cur);
+
+  const handleViewEvidence = async (evidenceId: string) => {
+    try {
+      const fullEv = await applicationReviewService.getEvidenceById(evidenceId);
+      setViewingEvidence(fullEv);
+      setViewerOpen(true);
+    } catch {
+      // ignore
+    }
+  };
   const stats = useMemo(() => {
     const evs = (data?.evidenceGroups ?? []).flatMap((g) => g.items);
     return {
@@ -349,6 +366,13 @@ export function StudentDetailPage() {
                 <div className="mt-0.5 text-[11px] text-slate-500 font-mono truncate">{a.applicationCode} • Năm học {a.schoolYear} • {a.evidenceCount} minh chứng</div>
               </div>
               <SubmissionStatusBadge status={a.status} />
+              <button
+                type="button"
+                onClick={() => setSelectedAppId(a.id)}
+                className="h-8 px-3 inline-flex items-center rounded-xl text-[12px] font-semibold text-[#0b63d6] bg-sky-50 border border-sky-100 hover:bg-[#0b63d6] hover:text-white cursor-pointer transition-colors shrink-0"
+              >
+                Xem hồ sơ & duyệt
+              </button>
             </article>
           ))}
         </div>
@@ -386,6 +410,13 @@ export function StudentDetailPage() {
                       <div className="mt-0.5 text-[11px] text-slate-500 truncate">Đơn {e.applicationCode}</div>
                     </div>
                     <EvidenceStatusBadge status={e.status} />
+                    <button
+                      type="button"
+                      onClick={() => handleViewEvidence(e.id)}
+                      className="h-8 px-3 inline-flex items-center rounded-xl text-[12px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 cursor-pointer transition-colors shrink-0"
+                    >
+                      Xem minh chứng
+                    </button>
                     <button type="button" onClick={() => setReviewing(e)} className="h-8 px-3 inline-flex items-center rounded-xl text-[12px] font-semibold text-[#0b63d6] bg-sky-50 border border-sky-100 hover:bg-[#0b63d6] hover:text-white hover:border-[#0b63d6] cursor-pointer transition-[background-color,border-color,color] shrink-0">Duyệt</button>
                   </div>
                 ))}
@@ -428,6 +459,23 @@ export function StudentDetailPage() {
       )}
       <StudentReviewModal isOpen={Boolean(reviewing)} evidence={reviewing} isLoading={m.reviewEvidence.isPending} onClose={() => setReviewing(null)} onSubmit={submitReview} />
       <StudentLockDialog isOpen={lockOpen} isLoading={m.lockStudent.isPending} onClose={() => setLockOpen(false)} onConfirm={toggleLock} student={data ? { id: data.id, fullName: fullName, email: data.email, studentCode: p?.studentCode ?? '', isActive: data.isActive } : null} />
+
+      {/* Advanced Evidence Viewer Modal */}
+      <EvidenceViewerModal
+        isOpen={viewerOpen}
+        evidence={viewingEvidence}
+        onClose={() => setViewerOpen(false)}
+      />
+
+      {/* Application Detail & Review Modal */}
+      <ApplicationDetailModal
+        isOpen={Boolean(selectedAppId)}
+        applicationId={selectedAppId}
+        onClose={() => setSelectedAppId(null)}
+        onSuccessDecision={() => {
+          void refetch();
+        }}
+      />
     </div>
   );
 }

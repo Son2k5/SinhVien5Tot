@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { DashboardFooter } from '../../components/dashboard/DashboardFooter';
@@ -8,7 +8,7 @@ import { useWelcomeDashboard } from '../../hooks/dashboard/useWelcomeDashboard';
 import { useLauncher } from '../../hooks/dashboard/useLauncher';
 import { formatUserRole } from '../../components/dashboard/home/homeDashboardConfig';
 import type { User } from '../../types/auth';
-import { AwardLevel, AwardType, SubmissionStatus } from '../../types/student';
+import { AwardLevel, AwardType, isDraftStatus, type StudentApplicationSummaryResponse } from '../../types/student';
 import { studentService } from '../../services/studentService';
 import { sanitizeApiError } from '../../services/apiErrorSanitizer';
 import { CampaignLevelTabs } from '../../components/student/CampaignLevelTabs';
@@ -16,7 +16,7 @@ import { ApplicationProcessStepper } from '../../components/student/ApplicationP
 import { EmptyCampaignNotice } from '../../components/student/EmptyCampaignNotice';
 import { DraftApplicationsSection } from '../../components/student/DraftApplicationsSection';
 import { CreateApplicationTypeModal } from '../../components/student/CreateApplicationTypeModal';
-import { AlertCircle, FileText, X, ArrowRight } from 'lucide-react';
+import { AlertCircle, X } from 'lucide-react';
 
 interface StudentCampaignsPageProps {
   user: User;
@@ -82,13 +82,13 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
   const currentActiveCampaign = availableCampaigns[0];
 
   // Query: existing applications — duplicate check + draft history (chưa nộp)
-  const { data: myApplicationsData } = useQuery({
+  const { data: myApplicationsData, isLoading: myApplicationsLoading } = useQuery({
     queryKey: ['my-applications'],
     queryFn: () => studentService.getMyApplications({ pageSize: 50 }),
   });
 
   const myApplications = myApplicationsData?.items ?? [];
-  const draftApplications = myApplications.filter((a) => a.status === SubmissionStatus.Draft);
+  const draftApplications = myApplications.filter((a) => isDraftStatus(a.status));
   const hasAnyDraft = draftApplications.length > 0;
 
   // Create Application Mutation
@@ -98,6 +98,22 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
       queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       setShowTypeModal(false);
       navigate(`/dashboard/applications/${data.id}`);
+    },
+    onError: (err: any) => {
+      const msg = sanitizeApiError(err);
+      setActionError(msg);
+    },
+  });
+
+  // Delete/Cancel Draft Application Mutation
+  const deleteDraftMutation = useMutation({
+    mutationFn: async (app: StudentApplicationSummaryResponse) => {
+      const detail = await studentService.getApplicationDetail(app.id);
+      return studentService.withdrawApplication(app.id, detail.rowVersion, 'Hủy bản nháp');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      setActionError(null);
     },
     onError: (err: any) => {
       const msg = sanitizeApiError(err);
@@ -138,7 +154,7 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] text-slate-800 flex flex-col font-['Be_Vietnam_Pro',_ui-sans-serif,_system-ui,_sans-serif]">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-['Inter',_sans-serif]">
       <DashboardHeader
         displayName={displayName}
         role={formatUserRole(user.role)}
@@ -162,8 +178,8 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
         onLogout={onLogout}
       />
 
-      <main className="flex-1 pb-16">
-        {/* Top Hero Banner (Kéo dài cân đối dạng thẻ nổi max-w-7xl, không full-width) */}
+      <main className="flex-1 pb-20">
+        {/* Top Hero Banner */}
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
           <div className="relative rounded-3xl bg-gradient-to-b from-[#4364f7] via-[#3a57e8] to-[#6fb1fc] pt-10 sm:pt-12 pb-14 sm:pb-16 px-6 sm:px-12 text-center text-white shadow-xl shadow-blue-500/10 border border-white/25 overflow-hidden">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
@@ -187,7 +203,7 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
           </div>
         </div>
 
-        {/* Level selector: chỉ 3 nút Cấp (Cá nhân/Tập thể chọn trong popup) */}
+        {/* Level selector: Cấp trường, Cấp thành phố, Cấp trung ương */}
         <CampaignLevelTabs
           selectedLevel={selectedLevel}
           onSelectLevel={setSelectedLevel}
@@ -195,13 +211,17 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
 
         {/* Action Error if any */}
         {actionError && (
-          <div className="max-w-4xl mx-auto mt-6 px-4">
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm flex items-center justify-between">
+          <div className="max-w-5xl mx-auto mt-6 px-4">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm flex items-center justify-between shadow-xs">
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
                 <span>{actionError}</span>
               </div>
-              <button onClick={() => setActionError(null)} className="text-rose-500 hover:text-rose-700">
+              <button
+                type="button"
+                onClick={() => setActionError(null)}
+                className="text-rose-500 hover:text-rose-700 cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -213,13 +233,7 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
           <EmptyCampaignNotice level={selectedLevel} />
         )}
 
-        {/* Section: Lịch sử bản nháp đã lưu nhưng chưa nộp — chọn nhanh */}
-        <DraftApplicationsSection
-          draftApplications={draftApplications}
-          isLoading={false}
-        />
-
-        {/* 4-Step Process Section with single "Tạo hồ sơ mới" (mở popup) */}
+        {/* 1. Quy trình & Nút "Tạo hồ sơ mới" duy nhất mở popup (thay vì 2 nút sẵn) */}
         <ApplicationProcessStepper
           onCreateApplication={handleOpenCreateModal}
           canCreate={availableCampaigns.length > 0}
@@ -227,22 +241,18 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
           hasExistingDraft={hasAnyDraft}
         />
 
-        {/* Quick Link sang trang Hồ sơ của tôi (quản lý hồ sơ chiến dịch) */}
-        <div className="max-w-4xl mx-auto px-4 mt-8 flex justify-center">
-          <Link
-            to="/dashboard/applications"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 text-slate-700 hover:text-blue-700 text-xs sm:text-sm font-semibold shadow-xs hover:shadow-sm transition-all"
-          >
-            <FileText className="w-4 h-4 text-blue-600" />
-            <span>Bạn đã có hồ sơ? Xem & quản lý hồ sơ đã nộp tại đây</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+        {/* 2. Template: CÁC MINH CHỨNG ĐANG XÉT (Lịch sử các bản nháp chưa nộp - theo đúng Mockup 1) */}
+        <DraftApplicationsSection
+          draftApplications={draftApplications}
+          isLoading={myApplicationsLoading}
+          onDeleteDraft={(app) => deleteDraftMutation.mutate(app)}
+          isDeleting={deleteDraftMutation.isPending}
+        />
       </main>
 
       <DashboardFooter />
 
-      {/* Popup chọn loại hồ sơ: Cá nhân / Tập thể (theo mock) */}
+      {/* Popup chọn loại hồ sơ: Cá nhân / Tập thể (theo đúng Mockup 2 - Chế Độ Minh Chứng) */}
       <CreateApplicationTypeModal
         open={showTypeModal}
         onClose={() => setShowTypeModal(false)}
@@ -256,3 +266,4 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
     </div>
   );
 };
+export default StudentCampaignsPage;

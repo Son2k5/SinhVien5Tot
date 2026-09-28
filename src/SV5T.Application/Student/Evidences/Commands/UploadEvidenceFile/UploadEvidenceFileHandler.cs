@@ -5,6 +5,7 @@ using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Student.Abstractions;
 using SV5T.Application.Student.Dtos;
 using SV5T.Application.Student.Support;
+using SV5T.Domain.Submissions.Enums;
 
 namespace SV5T.Application.Student.Evidences.Commands.UploadEvidenceFile;
 
@@ -33,6 +34,12 @@ public sealed class UploadEvidenceFileHandler(
                 "evidence_not_found");
 
         StudentEvidenceGuard.EnsureEvidenceEditable(evidence);
+        StudentEvidenceGuard.EnsureCampaignAcceptingEvidence(evidence.Application.Campaign);
+        if (evidence.Application.Status is SubmissionStatus.Approved or SubmissionStatus.Rejected or SubmissionStatus.Withdrawn ||
+            evidence.Application.Status is not (SubmissionStatus.Draft or SubmissionStatus.NeedsRevision) &&
+            evidence.Status is not (EvidenceStatus.NeedsRevision or EvidenceStatus.Rejected) &&
+            !(evidence.Status == EvidenceStatus.Draft && evidence.ReviewedAt.HasValue))
+            StudentApplicationGuard.EnsureApplicationEditable(evidence.Application);
         StudentEvidenceGuard.EnsureExtensionAllowed(command.Request.FileName);
         StudentEvidenceGuard.EnsureSizeAllowed(command.Request.Length);
 
@@ -56,6 +63,8 @@ public sealed class UploadEvidenceFileHandler(
 
         var now = DateTime.UtcNow;
         evidence.AttachmentsJson = JsonSerializer.Serialize(attachments);
+        if (evidence.Status is EvidenceStatus.NeedsRevision or EvidenceStatus.Rejected)
+            evidence.Status = EvidenceStatus.Draft;
         evidence.UpdatedAt = now;
         evidence.UpdatedBy = userId.ToString();
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Award, RotateCcw, Clock, CheckCircle, AlertCircle, FileEdit, Send, ArrowRight } from 'lucide-react';
 import {
   SubmissionStatus,
+  normalizeSubmissionStatus,
   type StudentApplicationSummaryResponse,
 } from '../../types/student';
 
@@ -19,8 +20,8 @@ export const MyApplicationCards: React.FC<MyApplicationCardsProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const getStatusBadge = (status: SubmissionStatus) => {
-    switch (status) {
+  const getStatusBadge = (status: SubmissionStatus | string | number) => {
+    switch (normalizeSubmissionStatus(status)) {
       case SubmissionStatus.Draft:
         return {
           label: 'Chưa hoàn thành',
@@ -124,10 +125,11 @@ export const MyApplicationCards: React.FC<MyApplicationCardsProps> = ({
       ) : (
         <div className="space-y-4">
           {applications.map((app, index) => {
-            const badge = getStatusBadge(app.status);
+            const statusNormalized = normalizeSubmissionStatus(app.status);
+            const badge = getStatusBadge(statusNormalized);
             const StatusIcon = badge.icon;
-            const canWithdraw = app.status === SubmissionStatus.Submitted || app.status === SubmissionStatus.UnderReview;
-            const hasFeedback = app.status === SubmissionStatus.NeedsRevision;
+            const canWithdraw = statusNormalized === SubmissionStatus.Submitted || statusNormalized === SubmissionStatus.UnderReview;
+            const hasFeedback = statusNormalized === SubmissionStatus.NeedsRevision;
 
             return (
               <div

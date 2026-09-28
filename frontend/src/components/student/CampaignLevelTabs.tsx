@@ -18,9 +18,9 @@ export const CampaignLevelTabs: React.FC<CampaignLevelTabsProps> = ({
   ];
 
   return (
-    <div className="flex flex-col items-center gap-4 -mt-7 z-10 relative px-4">
+    <div className="flex flex-col items-center gap-4 -mt-7 z-10 relative px-4 font-['Inter',_sans-serif]">
       {/* Level Selector Bar (Theo đúng mockup) */}
-      <div className="inline-flex items-center bg-white p-1.5 rounded-2xl shadow-lg shadow-blue-900/10 border border-slate-100 max-w-full overflow-x-auto">
+      <div className="inline-flex items-center bg-white p-1.5 rounded-2xl shadow-lg shadow-blue-900/10 border border-slate-100 max-w-full overflow-x-auto font-['Inter',_sans-serif]">
         {levels.map((level) => {
           const isActive = selectedLevel === level.id;
           const Icon = level.icon;

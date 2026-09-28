@@ -79,6 +79,10 @@ public static class StudentApplicationGuard
 
     public static void EnsureSubmitBeforeDeadline(Campaign campaign)
     {
+        if (campaign.Status != CampaignStatus.Open || DateTime.UtcNow < campaign.RegOpenAt)
+            throw new UseCaseException(ApplicationErrorKind.Conflict,
+                "Đợt xét chưa mở nhận hồ sơ chính thức.", "campaign_not_open");
+
         if (DateTime.UtcNow > campaign.SubmitDeadline)
         {
             throw new UseCaseException(
@@ -86,6 +90,14 @@ public static class StudentApplicationGuard
                 "Đã quá hạn nộp hồ sơ của đợt xét này.",
                 "campaign_submit_deadline_passed");
         }
+    }
+
+    public static void EnsureResubmitBeforeReviewDeadline(Campaign campaign)
+    {
+        if (campaign.Status is not (CampaignStatus.Open or CampaignStatus.Reviewing) ||
+            DateTime.UtcNow > campaign.ReviewDeadline)
+            throw new UseCaseException(ApplicationErrorKind.Conflict,
+                "Đợt xét đã đóng nhận hồ sơ bổ sung.", "campaign_resubmission_closed");
     }
 
     public static void EnsureCampaignNotArchived(Campaign campaign)

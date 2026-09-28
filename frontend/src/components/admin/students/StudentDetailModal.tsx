@@ -4,10 +4,15 @@ import { useStudentDetail } from '../../../hooks/admin/useStudents';
 import type { AdminStudentListItem } from '../../../types/admin/student';
 import {
   ActiveBadge,
+  EvidenceStatusBadge,
   SubmissionStatusBadge,
   VerifiedBadge,
 } from './StudentBadges';
 import { Award, X, ClipboardCheck, ExternalLink, AlertCircle, RefreshCw, GraduationCap, User, MapPin } from 'lucide-react';
+import { EvidenceViewerModal } from '../applications/EvidenceViewerModal';
+import { ApplicationDetailModal } from '../applications/ApplicationDetailModal';
+import { applicationReviewService } from '../../../services/admin/applicationReviewService';
+import type { AdminEvidenceItem } from '../../../types/admin/application';
 
 interface StudentDetailModalProps {
   isOpen: boolean;
@@ -57,6 +62,19 @@ export function StudentDetailModal({
 }: StudentDetailModalProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'info' | 'apps' | 'evidence'>('info');
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [viewingEvidence, setViewingEvidence] = useState<AdminEvidenceItem | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+
+  const handleViewEvidence = async (evidenceId: string) => {
+    try {
+      const fullEv = await applicationReviewService.getEvidenceById(evidenceId);
+      setViewingEvidence(fullEv);
+      setViewerOpen(true);
+    } catch {
+      // ignore
+    }
+  };
 
   const { data, isPending, isError, refetch } = useStudentDetail(
     isOpen && studentId ? studentId : undefined
@@ -352,6 +370,13 @@ export function StudentDetailModal({
                       </div>
                       <div className="shrink-0 flex items-center gap-2">
                         <SubmissionStatusBadge status={app.status} />
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAppId(app.id)}
+                          className="px-2.5 py-1 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Xem hồ sơ & duyệt
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -369,11 +394,11 @@ export function StudentDetailModal({
                   <div>Chưa có minh chứng.</div>
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {evidenceGroups.map((g) => {
                     const percent = g.totalCount > 0 ? Math.round((g.approvedCount / g.totalCount) * 100) : 0;
                     return (
-                      <div key={g.groupName} className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-2">
+                      <div key={g.groupName} className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-2.5">
                         <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
                           <span>{g.groupName}</span>
                           <span className="text-slate-500 font-mono">
@@ -386,6 +411,34 @@ export function StudentDetailModal({
                             style={{ width: `${percent}%` }}
                           />
                         </div>
+
+                        {/* List of evidence items in group */}
+                        {g.items && g.items.length > 0 && (
+                          <div className="divide-y divide-slate-100 pt-1">
+                            {g.items.map((item) => (
+                              <div key={item.id} className="py-2 flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium text-slate-800 truncate text-xs">
+                                    {item.criterionCode} — {item.criterionTitle}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 font-mono">
+                                    Đơn: {item.applicationCode}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <EvidenceStatusBadge status={item.status} />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewEvidence(item.id)}
+                                    className="px-2.5 py-1 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    Xem minh chứng
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -421,6 +474,23 @@ export function StudentDetailModal({
           </button>
         </div>
       </div>
+
+      {/* Advanced Evidence Viewer Modal */}
+      <EvidenceViewerModal
+        isOpen={viewerOpen}
+        evidence={viewingEvidence}
+        onClose={() => setViewerOpen(false)}
+      />
+
+      {/* Application Detail & Review Modal */}
+      <ApplicationDetailModal
+        isOpen={Boolean(selectedAppId)}
+        applicationId={selectedAppId}
+        onClose={() => setSelectedAppId(null)}
+        onSuccessDecision={() => {
+          void refetch();
+        }}
+      />
     </div>
   );
 }

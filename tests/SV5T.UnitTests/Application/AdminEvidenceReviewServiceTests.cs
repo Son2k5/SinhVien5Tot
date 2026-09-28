@@ -32,6 +32,26 @@ public sealed class AdminEvidenceReviewHandlerTests
             _currentUser);
 
     [Fact]
+    public async Task ReviewAsync_SubmittedEvidenceInDraftApplication_DoesNotSubmitApplication()
+    {
+        var application = new SubmissionApplication
+        {
+            Status = SubmissionStatus.Draft,
+            Campaign = new Campaign { Status = CampaignStatus.Open,
+                ReviewDeadline = DateTime.UtcNow.AddDays(7) }
+        };
+        var evidence = new Evidence { ApplicationId = application.Id, Application = application,
+            Status = EvidenceStatus.Submitted, RowVersion = [1, 2, 3] };
+        _evidenceRepo.Items.Add(evidence);
+
+        var result = await CreateHandler().Handle(new ReviewEvidenceCommand(evidence.Id,
+            new ReviewEvidenceRequest(EvidenceStatus.Approved, "Đạt", "AQID")), CancellationToken.None);
+
+        Assert.Equal(EvidenceStatus.Approved, result.Status);
+        Assert.Equal(SubmissionStatus.Draft, application.Status);
+    }
+
+    [Fact]
     public async Task ReviewAsync_RowVersionMismatch_ThrowsConcurrencyConflict()
     {
         var evidenceId = Guid.NewGuid();

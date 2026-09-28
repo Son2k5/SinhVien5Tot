@@ -3,6 +3,10 @@ using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Student.Abstractions;
 using SV5T.Application.Student.Dtos;
 using SV5T.Application.Student.Evidences.Commands.UpsertEvidence;
+using SV5T.Application.Student.Evidences.Commands.SubmitEvidence;
+using SV5T.Application.Student.Applications.Commands.SubmitApplication;
+using SV5T.Domain.Campaigns;
+using SV5T.Domain.Campaigns.Enums;
 using SV5T.Domain.Criteria;
 using SV5T.Domain.Evidences;
 using SV5T.Domain.Standards;
@@ -30,6 +34,55 @@ public sealed class StudentEvidenceServiceTests
             new FakeCurrentUser(_currentUserId));
 
     [Fact]
+    public async Task SubmitSingleEvidence_LeavesDraftApplicationOpenForMoreEvidence()
+    {
+        var application = new SV5T.Domain.Submissions.Application
+        {
+            ApplicantUserId = _currentUserId,
+            Status = SubmissionStatus.Draft,
+            Campaign = new Campaign { Status = CampaignStatus.Open, ReviewDeadline = DateTime.UtcNow.AddDays(7) }
+        };
+        var evidence = new Evidence
+        {
+            ApplicationId = application.Id, Application = application, CriterionId = Guid.NewGuid(),
+            DataJson = "{\"score\":9}", RowVersion = [1, 2, 3], Status = EvidenceStatus.Draft
+        };
+        _evidenceRepo.Evidences.Add(evidence);
+        var handler = new SubmitEvidenceHandler(_evidenceRepo, _applicationRepo, _unitOfWork,
+            new FakeCurrentUser(_currentUserId));
+
+        var result = await handler.Handle(new SubmitEvidenceCommand(evidence.Id, "AQID"), CancellationToken.None);
+
+        Assert.Equal(EvidenceStatus.Submitted, result.Status);
+        Assert.Equal(SubmissionStatus.Draft, application.Status);
+    }
+
+    [Fact]
+    public async Task SubmitApplication_RequiresEachMandatoryEvidenceToBeSubmittedSeparately()
+    {
+        var criterion = new Criterion { Id = Guid.NewGuid(), Type = CriterionType.Requirement,
+            Code = "STUDY-01", Title = "Điểm học tập" };
+        _criterionRepo.Criteria.Add(criterion);
+        var application = new SV5T.Domain.Submissions.Application
+        {
+            ApplicantUserId = _currentUserId, Status = SubmissionStatus.Draft, RowVersion = [4, 5, 6],
+            Campaign = new Campaign { Status = CampaignStatus.Open,
+                RegOpenAt = DateTime.UtcNow.AddDays(-1), SubmitDeadline = DateTime.UtcNow.AddDays(7) }
+        };
+        _applicationRepo.Applications.Add(application);
+        _evidenceRepo.Evidences.Add(new Evidence { ApplicationId = application.Id,
+            CriterionId = criterion.Id, Status = EvidenceStatus.Draft });
+        var handler = new SubmitApplicationHandler(_applicationRepo, _evidenceRepo, _criterionRepo,
+            _unitOfWork, new FakeCurrentUser(_currentUserId));
+
+        var ex = await Assert.ThrowsAsync<UseCaseException>(() => handler.Handle(
+            new SubmitApplicationCommand(application.Id, "BAUG"), CancellationToken.None));
+
+        Assert.Equal("application_missing_evidences", ex.ErrorCode);
+        Assert.Equal(SubmissionStatus.Draft, application.Status);
+    }
+
+    [Fact]
     public async Task UpsertEvidence_WhenNew_CreatesEvidenceWithNullTemplateId()
     {
         var appId = Guid.NewGuid();
@@ -39,7 +92,8 @@ public sealed class StudentEvidenceServiceTests
         {
             Id = appId,
             ApplicantUserId = _currentUserId,
-            Status = SubmissionStatus.Draft
+            Status = SubmissionStatus.Draft,
+            Campaign = new Campaign { Status = CampaignStatus.Open, ReviewDeadline = DateTime.UtcNow.AddDays(7) }
         });
 
         var standard = new Standard
@@ -92,7 +146,8 @@ public sealed class StudentEvidenceServiceTests
         {
             Id = appId,
             ApplicantUserId = _currentUserId,
-            Status = SubmissionStatus.Draft
+            Status = SubmissionStatus.Draft,
+            Campaign = new Campaign { Status = CampaignStatus.Open, ReviewDeadline = DateTime.UtcNow.AddDays(7) }
         });
 
         _criterionRepo.Criteria.Add(new Criterion
@@ -133,7 +188,8 @@ public sealed class StudentEvidenceServiceTests
         {
             Id = appId,
             ApplicantUserId = _currentUserId,
-            Status = SubmissionStatus.Draft
+            Status = SubmissionStatus.Draft,
+            Campaign = new Campaign { Status = CampaignStatus.Open, ReviewDeadline = DateTime.UtcNow.AddDays(7) }
         });
 
         _criterionRepo.Criteria.Add(new Criterion
@@ -167,7 +223,8 @@ public sealed class StudentEvidenceServiceTests
         {
             Id = appId,
             ApplicantUserId = _currentUserId,
-            Status = SubmissionStatus.Submitted // Not editable
+            Status = SubmissionStatus.Submitted, // Not editable
+            Campaign = new Campaign { Status = CampaignStatus.Open, ReviewDeadline = DateTime.UtcNow.AddDays(7) }
         });
 
         var handler = CreateHandler();

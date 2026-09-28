@@ -10,9 +10,7 @@ public static class EvidenceStateGuard
 {
     private static readonly Dictionary<EvidenceStatus, HashSet<EvidenceStatus>> AllowedTransitions = new()
     {
-        [EvidenceStatus.Draft] = [EvidenceStatus.Submitted],
         [EvidenceStatus.Submitted] = [EvidenceStatus.Approved, EvidenceStatus.Rejected, EvidenceStatus.NeedsRevision],
-        [EvidenceStatus.NeedsRevision] = [EvidenceStatus.Submitted],
         [EvidenceStatus.Approved] = [EvidenceStatus.NeedsRevision, EvidenceStatus.Rejected],
         [EvidenceStatus.Rejected] = [EvidenceStatus.NeedsRevision, EvidenceStatus.Approved]
     };
@@ -30,18 +28,18 @@ public static class EvidenceStateGuard
 
     public static void EnsureApplicationReviewable(SubmissionStatus status)
     {
-        if (status is SubmissionStatus.Draft or SubmissionStatus.Approved or SubmissionStatus.Rejected or SubmissionStatus.Withdrawn)
+        if (status is SubmissionStatus.Approved or SubmissionStatus.Rejected or SubmissionStatus.Withdrawn)
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,
-                "Không thể xét duyệt minh chứng khi hồ sơ đang ở trạng thái nháp, đã đóng hoặc đã có kết quả xét duyệt cuối cùng.",
+                "Không thể xét duyệt minh chứng khi hồ sơ đã đóng hoặc đã có kết quả cuối cùng.",
                 "application_not_reviewable");
         }
     }
 
     public static void EnsureCampaignReviewable(Campaign campaign)
     {
-        if (campaign.Status is CampaignStatus.Draft or CampaignStatus.Closed or CampaignStatus.Archived)
+        if (campaign.Status is not (CampaignStatus.Open or CampaignStatus.Reviewing))
         {
             throw new UseCaseException(
                 ApplicationErrorKind.Conflict,

@@ -227,6 +227,7 @@ public static class DependencyInjection
         services.AddScoped<ICriterionRepository, CriterionRepository>();
         services.AddScoped<ICampaignRepository, CampaignRepository>();
         services.AddScoped<IEvidenceRepository, EvidenceRepository>();
+        services.AddScoped<SV5T.Application.Admin.Applications.IReviewApplicationRepository, SV5T.Infrastructure.Persistence.Repositories.Admin.ReviewApplicationRepository>();
         services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
         services.AddScoped<IAdminStudentRepository, AdminStudentRepository>();
         services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();

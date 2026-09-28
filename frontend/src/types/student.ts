@@ -21,7 +21,47 @@ export const SubmissionStatus = {
   Rejected: 7,
   Withdrawn: 8,
 } as const;
-export type SubmissionStatus = (typeof SubmissionStatus)[keyof typeof SubmissionStatus];
+export type SubmissionStatus =
+  | (typeof SubmissionStatus)[keyof typeof SubmissionStatus]
+  | 'Draft'
+  | 'Submitted'
+  | 'UnderReview'
+  | 'NeedsRevision'
+  | 'Resubmitted'
+  | 'Approved'
+  | 'Rejected'
+  | 'Withdrawn'
+  | string;
+
+export function normalizeSubmissionStatus(status?: number | string | null): number {
+  if (status === null || status === undefined) return SubmissionStatus.Draft;
+  if (typeof status === 'number') return status;
+  const s = String(status).toLowerCase();
+  switch (s) {
+    case 'draft':
+      return SubmissionStatus.Draft;
+    case 'submitted':
+      return SubmissionStatus.Submitted;
+    case 'underreview':
+      return SubmissionStatus.UnderReview;
+    case 'needsrevision':
+      return SubmissionStatus.NeedsRevision;
+    case 'resubmitted':
+      return SubmissionStatus.Resubmitted;
+    case 'approved':
+      return SubmissionStatus.Approved;
+    case 'rejected':
+      return SubmissionStatus.Rejected;
+    case 'withdrawn':
+      return SubmissionStatus.Withdrawn;
+    default:
+      return Number(status) || SubmissionStatus.Draft;
+  }
+}
+
+export function isDraftStatus(status?: number | string | null): boolean {
+  return normalizeSubmissionStatus(status) === SubmissionStatus.Draft;
+}
 
 export const EvidenceStatus = {
   Draft: 1,
@@ -143,6 +183,8 @@ export interface StudentApplicationDetailResponse {
   updatedAt?: string | null;
   rowVersion: string;
   evidences: StudentEvidenceItemResponse[];
+  reviewerGeneralNote?: string | null;
+  rejectionReason?: string | null;
 }
 
 export interface PagedResult<T> {

@@ -8,7 +8,12 @@ import { useWelcomeDashboard } from '../../hooks/dashboard/useWelcomeDashboard';
 import { useLauncher } from '../../hooks/dashboard/useLauncher';
 import { formatUserRole } from '../../components/dashboard/home/homeDashboardConfig';
 import type { User } from '../../types/auth';
-import { SubmissionStatus, type StudentApplicationSummaryResponse } from '../../types/student';
+import {
+  SubmissionStatus,
+  isDraftStatus,
+  normalizeSubmissionStatus,
+  type StudentApplicationSummaryResponse,
+} from '../../types/student';
 import { studentService } from '../../services/studentService';
 import { sanitizeApiError } from '../../services/apiErrorSanitizer';
 import { MyApplicationCards } from '../../components/student/MyApplicationCards';
@@ -71,8 +76,8 @@ export const StudentMyApplicationsPage: React.FC<StudentMyApplicationsPageProps>
   });
 
   const allApplications = myApplicationsData?.items ?? [];
-  const submittedApplications = allApplications.filter((a) => a.status !== SubmissionStatus.Draft);
-  const draftApplications = allApplications.filter((a) => a.status === SubmissionStatus.Draft);
+  const submittedApplications = allApplications.filter((a) => !isDraftStatus(a.status));
+  const draftApplications = allApplications.filter((a) => isDraftStatus(a.status));
 
   // Withdraw Mutation
   const withdrawMutation = useMutation({
@@ -102,17 +107,22 @@ export const StudentMyApplicationsPage: React.FC<StudentMyApplicationsPageProps>
 
   // Stats calculation: Chỉ tính trên các hồ sơ ĐÃ NỘP cho Mentor
   const totalApps = submittedApplications.length;
-  const pendingApps = submittedApplications.filter(
-    (a) => a.status === SubmissionStatus.Submitted || a.status === SubmissionStatus.UnderReview
+  const pendingApps = submittedApplications.filter((a) => {
+    const s = normalizeSubmissionStatus(a.status);
+    return s === SubmissionStatus.Submitted || s === SubmissionStatus.UnderReview;
+  }).length;
+  const revisionApps = submittedApplications.filter(
+    (a) => normalizeSubmissionStatus(a.status) === SubmissionStatus.NeedsRevision
   ).length;
-  const revisionApps = submittedApplications.filter((a) => a.status === SubmissionStatus.NeedsRevision).length;
-  const approvedApps = submittedApplications.filter((a) => a.status === SubmissionStatus.Approved).length;
+  const approvedApps = submittedApplications.filter(
+    (a) => normalizeSubmissionStatus(a.status) === SubmissionStatus.Approved
+  ).length;
   const totalEvidencesAll = submittedApplications.reduce((s, a) => s + (a.totalEvidences ?? 0), 0);
   const approvedEvidencesAll = submittedApplications.reduce((s, a) => s + (a.approvedEvidences ?? 0), 0);
   const pendingEvidencesAll = submittedApplications.reduce((s, a) => s + (a.pendingEvidences ?? 0), 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-['Be_Vietnam_Pro',_ui-sans-serif,_system-ui,_sans-serif]">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-['Inter',_sans-serif]">
       <DashboardHeader
         displayName={displayName}
         role={formatUserRole(user.role)}

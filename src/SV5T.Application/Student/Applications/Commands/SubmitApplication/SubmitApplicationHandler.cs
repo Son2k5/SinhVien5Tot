@@ -45,7 +45,10 @@ public sealed class SubmitApplicationHandler(
                 "campaign_not_found");
         }
 
-        StudentApplicationGuard.EnsureSubmitBeforeDeadline(app.Campaign);
+        if (app.Status == SubmissionStatus.NeedsRevision)
+            StudentApplicationGuard.EnsureResubmitBeforeReviewDeadline(app.Campaign);
+        else
+            StudentApplicationGuard.EnsureSubmitBeforeDeadline(app.Campaign);
 
         var requirements = await criteria.GetRequirementsByStandardSetIdAsync(
             app.StandardSetId, cancellationToken);
@@ -59,7 +62,7 @@ public sealed class SubmitApplicationHandler(
 
         var evidenceList = await evidences.GetByApplicationAsync(app.Id, cancellationToken);
         var submittedIds = evidenceList
-            .Where(e => e.Status is EvidenceStatus.Draft or EvidenceStatus.Submitted or EvidenceStatus.Approved)
+            .Where(e => e.Status is EvidenceStatus.Submitted or EvidenceStatus.Approved)
             .Select(e => e.CriterionId)
             .ToHashSet();
 
@@ -77,17 +80,10 @@ public sealed class SubmitApplicationHandler(
 
         await uow.ExecuteInTransactionAsync(async ct =>
         {
-            app.Status = SubmissionStatus.Submitted;
-            app.SubmittedAt = now;
+            app.Status = isResubmit ? SubmissionStatus.Resubmitted : SubmissionStatus.Submitted;
+            app.SubmittedAt ??= now;
             app.UpdatedAt = now;
             app.UpdatedBy = userId.ToString();
-
-            foreach (var e in evidenceList.Where(e => e.Status == EvidenceStatus.Draft))
-            {
-                e.Status = EvidenceStatus.Submitted;
-                e.UpdatedAt = now;
-                e.UpdatedBy = userId.ToString();
-            }
 
             await applications.AddReviewLogAsync(new ReviewLog
             {

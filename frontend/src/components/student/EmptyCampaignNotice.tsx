@@ -20,7 +20,7 @@ export const EmptyCampaignNotice: React.FC<EmptyCampaignNoticeProps> = ({ level,
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto my-6 px-4">
+    <div className="w-full max-w-5xl mx-auto my-6 px-4 font-['Inter',_sans-serif]">
       <div className="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-8 text-center flex flex-col items-center">
         <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 mb-4 shadow-sm">
           <CalendarX2 className="w-8 h-8" />

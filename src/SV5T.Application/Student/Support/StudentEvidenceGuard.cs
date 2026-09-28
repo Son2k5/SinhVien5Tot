@@ -1,6 +1,8 @@
 using System.Text.Json;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Domain.Evidences;
+using SV5T.Domain.Campaigns;
+using SV5T.Domain.Campaigns.Enums;
 using SV5T.Domain.Submissions.Enums;
 
 namespace SV5T.Application.Student.Support;
@@ -25,6 +27,14 @@ public static class StudentEvidenceGuard
                 "Minh chứng không ở trạng thái cho phép chỉnh sửa.",
                 "evidence_not_editable");
         }
+    }
+
+    public static void EnsureCampaignAcceptingEvidence(Campaign? campaign)
+    {
+        if (campaign is null || campaign.Status is not (CampaignStatus.Open or CampaignStatus.Reviewing) ||
+            DateTime.UtcNow > campaign.ReviewDeadline)
+            throw new UseCaseException(ApplicationErrorKind.Conflict,
+                "Đợt xét đã đóng nhận minh chứng.", "campaign_evidence_closed");
     }
 
     public static void EnsureExtensionAllowed(string fileName)

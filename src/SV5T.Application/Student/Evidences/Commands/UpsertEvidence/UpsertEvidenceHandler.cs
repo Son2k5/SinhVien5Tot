@@ -35,7 +35,18 @@ public sealed class UpsertEvidenceHandler(
                 "Không tìm thấy hồ sơ.",
                 "application_not_found");
 
-        StudentApplicationGuard.EnsureApplicationEditable(app);
+        StudentEvidenceGuard.EnsureCampaignAcceptingEvidence(app.Campaign);
+
+        var existing = await evidences.GetByApplicationAndCriterionAsync(
+            app.Id, command.CriterionId, tracking: true, cancellationToken: cancellationToken);
+        if (app.Status is Domain.Submissions.Enums.SubmissionStatus.Approved or
+            Domain.Submissions.Enums.SubmissionStatus.Rejected or
+            Domain.Submissions.Enums.SubmissionStatus.Withdrawn ||
+            app.Status is not (Domain.Submissions.Enums.SubmissionStatus.Draft or
+                Domain.Submissions.Enums.SubmissionStatus.NeedsRevision) &&
+            existing?.Status is not (EvidenceStatus.NeedsRevision or EvidenceStatus.Rejected) &&
+            !(existing?.Status == EvidenceStatus.Draft && existing.ReviewedAt.HasValue))
+            StudentApplicationGuard.EnsureApplicationEditable(app);
 
         var criterion = await criteria.GetByIdAsync(command.CriterionId, cancellationToken)
             ?? throw new UseCaseException(
@@ -51,8 +62,9 @@ public sealed class UpsertEvidenceHandler(
                 "criterion_not_requirement");
         }
 
-        var existing = await evidences.GetByApplicationAndCriterionAsync(
-            app.Id, criterion.Id, tracking: true, cancellationToken: cancellationToken);
+        if (criterion.Standard?.StandardSetId != app.StandardSetId)
+            throw new UseCaseException(ApplicationErrorKind.Validation,
+                "Tiêu chí không thuộc bộ tiêu chuẩn của hồ sơ.", "criterion_standard_set_mismatch");
 
         if (existing is not null)
         {
@@ -66,7 +78,7 @@ public sealed class UpsertEvidenceHandler(
             existing.DataJson = command.Request.DataJson;
             existing.UpdatedAt = now;
             existing.UpdatedBy = userId.ToString();
-            if (existing.Status == EvidenceStatus.NeedsRevision)
+            if (existing.Status is EvidenceStatus.NeedsRevision or EvidenceStatus.Rejected)
             {
                 existing.Status = EvidenceStatus.Draft;
             }
