@@ -188,25 +188,39 @@ export function StandardSetFormModal({
       aria-labelledby="standard-set-modal-title"
     >
       <div className="w-full max-w-lg bg-white border border-slate-200 shadow-2xl p-6 space-y-5 relative">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isLoading}
-          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-          aria-label="Đóng"
-        >
-          <X size={18} />
-        </button>
-
-        <div className="space-y-1">
-          <h2 id="standard-set-modal-title" className="text-base font-semibold text-slate-800">
-            {isEdit
-              ? `Bộ tiêu chuẩn ${standardSet?.academicYear}`
-              : 'Thiết lập khung tiêu chuẩn SV5T'}
-          </h2>
-          <p className="text-xs text-slate-500">
-            Định nghĩa năm học, cấp xét duyệt và các tiêu chí đánh giá Sinh viên 5 tốt.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
+            <h2 id="standard-set-modal-title" className="text-base font-semibold text-slate-800">
+              {isEdit
+                ? `Bộ tiêu chuẩn ${standardSet?.academicYear}`
+                : 'Thiết lập khung tiêu chuẩn SV5T'}
+            </h2>
+            <p className="text-xs text-slate-500">
+              Định nghĩa năm học, cấp xét duyệt và các tiêu chí đánh giá Sinh viên 5 tốt.
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            {isEdit && standardSet?.status && (
+              <span
+                className={`text-xs px-2.5 py-0.5 font-semibold border ${
+                  standardSet.status === StandardSetStatus.Published
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                }`}
+              >
+                {standardSet.status === StandardSetStatus.Published ? 'Đã công bố' : 'Bản nháp'}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Đóng"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {formError && (

@@ -4,15 +4,29 @@ import { useStudentDetail } from '../../../hooks/admin/useStudents';
 import type { AdminStudentListItem } from '../../../types/admin/student';
 import {
   ActiveBadge,
-  EvidenceStatusBadge,
   SubmissionStatusBadge,
-  VerifiedBadge,
 } from './StudentBadges';
-import { Award, X, ClipboardCheck, ExternalLink, AlertCircle, RefreshCw, GraduationCap, User, MapPin } from 'lucide-react';
-import { EvidenceViewerModal } from '../applications/EvidenceViewerModal';
+import {
+  X,
+  ExternalLink,
+  AlertCircle,
+  RefreshCw,
+  GraduationCap,
+  User,
+  MapPin,
+  FileText,
+  CheckCircle2,
+  Clock,
+  ChevronRight,
+  ShieldCheck,
+  BookOpen,
+  Activity,
+  HeartHandshake,
+  Globe,
+  BarChart2,
+  PieChart,
+} from 'lucide-react';
 import { ApplicationDetailModal } from '../applications/ApplicationDetailModal';
-import { applicationReviewService } from '../../../services/admin/applicationReviewService';
-import type { AdminEvidenceItem } from '../../../types/admin/application';
 
 interface StudentDetailModalProps {
   isOpen: boolean;
@@ -41,6 +55,64 @@ const ADDRESS_TYPE_LABELS: Record<string, string> = {
   None: 'Khác',
 };
 
+interface StandardGroupDef {
+  code: string;
+  name: string;
+  icon: typeof ShieldCheck;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  barColor: string;
+}
+
+const STANDARD_GROUPS: StandardGroupDef[] = [
+  {
+    code: 'Ethics',
+    name: 'Đạo đức tốt',
+    icon: ShieldCheck,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    barColor: 'bg-blue-500',
+  },
+  {
+    code: 'Study',
+    name: 'Học tập tốt',
+    icon: BookOpen,
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-50',
+    borderColor: 'border-indigo-200',
+    barColor: 'bg-indigo-500',
+  },
+  {
+    code: 'Fitness',
+    name: 'Thể lực tốt',
+    icon: Activity,
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
+    borderColor: 'border-emerald-200',
+    barColor: 'bg-emerald-500',
+  },
+  {
+    code: 'Volunteer',
+    name: 'Tình nguyện tốt',
+    icon: HeartHandshake,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    barColor: 'bg-amber-500',
+  },
+  {
+    code: 'Integration',
+    name: 'Hội nhập tốt',
+    icon: Globe,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
+    barColor: 'bg-purple-500',
+  },
+];
+
 const fmtAddress = (a?: { provinceOrCity?: string | null; district?: string | null; streetAddress?: string | null } | null) => {
   if (!a) return '—';
   const parts = [a.streetAddress, a.district, a.provinceOrCity].map((s) => (s || '').trim()).filter(Boolean);
@@ -61,20 +133,8 @@ export function StudentDetailModal({
   onClose,
 }: StudentDetailModalProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'info' | 'apps' | 'evidence'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'records'>('info');
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
-  const [viewingEvidence, setViewingEvidence] = useState<AdminEvidenceItem | null>(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
-
-  const handleViewEvidence = async (evidenceId: string) => {
-    try {
-      const fullEv = await applicationReviewService.getEvidenceById(evidenceId);
-      setViewingEvidence(fullEv);
-      setViewerOpen(true);
-    } catch {
-      // ignore
-    }
-  };
 
   const { data, isPending, isError, refetch } = useStudentDetail(
     isOpen && studentId ? studentId : undefined
@@ -86,13 +146,91 @@ export function StudentDetailModal({
   const fullName = profile?.fullName || fallbackItem?.fullName || data?.displayName || 'Sinh viên';
   const email = data?.email || fallbackItem?.email || '—';
   const studentCode = profile?.studentCode || fallbackItem?.studentCode || '—';
-  const isVerified = data ? data.isVerified : Boolean(fallbackItem?.isVerified);
   const isActive = data ? data.isActive : Boolean(fallbackItem?.isActive);
 
   const avatarUrl = data?.avatarUrl ?? null;
   const initial = (fullName.trim().charAt(0) || 'S').toUpperCase();
   const applications = data?.applications ?? [];
   const evidenceGroups = data?.evidenceGroups ?? [];
+
+  // Statistics calculation for combined Hồ sơ & Minh chứng tab
+  const totalApps = applications.length;
+
+  const allItems = evidenceGroups.flatMap((g) => g.items || []);
+  const totalEvidences = evidenceGroups.reduce((acc, g) => acc + g.totalCount, 0);
+  const approvedEvidences = evidenceGroups.reduce((acc, g) => acc + g.approvedCount, 0);
+
+  const statusCounts = {
+    Approved: allItems.filter((i) => i.status === 'Approved').length || approvedEvidences,
+    Submitted: allItems.filter((i) => i.status === 'Submitted').length,
+    NeedsRevision: allItems.filter((i) => i.status === 'NeedsRevision').length,
+    Rejected: allItems.filter((i) => i.status === 'Rejected').length,
+    Draft: allItems.filter((i) => i.status === 'Draft').length,
+  };
+
+  const knownStatusSum =
+    statusCounts.Approved +
+    statusCounts.Submitted +
+    statusCounts.NeedsRevision +
+    statusCounts.Rejected +
+    statusCounts.Draft;
+
+  if (knownStatusSum < totalEvidences) {
+    statusCounts.Submitted += totalEvidences - knownStatusSum;
+  }
+
+  const approvalRate = totalEvidences > 0 ? Math.round((approvedEvidences / totalEvidences) * 100) : 0;
+
+  // 5 Standard groups evaluation
+  const standardGroupsEvaluated = STANDARD_GROUPS.map((std) => {
+    const g = evidenceGroups.find((eg) => {
+      if (eg.groupCode && String(eg.groupCode).toLowerCase() === std.code.toLowerCase()) return true;
+      if (eg.groupName && eg.groupName.toLowerCase().includes(std.name.toLowerCase().replace(' tốt', ''))) return true;
+      return false;
+    });
+    const total = g?.totalCount ?? 0;
+    const approved = g?.approvedCount ?? 0;
+    const isComplete = total > 0 && approved >= total;
+    const percent = total > 0 ? Math.round((approved / total) * 100) : 0;
+    return {
+      ...std,
+      total,
+      approved,
+      isComplete,
+      percent,
+      items: g?.items ?? [],
+    };
+  });
+
+  const otherGroups = evidenceGroups.filter(
+    (g) =>
+      !STANDARD_GROUPS.some(
+        (std) =>
+          (g.groupCode && String(g.groupCode).toLowerCase() === std.code.toLowerCase()) ||
+          (g.groupName && g.groupName.toLowerCase().includes(std.name.toLowerCase().replace(' tốt', '')))
+      )
+  );
+
+  const completedGroupsCount = standardGroupsEvaluated.filter((g) => g.isComplete).length;
+
+  // Donut chart status breakdown items
+  const evidenceStatusItems = [
+    { key: 'Approved', label: 'Đã duyệt', count: statusCounts.Approved, color: '#10b981' },
+    { key: 'Submitted', label: 'Chờ xét duyệt', count: statusCounts.Submitted, color: '#3b82f6' },
+    { key: 'NeedsRevision', label: 'Cần bổ sung', count: statusCounts.NeedsRevision, color: '#f59e0b' },
+    { key: 'Rejected', label: 'Từ chối', count: statusCounts.Rejected, color: '#ef4444' },
+    { key: 'Draft', label: 'Bản nháp', count: statusCounts.Draft, color: '#94a3b8' },
+  ];
+
+  let cursor = 0;
+  const donutGradient = evidenceStatusItems
+    .filter((item) => item.count > 0)
+    .map((item) => {
+      const start = cursor;
+      cursor += totalEvidences > 0 ? (item.count / totalEvidences) * 360 : 0;
+      return `${item.color} ${start}deg ${cursor}deg`;
+    })
+    .join(', ');
 
   return (
     <div
@@ -103,7 +241,8 @@ export function StudentDetailModal({
       aria-label="Chi tiết sinh viên"
     >
       <div
-        className="w-full max-w-[860px] bg-white shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-[880px] bg-white shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[90vh] max-h-[94vh] animate-in zoom-in-95 duration-150 font-inter font-['Inter',_sans-serif]"
+        style={{ fontFamily: "'Inter', sans-serif" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -126,9 +265,8 @@ export function StudentDetailModal({
             </div>
           </div>
 
-          {/* Right side: Trạng thái nằm bên cạnh nút X (phía bên trái nút X) */}
+          {/* Right side: Trạng thái nằm bên cạnh nút X */}
           <div className="flex items-center gap-2 shrink-0 ml-2">
-            <VerifiedBadge verified={isVerified} />
             <ActiveBadge active={isActive} />
             <button
               type="button"
@@ -141,50 +279,27 @@ export function StudentDetailModal({
           </div>
         </div>
 
-        {/* Tabs Bar */}
+        {/* Tabs Bar: Giữ nguyên Thông tin, chỉ hiện chữ Hồ sơ & Minh chứng */}
         <div className="flex items-center gap-6 px-6 pt-3 border-b border-slate-100">
           <button
             type="button"
             onClick={() => setActiveTab('info')}
-            className={`pb-2.5 -mb-px text-[13px] cursor-pointer transition-colors border-b-2 ${
-              activeTab === 'info'
+            className={`pb-2.5 -mb-px text-[13px] cursor-pointer transition-colors border-b-2 ${activeTab === 'info'
                 ? 'border-blue-600 text-blue-600 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-700 font-medium'
-            }`}
+              }`}
           >
             Thông tin
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('apps')}
-            className={`pb-2.5 -mb-px text-[13px] cursor-pointer transition-colors border-b-2 ${
-              activeTab === 'apps'
+            onClick={() => setActiveTab('records')}
+            className={`pb-2.5 -mb-px text-[13px] cursor-pointer transition-colors border-b-2 font-medium ${activeTab === 'records'
                 ? 'border-blue-600 text-blue-600 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-slate-700 font-medium'
-            }`}
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
           >
-            Hồ sơ
-            {applications.length > 0 && (
-              <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium flex items-center justify-center">
-                {applications.length}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('evidence')}
-            className={`pb-2.5 -mb-px text-[13px] cursor-pointer transition-colors border-b-2 ${
-              activeTab === 'evidence'
-                ? 'border-blue-600 text-blue-600 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-slate-700 font-medium'
-            }`}
-          >
-            Minh chứng
-            {evidenceGroups.length > 0 && (
-              <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium flex items-center justify-center">
-                {evidenceGroups.reduce((acc, g) => acc + g.totalCount, 0)}
-              </span>
-            )}
+            Hồ sơ & Minh chứng
           </button>
         </div>
 
@@ -216,96 +331,96 @@ export function StudentDetailModal({
             </div>
           )}
 
-          {/* Data Tab 1: Thông tin hồ sơ */}
+          {/* Data Tab 1: Thông tin hồ sơ (Giữ nguyên theo yêu cầu) */}
           {!isPending && !isError && activeTab === 'info' && (
             <div className="space-y-4">
               {/* Nhóm học vụ - nơi học tập */}
-              <div className="bg-slate-50/70 border border-slate-200/70 rounded-xl p-4 space-y-3">
-                <div className="text-[13px] font-medium text-slate-700 flex items-center gap-1.5">
+              <div className="bg-slate-50/70 border border-slate-200/70 rounded-xl p-4 space-y-3 font-inter">
+                <div className="text-[13px] font-semibold text-slate-700 flex items-center gap-1.5 font-inter">
                   <GraduationCap size={15} className="text-blue-600" /> Nơi học tập
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Mã sinh viên:</span>
-                    <span className="font-semibold font-mono text-slate-800 text-right">{studentCode}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 font-inter text-[13px]">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Mã sinh viên:</span>
+                    <span className="font-normal text-slate-800 text-right">{studentCode}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100 sm:col-span-2">
-                    <span className="text-slate-500">Trường:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.school || fallbackItem?.school || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100 sm:col-span-2">
+                    <span className="text-slate-500 font-normal">Trường:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.school || fallbackItem?.school || '—'}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Khoa / Viện:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.faculty || fallbackItem?.faculty || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Khoa / Viện:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.faculty || fallbackItem?.faculty || '—'}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Chuyên ngành:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.major || fallbackItem?.major || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Chuyên ngành:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.major || fallbackItem?.major || '—'}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Lớp hành chính:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.administrativeClass || fallbackItem?.administrativeClass || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Lớp hành chính:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.administrativeClass || fallbackItem?.administrativeClass || '—'}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Khóa tuyển sinh:</span>
-                    <span className="font-medium text-slate-700 text-right">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Khóa tuyển sinh:</span>
+                    <span className="font-normal text-slate-800 text-right">
                       {profile?.academicYear ? `K${profile.academicYear}` : fallbackItem?.academicYear ? `K${fallbackItem.academicYear}` : '—'}
                     </span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Email liên hệ:</span>
-                    <span className="font-normal text-slate-700 text-right break-all">{profile?.contactEmail || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Email liên hệ:</span>
+                    <span className="font-normal text-slate-800 text-right break-all">{profile?.contactEmail || '—'}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Chức vụ Đoàn/Hội:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.unionPosition || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Chức vụ Đoàn/Hội:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.unionPosition || '—'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Nhóm cá nhân & liên hệ */}
-              <div className="bg-slate-50/70 border border-slate-200/70 rounded-xl p-4 space-y-3">
-                <div className="text-[13px] font-medium text-slate-700 flex items-center gap-1.5">
+              <div className="bg-slate-50/70 border border-slate-200/70 rounded-xl p-4 space-y-3 font-inter">
+                <div className="text-[13px] font-semibold text-slate-700 flex items-center gap-1.5 font-inter">
                   <User size={15} className="text-violet-600" /> Cá nhân & liên hệ
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Ngày sinh:</span>
-                    <span className="font-medium text-slate-700 text-right">{fmtDate(profile?.birthDate)}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 font-inter text-[13px]">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Ngày sinh:</span>
+                    <span className="font-normal text-slate-800 text-right">{fmtDate(profile?.birthDate)}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Giới tính:</span>
-                    <span className="font-medium text-slate-700 text-right">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Giới tính:</span>
+                    <span className="font-normal text-slate-800 text-right">
                       {profile?.gender ? GENDER_LABELS[profile.gender] ?? profile.gender : '—'}
                     </span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Số điện thoại:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.phoneNumber || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Số điện thoại:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.phoneNumber || '—'}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">CCCD / CMND:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.identityCardNumber || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">CCCD / CMND:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.identityCardNumber || '—'}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Dân tộc:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.ethnicity || '—'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Dân tộc:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.ethnicity || '—'}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Đoàn / Đảng:</span>
-                    <span className="font-medium text-slate-700 text-right">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-normal">Đoàn / Đảng:</span>
+                    <span className="font-normal text-slate-800 text-right">
                       {profile?.politicalStatus ? POLITICAL_LABELS[profile.politicalStatus] ?? profile.politicalStatus : '—'}
                     </span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100 sm:col-span-2">
-                    <span className="text-slate-500">Chức vụ hiện tại:</span>
-                    <span className="font-medium text-slate-700 text-right">{profile?.currentPosition || 'Sinh viên'}</span>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100 sm:col-span-2">
+                    <span className="text-slate-500 font-normal">Chức vụ hiện tại:</span>
+                    <span className="font-normal text-slate-800 text-right">{profile?.currentPosition || 'Sinh viên'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Nơi cư trú */}
-              <div className="bg-slate-50/70 border border-slate-200/70 rounded-xl p-4 space-y-3">
-                <div className="text-[13px] font-medium text-slate-700 flex items-center gap-1.5">
+              <div className="bg-slate-50/70 border border-slate-200/70 rounded-xl p-4 space-y-3 font-inter">
+                <div className="text-[13px] font-semibold text-slate-700 flex items-center gap-1.5 font-inter">
                   <MapPin size={15} className="text-emerald-600" /> Nơi cư trú
                 </div>
                 {(() => {
@@ -313,32 +428,32 @@ export function StudentDetailModal({
                   const perm = addresses.find((a) => a.addressType === 'Permanent');
                   const temp = addresses.find((a) => a.addressType === 'Temporary');
                   if (addresses.length === 0) {
-                    return <div className="text-slate-400 text-[12px] py-2 text-center">Chưa cập nhật địa chỉ thường trú / tạm trú.</div>;
+                    return <div className="text-slate-400 text-[13px] font-normal py-2 text-center font-inter">Chưa cập nhật địa chỉ thường trú / tạm trú.</div>;
                   }
                   return (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-inter">
                       {perm && (
-                        <div className="bg-white border border-slate-200 rounded-lg p-3">
+                        <div className="bg-white border border-slate-200 rounded-lg p-3 font-inter">
                           <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-1">Thường trú</div>
-                          <div className="text-[12px] font-medium text-slate-700 leading-relaxed">{fmtAddress(perm)}</div>
+                          <div className="text-[13px] font-normal text-slate-800 leading-relaxed">{fmtAddress(perm)}</div>
                         </div>
                       )}
                       {temp && (
-                        <div className="bg-white border border-slate-200 rounded-lg p-3">
+                        <div className="bg-white border border-slate-200 rounded-lg p-3 font-inter">
                           <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-1">Tạm trú</div>
-                          <div className="text-[12px] font-medium text-slate-700 leading-relaxed">{fmtAddress(temp)}</div>
+                          <div className="text-[13px] font-normal text-slate-800 leading-relaxed">{fmtAddress(temp)}</div>
                         </div>
                       )}
                       {addresses.filter((a) => a.addressType !== 'Permanent' && a.addressType !== 'Temporary').map((a) => (
-                        <div key={a.addressType} className="bg-white border border-slate-200 rounded-lg p-3">
+                        <div key={a.addressType} className="bg-white border border-slate-200 rounded-lg p-3 font-inter">
                           <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-1">
                             {ADDRESS_TYPE_LABELS[a.addressType] ?? a.addressType}
                           </div>
-                          <div className="text-[12px] font-medium text-slate-700 leading-relaxed">{fmtAddress(a)}</div>
+                          <div className="text-[13px] font-normal text-slate-800 leading-relaxed">{fmtAddress(a)}</div>
                         </div>
                       ))}
                       {!perm && !temp && addresses.length > 0 && (
-                        <div className="text-slate-400 text-[12px]">Đã có địa chỉ khác, xem chi tiết ở trên.</div>
+                        <div className="text-slate-400 text-[13px] font-normal font-inter">Đã có địa chỉ khác, xem chi tiết ở trên.</div>
                       )}
                     </div>
                   );
@@ -347,103 +462,241 @@ export function StudentDetailModal({
             </div>
           )}
 
-          {/* Data Tab 2: Hồ sơ đăng ký */}
-          {!isPending && !isError && activeTab === 'apps' && (
-            <div className="space-y-3">
-              {applications.length === 0 ? (
-                <div className="py-10 text-center text-slate-400">
-                  <Award size={32} className="mx-auto mb-2 opacity-50" />
-                  <div>Sinh viên chưa có hồ sơ đăng ký danh hiệu SV5T nào.</div>
+          {/* Data Tab 2: Biểu đồ thống kê Hồ sơ & Minh chứng gộp trực quan */}
+          {!isPending && !isError && activeTab === 'records' && (
+            <div className="space-y-5">
+              {totalApps === 0 && totalEvidences === 0 ? (
+                <div className="py-12 text-center">
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                    <BarChart2 size={28} />
+                  </div>
+                  <h4 className="text-sm font-semibold text-slate-700">Chưa có dữ liệu hồ sơ & minh chứng</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                    Sinh viên chưa đăng ký hồ sơ tham gia danh hiệu hoặc chưa cập nhật minh chứng nào trong hệ thống.
+                  </p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white">
-                  {applications.map((app) => (
-                    <div key={app.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/50">
-                      <div className="space-y-1 min-w-0">
-                        <div className="font-normal text-slate-800 truncate">{app.campaignName}</div>
-                        <div className="text-[11px] text-slate-500 flex items-center gap-2">
-                          <span className="font-mono">{app.applicationCode}</span>
-                          <span>•</span>
-                          <span>Năm học {app.schoolYear}</span>
-                          <span>•</span>
-                          <span>{app.evidenceCount} minh chứng</span>
-                        </div>
-                      </div>
-                      <div className="shrink-0 flex items-center gap-2">
-                        <SubmissionStatusBadge status={app.status} />
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAppId(app.id)}
-                          className="px-2.5 py-1 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
-                        >
-                          Xem hồ sơ & duyệt
-                        </button>
-                      </div>
+                <>
+                  {/* Top Metric Cards - Tinh gọn */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="bg-slate-50/80 border border-slate-200/80 rounded-lg px-3 py-2">
+                      <div className="text-[11px] text-slate-500 font-normal">Hồ sơ</div>
+                      <div className="text-[15px] font-semibold text-slate-800 mt-0.5">{totalApps}</div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Data Tab 3: Minh chứng */}
-          {!isPending && !isError && activeTab === 'evidence' && (
-            <div className="space-y-3">
-              {evidenceGroups.length === 0 ? (
-                <div className="py-10 text-center text-slate-400">
-                  <ClipboardCheck size={32} className="mx-auto mb-2 opacity-50" />
-                  <div>Chưa có minh chứng.</div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {evidenceGroups.map((g) => {
-                    const percent = g.totalCount > 0 ? Math.round((g.approvedCount / g.totalCount) * 100) : 0;
-                    return (
-                      <div key={g.groupName} className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-2.5">
-                        <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
-                          <span>{g.groupName}</span>
-                          <span className="text-slate-500 font-mono">
-                            {g.approvedCount} / {g.totalCount} đã duyệt ({percent}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="bg-emerald-500 h-full rounded-full transition-[width] duration-300"
-                            style={{ width: `${percent}%` }}
-                          />
+                    <div className="bg-slate-50/80 border border-slate-200/80 rounded-lg px-3 py-2">
+                      <div className="text-[11px] text-slate-500 font-normal">Minh chứng</div>
+                      <div className="text-[15px] font-semibold text-slate-800 mt-0.5">{totalEvidences}</div>
+                    </div>
+
+                    <div className="bg-slate-50/80 border border-slate-200/80 rounded-lg px-3 py-2">
+                      <div className="text-[11px] text-slate-500 font-normal">Tỷ lệ duyệt</div>
+                      <div className="text-[15px] font-semibold text-emerald-600 mt-0.5">{approvalRate}%</div>
+                    </div>
+
+                    <div className="bg-slate-50/80 border border-slate-200/80 rounded-lg px-3 py-2">
+                      <div className="text-[11px] text-slate-500 font-normal">Tiêu chuẩn đạt</div>
+                      <div className="text-[15px] font-semibold text-slate-800 mt-0.5">{completedGroupsCount} / {STANDARD_GROUPS.length}</div>
+                    </div>
+                  </div>
+
+                  {/* Dual Chart Section */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    {/* Biểu đồ Donut: Trạng thái minh chứng */}
+                    <div className="md:col-span-5 bg-slate-50/70 border border-slate-200/70 rounded-xl p-4 flex flex-col justify-between">
+                      <div className="text-[13px] font-medium text-slate-700 flex items-center justify-between pb-2 border-b border-slate-200/60">
+                        <span className="flex items-center gap-1.5">
+                          <PieChart size={15} className="text-blue-600" />
+                          Phân bố trạng thái minh chứng
+                        </span>
+                      </div>
+
+                      <div className="py-3 flex flex-col items-center">
+                        {/* Donut graphic chuẩn tỉ lệ tròn */}
+                        <div
+                          className="w-32 h-32 rounded-full grid place-items-center relative shrink-0 shadow-inner mb-3"
+                          style={{
+                            background:
+                              totalEvidences > 0 && donutGradient
+                                ? `conic-gradient(${donutGradient})`
+                                : '#e2e8f0',
+                          }}
+                        >
+                          <div className="w-20 h-20 rounded-full bg-white shadow-xs flex flex-col items-center justify-center text-center">
+                            <span className="text-xl font-bold text-slate-800 leading-none">
+                              {approvedEvidences}
+                            </span>
+                            <span className="text-[10px] text-slate-400 mt-1 font-medium">/{totalEvidences} đạt</span>
+                          </div>
                         </div>
 
-                        {/* List of evidence items in group */}
-                        {g.items && g.items.length > 0 && (
-                          <div className="divide-y divide-slate-100 pt-1">
-                            {g.items.map((item) => (
-                              <div key={item.id} className="py-2 flex items-center justify-between gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <div className="font-medium text-slate-800 truncate text-xs">
-                                    {item.criterionCode} — {item.criterionTitle}
-                                  </div>
-                                  <div className="text-[11px] text-slate-400 font-mono">
-                                    Đơn: {item.applicationCode}
-                                  </div>
+                        {/* Status Legend */}
+                        <div className="w-full space-y-1.5">
+                          {evidenceStatusItems.map((item) => {
+                            const pct = totalEvidences > 0 ? Math.round((item.count / totalEvidences) * 100) : 0;
+                            return (
+                              <div
+                                key={item.key}
+                                className={`flex items-center justify-between px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                                  item.count > 0 ? 'bg-white border border-slate-150' : 'opacity-40'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span className="text-slate-600 font-medium truncate">{item.label}</span>
                                 </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <EvidenceStatusBadge status={item.status} />
-                                  <button
-                                    type="button"
-                                    onClick={() => handleViewEvidence(item.id)}
-                                    className="px-2.5 py-1 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
-                                  >
-                                    Xem minh chứng
-                                  </button>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-slate-800 font-mono">{item.count}</span>
+                                  <span className="text-[11px] text-slate-400 w-8 text-right font-mono">
+                                    {item.count > 0 ? `${pct}%` : '0%'}
+                                  </span>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
+                            );
+                          })}
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+
+                    {/* Biểu đồ Thanh Tiến độ: 5 Nhóm Tiêu chí SV5T */}
+                    <div className="md:col-span-7 bg-slate-50/70 border border-slate-200/70 rounded-xl p-4 flex flex-col justify-between">
+                      <div className="text-[13px] font-medium text-slate-700 flex items-center justify-between pb-2 border-b border-slate-200/60">
+                        <span className="flex items-center gap-1.5">
+                          <BarChart2 size={15} className="text-indigo-600" />
+                          Tiến độ 5 tiêu chí Sinh viên 5 Tốt
+                        </span>
+                        <span className="text-[11px] text-slate-500 font-mono">
+                          {completedGroupsCount} / {STANDARD_GROUPS.length} hoàn thành
+                        </span>
+                      </div>
+
+                      <div className="py-2 space-y-3 flex-1 justify-center flex flex-col">
+                        {standardGroupsEvaluated.map((std) => {
+                          const Icon = std.icon;
+                          return (
+                            <div key={std.code} className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <div
+                                    className={`w-5 h-5 rounded-md ${std.bgColor} ${std.color} flex items-center justify-center shrink-0`}
+                                  >
+                                    <Icon size={12} />
+                                  </div>
+                                  <span className="font-medium text-slate-800 truncate">{std.name}</span>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {std.total === 0 ? (
+                                    <span className="text-[11px] text-slate-400 bg-slate-150/70 px-2 py-0.5 rounded-md font-medium">
+                                      Chưa nộp
+                                    </span>
+                                  ) : std.isComplete ? (
+                                    <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                                      <CheckCircle2 size={11} /> Đạt ({std.approved}/{std.total})
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
+                                      <Clock size={11} /> {std.approved}/{std.total} ({std.percent}%)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    std.isComplete ? 'bg-emerald-500' : std.approved > 0 ? 'bg-blue-500' : 'bg-amber-400'
+                                  }`}
+                                  style={{ width: `${std.total > 0 ? Math.max(std.percent, 8) : 0}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {otherGroups.map((og) => {
+                          const percent = og.totalCount > 0 ? Math.round((og.approvedCount / og.totalCount) * 100) : 0;
+                          const isComplete = og.totalCount > 0 && og.approvedCount >= og.totalCount;
+                          return (
+                            <div key={og.groupName} className="space-y-1 pt-1 border-t border-slate-200/60">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-medium text-slate-700 truncate">{og.groupName}</span>
+                                <span className="text-[11px] text-slate-500 font-mono">
+                                  {og.approvedCount}/{og.totalCount} ({percent}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    isComplete ? 'bg-emerald-500' : 'bg-blue-500'
+                                  }`}
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hồ sơ tham gia tóm tắt trực quan - KHÔNG LỘ ID */}
+                  <div className="space-y-2.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[13px] font-medium text-slate-700 flex items-center gap-1.5">
+                        <FileText size={15} className="text-blue-600" />
+                        <span>Hồ sơ tham gia phong trào</span>
+                        <span className="text-xs font-normal text-slate-400">({applications.length})</span>
+                      </div>
+                    </div>
+
+                    {applications.length === 0 ? (
+                      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-400">
+                        Sinh viên chưa có đơn đăng ký tham gia phong trào SV5T nào.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {applications.map((app) => (
+                          <div
+                            key={app.id}
+                            className="p-3 bg-white border border-slate-200 hover:border-blue-200 rounded-xl flex items-center justify-between gap-3 transition-colors shadow-2xs"
+                          >
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="font-semibold text-slate-800 text-[13px] truncate">
+                                {app.campaignName}
+                              </div>
+                              <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                                <span>
+                                  Năm học: <b className="text-slate-700 font-medium">{app.schoolYear}</b>
+                                </span>
+                                <span>•</span>
+                                <span>
+                                  Minh chứng: <b className="text-slate-700 font-medium">{app.evidenceCount}</b> tệp
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <SubmissionStatusBadge status={app.status} />
+                              <button
+                                type="button"
+                                onClick={() => setSelectedAppId(app.id)}
+                                className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <span>Chi tiết & Duyệt</span>
+                                <ChevronRight size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -475,13 +728,6 @@ export function StudentDetailModal({
           </button>
         </div>
       </div>
-
-      {/* Advanced Evidence Viewer Modal */}
-      <EvidenceViewerModal
-        isOpen={viewerOpen}
-        evidence={viewingEvidence}
-        onClose={() => setViewerOpen(false)}
-      />
 
       {/* Application Detail & Review Modal */}
       <ApplicationDetailModal

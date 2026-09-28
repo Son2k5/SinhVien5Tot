@@ -23,11 +23,11 @@ export function StudentReviewModal({ isOpen, evidence, isLoading, onClose, onSub
   };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Xét duyệt minh chứng">
-      <div className="w-full max-w-lg bg-white border border-slate-200 shadow-2xl overflow-hidden">
+      <div className="w-full max-w-xl bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden font-inter">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 gap-3">
           <div className="min-w-0 flex-1">
             <h3 className="text-sm font-bold text-slate-900">Xét duyệt minh chứng</h3>
-            <p className="text-xs text-slate-500 truncate" title={evidence.criterionTitle}>{evidence.criterionCode} — {evidence.criterionTitle}</p>
+            <p className="text-xs text-slate-500 truncate font-inter" title={evidence.criterionTitle}>{evidence.criterionTitle}</p>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             <EvidenceStatusBadge status={evidence.status} />

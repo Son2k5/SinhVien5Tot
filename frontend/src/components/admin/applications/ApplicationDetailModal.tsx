@@ -673,7 +673,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
       >
         {/* Modal Window: Khung hình chữ nhật thuần, phẳng hiện đại */}
         <div
-          className="w-[96vw] max-w-[1420px] bg-white shadow-2xl overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95 duration-150 font-inter font-['Inter',_sans-serif]"
+          className="w-[96vw] max-w-[1420px] bg-white shadow-2xl overflow-hidden flex flex-col h-[92vh] max-h-[95vh] animate-in zoom-in-95 duration-150 font-inter font-['Inter',_sans-serif]"
           style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -1185,68 +1185,68 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                             )}
                           </div>
                           <div>
-                            <h4 className="text-base font-semibold text-slate-900 font-inter">{snapshot.fullName || '—'}</h4>
-                            <p className="text-sm font-semibold text-slate-600 mt-0.5 font-inter">
+                            <h4 className="text-[15px] font-semibold text-slate-900 font-inter">{snapshot.fullName || '—'}</h4>
+                            <p className="text-[13px] font-normal text-slate-600 mt-0.5 font-inter">
                               MSSV: {snapshot.studentCode || '—'}
                             </p>
                             {snapshot.administrativeClass && (
-                              <p className="text-sm font-semibold text-slate-600 font-inter">
+                              <p className="text-[13px] font-normal text-slate-600 font-inter">
                                 Lớp: {snapshot.administrativeClass}
                               </p>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 pb-2 text-sm font-semibold text-slate-800 font-inter">
-                          <GraduationCap size={18} className="text-blue-600" />
+                        <div className="flex items-center gap-2 pb-2 text-[13px] font-semibold text-slate-800 font-inter">
+                          <GraduationCap size={16} className="text-blue-600" />
                           <span>Thông tin học vụ chi tiết</span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-inter">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[13px] font-inter">
                           <div>
-                            <span className="text-slate-500 block font-medium font-inter">Họ và tên sinh viên:</span>
-                            <span className="text-slate-800 font-semibold text-sm mt-0.5 block font-inter">
+                            <span className="text-slate-500 block font-normal font-inter">Họ và tên sinh viên:</span>
+                            <span className="text-slate-800 font-normal mt-0.5 block font-inter">
                               {snapshot.fullName || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-500 block font-medium font-inter">Mã số sinh viên (MSSV):</span>
-                            <span className="text-slate-800 font-semibold text-sm mt-0.5 block font-inter">
+                            <span className="text-slate-500 block font-normal font-inter">Mã số sinh viên (MSSV):</span>
+                            <span className="text-slate-800 font-normal mt-0.5 block font-inter">
                               {snapshot.studentCode || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-500 block font-medium font-inter">Trường:</span>
-                            <span className="text-slate-800 font-semibold text-sm mt-0.5 block font-inter">
+                            <span className="text-slate-500 block font-normal font-inter">Trường:</span>
+                            <span className="text-slate-800 font-normal mt-0.5 block font-inter">
                               {snapshot.school || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-500 block font-medium font-inter">Khoa / Viện:</span>
-                            <span className="text-slate-800 font-semibold text-sm mt-0.5 block font-inter">
+                            <span className="text-slate-500 block font-normal font-inter">Khoa / Viện:</span>
+                            <span className="text-slate-800 font-normal mt-0.5 block font-inter">
                               {snapshot.faculty || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-500 block font-medium font-inter">Chuyên ngành:</span>
-                            <span className="text-slate-800 font-semibold text-sm mt-0.5 block font-inter">
+                            <span className="text-slate-500 block font-normal font-inter">Chuyên ngành:</span>
+                            <span className="text-slate-800 font-normal mt-0.5 block font-inter">
                               {snapshot.major || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-500 block font-medium font-inter">Lớp hành chính:</span>
-                            <span className="text-slate-800 font-semibold text-sm mt-0.5 block font-inter">
+                            <span className="text-slate-500 block font-normal font-inter">Lớp hành chính:</span>
+                            <span className="text-slate-800 font-normal mt-0.5 block font-inter">
                               {snapshot.administrativeClass || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-500 block font-medium font-inter">Khóa tuyển sinh:</span>
-                            <span className="text-slate-800 font-semibold text-sm mt-0.5 block font-inter">
+                            <span className="text-slate-500 block font-normal font-inter">Khóa tuyển sinh:</span>
+                            <span className="text-slate-800 font-normal mt-0.5 block font-inter">
                               {snapshot.academicYear ? `K${snapshot.academicYear}` : '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-500 block font-medium font-inter">Email sinh viên:</span>
-                            <span className="text-slate-800 font-semibold text-sm mt-0.5 block font-inter">
+                            <span className="text-slate-500 block font-normal font-inter">Email sinh viên:</span>
+                            <span className="text-slate-800 font-normal mt-0.5 block font-inter">
                               {snapshot.email || '—'}
                             </span>
                           </div>

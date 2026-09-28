@@ -18,39 +18,72 @@ public static class AdminStandardMappings
         (
             StandardGroupCode.Ethics,
             "TC_DAODUC",
-            "Dao duc tot",
-            "Danh gia ve tu tuong chinh tri, dao duc, loi song va y thuc chap hanh phap luat, noi quy nha truong.",
+            "Đạo đức tốt",
+            "Đánh giá về tư tưởng chính trị, đạo đức, lối sống và ý thức chấp hành pháp luật, nội quy nhà trường.",
             1
         ),
         (
             StandardGroupCode.Study,
             "TC_HOCTAP",
-            "Hoc tap tot",
-            "Danh gia ve ket qua hoc tap, nghien cuu khoa hoc va tinh than hoc hoi sang tao.",
+            "Học tập tốt",
+            "Đánh giá về kết quả học tập, nghiên cứu khoa học và tinh thần học hỏi sáng tạo.",
             2
         ),
         (
             StandardGroupCode.Fitness,
             "TC_THELUC",
-            "The luc tot",
-            "Danh gia ve ren luyen the chat, the duc the thao va chung nhan the luc.",
+            "Thể lực tốt",
+            "Đánh giá về rèn luyện thể chất, thể dục thể thao và chứng nhận thể lực.",
             3
         ),
         (
             StandardGroupCode.Volunteer,
             "TC_TINHNGUYEN",
-            "Tinh nguyen tot",
-            "Danh gia ve viec tham gia cac hoat dong tinh nguyen vi cong dong, an sinh xa hoi.",
+            "Tình nguyện tốt",
+            "Đánh giá về việc tham gia các hoạt động tình nguyện vì cộng đồng, an sinh xã hội.",
             4
         ),
         (
             StandardGroupCode.Integration,
             "TC_HOINHAP",
-            "Hoi nhap tot",
-            "Danh gia ve trinh do ngoai ngu, ky nang mem va cac hoat dong giao luu quoc te.",
+            "Hội nhập tốt",
+            "Đánh giá về trình độ ngoại ngữ, kỹ năng mềm và các hoạt động giao lưu quốc tế.",
             5
         ),
     ];
+
+    private static readonly Dictionary<string, string> StandardTitleCorrections = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Dao duc tot"] = "Đạo đức tốt",
+        ["Hoc tap tot"] = "Học tập tốt",
+        ["The luc tot"] = "Thể lực tốt",
+        ["Tinh nguyen tot"] = "Tình nguyện tốt",
+        ["Hoi nhap tot"] = "Hội nhập tốt",
+    };
+
+    private static readonly Dictionary<string, string> StandardDescriptionCorrections = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Danh gia ve tu tuong chinh tri, dao duc, loi song va y thuc chap hanh phap luat, noi quy nha truong."] =
+            "Đánh giá về tư tưởng chính trị, đạo đức, lối sống và ý thức chấp hành pháp luật, nội quy nhà trường.",
+        ["Danh gia ve ket qua hoc tap, nghien cuu khoa hoc va tinh than hoc hoi sang tao."] =
+            "Đánh giá về kết quả học tập, nghiên cứu khoa học và tinh thần học hỏi sáng tạo.",
+        ["Danh gia ve ren luyen the chat, the duc the thao va chung nhan the luc."] =
+            "Đánh giá về rèn luyện thể chất, thể dục thể thao và chứng nhận thể lực.",
+        ["Danh gia ve viec tham gia cac hoat dong tinh nguyen vi cong dong, an sinh xa hoi."] =
+            "Đánh giá về việc tham gia các hoạt động tình nguyện vì cộng đồng, an sinh xã hội.",
+        ["Danh gia ve trinh do ngoai ngu, ky nang mem va cac hoat dong giao luu quoc te."] =
+            "Đánh giá về trình độ ngoại ngữ, kỹ năng mềm và các hoạt động giao lưu quốc tế.",
+    };
+
+    public static string NormalizeStandardTitle(string? title) =>
+        !string.IsNullOrWhiteSpace(title) && StandardTitleCorrections.TryGetValue(title.Trim(), out var corrected)
+            ? corrected
+            : title ?? string.Empty;
+
+    public static string? NormalizeStandardDescription(string? description) =>
+        !string.IsNullOrWhiteSpace(description) && StandardDescriptionCorrections.TryGetValue(description.Trim(), out var corrected)
+            ? corrected
+            : description;
 
     public static List<Standard> CloneStandards(
         IEnumerable<Standard> sourceStandards,
@@ -69,8 +102,8 @@ public static class AdminStandardMappings
                 StandardSetId = newStandardSetId,
                 GroupCode = sourceStd.GroupCode,
                 Code = sourceStd.Code,
-                Title = sourceStd.Title,
-                Description = sourceStd.Description,
+                Title = NormalizeStandardTitle(sourceStd.Title),
+                Description = NormalizeStandardDescription(sourceStd.Description),
                 DisplayOrder = sourceStd.DisplayOrder,
                 Operator = sourceStd.Operator,
                 MinimumSatisfied = sourceStd.MinimumSatisfied,
@@ -137,8 +170,8 @@ public static class AdminStandardMappings
             standard.StandardSetId,
             standard.GroupCode,
             standard.Code,
-            standard.Title,
-            standard.Description,
+            NormalizeStandardTitle(standard.Title),
+            NormalizeStandardDescription(standard.Description),
             standard.DisplayOrder,
             standard.Operator,
             standard.MinimumSatisfied,

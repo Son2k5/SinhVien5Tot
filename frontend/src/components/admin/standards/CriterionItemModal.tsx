@@ -3,6 +3,7 @@ import {
   CriterionEvaluationType,
   CriterionOperator,
   CriterionType,
+  formatStandardTitle,
   type CreateCriterionRequest,
   type CriterionResponse,
   type StandardResponse,
@@ -424,7 +425,7 @@ export function CriterionItemModal({
               >
                 {existingGroups.map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.title}
+                    {formatStandardTitle(g.title)}
                   </option>
                 ))}
               </select>

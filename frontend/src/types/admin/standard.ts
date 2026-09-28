@@ -61,6 +61,37 @@ export const STANDARD_GROUP_CODE_LABELS: Record<StandardGroupCode, string> = {
   [StandardGroupCode.Integration]: 'Hội nhập tốt',
 };
 
+const TITLE_ACCENT_MAP: Record<string, string> = {
+  'Dao duc tot': 'Đạo đức tốt',
+  'Hoc tap tot': 'Học tập tốt',
+  'The luc tot': 'Thể lực tốt',
+  'Tinh nguyen tot': 'Tình nguyện tốt',
+  'Hoi nhap tot': 'Hội nhập tốt',
+};
+
+const DESC_ACCENT_MAP: Record<string, string> = {
+  'Danh gia ve tu tuong chinh tri, dao duc, loi song va y thuc chap hanh phap luat, noi quy nha truong.':
+    'Đánh giá về tư tưởng chính trị, đạo đức, lối sống và ý thức chấp hành pháp luật, nội quy nhà trường.',
+  'Danh gia ve ket qua hoc tap, nghien cuu khoa hoc va tinh than hoc hoi sang tao.':
+    'Đánh giá về kết quả học tập, nghiên cứu khoa học và tinh thần học hỏi sáng tạo.',
+  'Danh gia ve ren luyen the chat, the duc the thao va chung nhan the luc.':
+    'Đánh giá về rèn luyện thể chất, thể dục thể thao và chứng nhận thể lực.',
+  'Danh gia ve viec tham gia cac hoat dong tinh nguyen vi cong dong, an sinh xa hoi.':
+    'Đánh giá về việc tham gia các hoạt động tình nguyện vì cộng đồng, an sinh xã hội.',
+  'Danh gia ve trinh do ngoai ngu, ky nang mem va cac hoat dong giao luu quoc te.':
+    'Đánh giá về trình độ ngoại ngữ, kỹ năng mềm và các hoạt động giao lưu quốc tế.',
+};
+
+export function formatStandardTitle(title?: string | null): string {
+  if (!title) return '';
+  return TITLE_ACCENT_MAP[title.trim()] ?? title;
+}
+
+export function formatStandardDescription(desc?: string | null): string {
+  if (!desc) return '';
+  return DESC_ACCENT_MAP[desc.trim()] ?? desc;
+}
+
 export const CRITERION_TYPE_LABELS: Record<CriterionType, string> = {
   [CriterionType.Group]: 'Nhóm tiêu chuẩn',
   [CriterionType.Requirement]: 'Tiêu chí đánh giá',

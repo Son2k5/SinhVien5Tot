@@ -147,11 +147,6 @@ export const MyApplicationCards: React.FC<MyApplicationCardsProps> = ({
 
                     {/* Title & Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold uppercase px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600">
-                          {app.applicationCode}
-                        </span>
-                      </div>
                       <h3 className="text-base sm:text-lg font-bold text-slate-800 mt-1 truncate">
                         {app.campaignName || `Danh hiệu ${index + 1}`}
                       </h3>

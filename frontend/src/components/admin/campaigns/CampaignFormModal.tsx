@@ -4,6 +4,7 @@ import {
   AwardType,
   AWARD_LEVEL_LABELS,
   AWARD_TYPE_LABELS,
+  CAMPAIGN_STATUS_LABELS,
   type CampaignDetailResponse,
   type CampaignResponse,
   type CreateCampaignRequest,
@@ -372,22 +373,31 @@ export function CampaignFormModal({
       aria-modal="true"
     >
       <div className="w-full max-w-2xl bg-white border border-slate-200 shadow-2xl p-6 space-y-5 relative max-h-[90vh] overflow-y-auto">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isLoading}
-          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-        >
-          <X size={18} />
-        </button>
-
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-slate-800">
-            {isEdit ? 'Chỉnh sửa đợt xét' : 'Tạo đợt xét mới'}
-          </h2>
-          <p className="text-xs text-slate-500">
-            Thiết lập thông tin đợt xét, bộ tiêu chuẩn và cấu hình lịch trình thời hạn.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
+            <h2 className="text-base font-semibold text-slate-800">
+              {isEdit ? 'Chỉnh sửa đợt xét' : 'Tạo đợt xét mới'}
+            </h2>
+            <p className="text-xs text-slate-500">
+              Thiết lập thông tin đợt xét, bộ tiêu chuẩn và cấu hình lịch trình thời hạn.
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            {isEdit && campaign?.status && (
+              <span className="text-xs px-2.5 py-0.5 font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                {CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Đóng"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}

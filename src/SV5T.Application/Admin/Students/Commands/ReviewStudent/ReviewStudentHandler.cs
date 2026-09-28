@@ -154,11 +154,11 @@ public sealed class ReviewStudentHandler(
     static string G(StandardGroupCode? c) =>
         c switch
         {
-            StandardGroupCode.Ethics => "Dao duc tot",
-            StandardGroupCode.Study => "Hoc tap tot",
-            StandardGroupCode.Fitness => "The luc tot",
-            StandardGroupCode.Volunteer => "Tinh nguyen tot",
-            StandardGroupCode.Integration => "Hoi nhap tot",
-            _ => "Chua phan nhom",
+            StandardGroupCode.Ethics => "Đạo đức tốt",
+            StandardGroupCode.Study => "Học tập tốt",
+            StandardGroupCode.Fitness => "Thể lực tốt",
+            StandardGroupCode.Volunteer => "Tình nguyện tốt",
+            StandardGroupCode.Integration => "Hội nhập tốt",
+            _ => "Chưa phân nhóm",
         };
 }

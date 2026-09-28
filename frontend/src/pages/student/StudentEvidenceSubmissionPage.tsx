@@ -717,7 +717,7 @@ export const StudentEvidenceSubmissionPage: React.FC<StudentEvidenceSubmissionPa
 
             <h3 className="text-lg font-bold text-slate-800">Xác nhận nộp hồ sơ chính thức</h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Bạn đang gửi hồ sơ <strong>{application.applicationCode}</strong> đến Hội đồng xét duyệt và Mentor. Sau khi nộp, hồ sơ sẽ chuyển sang trạng thái chờ duyệt.
+              Bạn đang gửi hồ sơ tham gia danh hiệu <strong>{application.campaignName}</strong> đến Hội đồng xét duyệt và Mentor. Sau khi nộp, hồ sơ sẽ chuyển sang trạng thái chờ duyệt.
             </p>
             {actionError && <p role="alert" className="mt-3 text-xs text-rose-700">{actionError}</p>}
 

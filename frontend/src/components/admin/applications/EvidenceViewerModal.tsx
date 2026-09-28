@@ -509,7 +509,7 @@ export const EvidenceViewerModal: React.FC<EvidenceViewerModalProps> = ({
                 src={currentFile?.url}
                 alt={currentFile?.name}
                 draggable={false}
-                className="max-h-[88vh] max-w-[92vw] object-contain shadow-2xl pointer-events-none select-none"
+                className="max-h-[94vh] max-w-[95vw] object-contain shadow-2xl pointer-events-none select-none"
               />
             </div>
           )}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useStudentDetail, useStudentMutations } from '../../hooks/admin/useStudents';
-import { ActiveBadge, EvidenceStatusBadge, ReviewActionLabel, SubmissionStatusBadge, VerifiedBadge } from '../../components/admin/students/StudentBadges';
+import { ActiveBadge, EvidenceStatusBadge, ReviewActionLabel, SubmissionStatusBadge } from '../../components/admin/students/StudentBadges';
 import { StudentReviewModal } from '../../components/admin/students/StudentReviewModal';
 import type { AdminStudentEvidenceItem } from '../../types/admin/student';
 import { sanitizeApiError } from '../../services/apiErrorSanitizer';
@@ -94,16 +94,16 @@ function TabBtn(p: { active: boolean; onClick: () => void; icon: React.ReactNode
 }
 
 
-function InfoRow(p: { icon: React.ReactNode; label: string; value?: string | null; mono?: boolean; copy?: string | null }) {
+function InfoRow(p: { icon: React.ReactNode; label: string; value?: string | null; copy?: string | null }) {
   const [copied, setCopied] = useState(false);
   const display = p.value && p.value.trim() ? p.value : '—';
   return (
-    <div className="flex items-start justify-between gap-3 py-2 border-b border-slate-100 last:border-0">
-      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 shrink-0 pt-0.5">
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-slate-100 last:border-0 font-inter text-[13px]">
+      <span className="inline-flex items-center gap-2 text-slate-500 shrink-0 font-normal text-[13px]">
         <span className="text-sky-500/80">{p.icon}</span>{p.label}
       </span>
-      <span className="min-w-0 flex-1 flex items-start gap-1.5 justify-end">
-        <span className={`flex-1 min-w-0 text-[13px] font-medium text-slate-800 text-right break-words whitespace-normal leading-relaxed ${p.mono ? 'font-mono !text-[12px] break-all' : ''}`}>{display}</span>
+      <span className="min-w-0 flex-1 flex items-center gap-1.5 justify-end">
+        <span className="flex-1 min-w-0 text-[13px] font-normal text-slate-800 text-right break-words whitespace-normal leading-relaxed">{display}</span>
         {p.copy && (
           <button
             type="button"
@@ -120,7 +120,7 @@ function InfoRow(p: { icon: React.ReactNode; label: string; value?: string | nul
 }
 function SectionCard(p: { icon: React.ReactNode; title: string; sub?: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`bg-white border border-slate-200/70 rounded-2xl shadow-[0_10px_30px_-18px_rgba(15,42,82,0.25)] overflow-hidden flex flex-col h-full ${p.className ?? ''}`}>
+    <section className={`bg-white border border-slate-200/70 rounded-2xl shadow-[0_10px_30px_-18px_rgba(15,42,82,0.25)] overflow-hidden flex flex-col h-full font-inter ${p.className ?? ''}`}>
       <header className="px-4 sm:px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5 bg-gradient-to-r from-sky-50/70 to-transparent">
         <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 text-sky-600 border border-sky-100 flex items-center justify-center shrink-0">{p.icon}</span>
         <span className="min-w-0">
@@ -128,7 +128,7 @@ function SectionCard(p: { icon: React.ReactNode; title: string; sub?: string; ch
           {p.sub && <span className="block text-[11px] text-slate-400 truncate">{p.sub}</span>}
         </span>
       </header>
-      <div className="px-4 sm:px-5 py-2 flex-1">{p.children}</div>
+      <div className="px-4 sm:px-5 py-2 flex-1 font-inter">{p.children}</div>
     </section>
   );
 }
@@ -277,12 +277,11 @@ export function StudentDetailPage() {
                 {p?.studentCode && (
                   <>
                     <span className="text-slate-300">•</span>
-                    <span className="font-mono text-[12px] text-slate-500 truncate">{p.studentCode}</span>
+                    <span className="font-inter text-[13px] font-normal text-slate-500 truncate">{p.studentCode}</span>
                   </>
                 )}
               </div>
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                <VerifiedBadge verified={data.isVerified} />
                 <ActiveBadge active={data.isActive} />
               </div>
             </div>
@@ -303,12 +302,12 @@ export function StudentDetailPage() {
       </div>
 
       {tab === 'profile' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 items-stretch font-inter">
             <SectionCard icon={<GraduationCap size={16} />} title="Học vụ" sub="Mã sinh viên • Trường • Khoa • Lớp • Khóa">
-              <InfoRow icon={<Hash size={13} />} label="Mã sinh viên" value={p?.studentCode} mono copy={p?.studentCode} />
+              <InfoRow icon={<Hash size={13} />} label="Mã sinh viên" value={p?.studentCode} copy={p?.studentCode} />
               <InfoRow icon={<GraduationCap size={13} />} label="Khoa và viện" value={p?.faculty} />
               <InfoRow icon={<FileText size={13} />} label="Chuyên ngành" value={p?.major} />
-              <InfoRow icon={<User size={13} />} label="Lớp hành chính" value={p?.administrativeClass} mono />
+              <InfoRow icon={<User size={13} />} label="Lớp hành chính" value={p?.administrativeClass} />
               <InfoRow icon={<GraduationCap size={13} />} label="Trường" value={p?.school} />
               <InfoRow icon={<CalendarDays size={13} />} label="Khóa tuyển sinh" value={p?.academicYear ? `K${p.academicYear}` : null} />
               <InfoRow icon={<Award size={13} />} label="Chức vụ Đoàn và Hội" value={p?.unionPosition} />
@@ -317,9 +316,9 @@ export function StudentDetailPage() {
               <InfoRow icon={<User size={13} />} label="Họ tên" value={p?.fullName} />
               <InfoRow icon={<CalendarDays size={13} />} label="Ngày sinh" value={fmtD(p?.birthDate)} />
               <InfoRow icon={<VenetianMask size={13} />} label="Giới tính" value={p?.gender ? GENDER_LABELS[p.gender] ?? p.gender : null} />
-              <InfoRow icon={<Phone size={13} />} label="Số điện thoại" value={p?.phoneNumber} mono copy={p?.phoneNumber} />
+              <InfoRow icon={<Phone size={13} />} label="Số điện thoại" value={p?.phoneNumber} copy={p?.phoneNumber} />
               <InfoRow icon={<Mail size={13} />} label="Email liên hệ" value={p?.contactEmail} copy={p?.contactEmail} />
-              <InfoRow icon={<IdCard size={13} />} label="Căn cước công dân" value={p?.identityCardNumber} mono copy={p?.identityCardNumber} />
+              <InfoRow icon={<IdCard size={13} />} label="Căn cước công dân" value={p?.identityCardNumber} copy={p?.identityCardNumber} />
               <InfoRow icon={<BadgeCheck size={13} />} label="Dân tộc" value={p?.ethnicity} />
               <InfoRow icon={<ShieldCheck size={13} />} label="Đoàn và Đảng" value={p?.politicalStatus ? POLITICAL_LABELS[p.politicalStatus] ?? p.politicalStatus : null} />
               <InfoRow icon={<Award size={13} />} label="Chức vụ hiện tại" value={p?.currentPosition ?? 'Sinh viên'} />
@@ -334,13 +333,13 @@ export function StudentDetailPage() {
             </SectionCard>
             <SectionCard icon={<MapPin size={16} />} title="Nơi cư trú" sub="Thường trú • Tạm trú">
               {(p?.addresses ?? []).length === 0 ? (
-                <p className="py-3 text-center text-xs text-slate-400">Chưa cập nhật địa chỉ.</p>
+                <p className="py-3 text-center text-[13px] text-slate-400 font-inter font-normal">Chưa cập nhật địa chỉ.</p>
               ) : (
-                <div className="py-2 space-y-2.5">
+                <div className="py-2 space-y-2.5 font-inter">
                   {(p?.addresses ?? []).map((a, i) => (
                     <div key={`${a.addressType}-${i}`} className="rounded-xl border border-sky-100 bg-sky-50/50 p-3">
-                      <div className="text-[11px] font-bold uppercase tracking-wide text-sky-700">{ADDRESS_TYPE_LABELS[a.addressType] ?? a.addressType}</div>
-                      <div className="mt-1 text-[13px] font-medium text-slate-800 leading-relaxed">
+                      <div className="text-[12px] font-medium uppercase tracking-wide text-sky-700">{ADDRESS_TYPE_LABELS[a.addressType] ?? a.addressType}</div>
+                      <div className="mt-1 text-[13px] font-normal text-slate-800 leading-relaxed">
                         {[a.streetAddress, a.district, a.provinceOrCity].map((s) => (s || '').trim()).filter(Boolean).join(', ') || '—'}
                       </div>
                     </div>
@@ -361,9 +360,9 @@ export function StudentDetailPage() {
           {data.applications.map((a) => (
             <article key={a.id} className="bg-white border border-slate-200/70 rounded-2xl p-4 shadow-[0_10px_30px_-20px_rgba(15,42,82,0.3)] flex flex-col sm:flex-row sm:items-center gap-3 hover:border-sky-200 hover:shadow-[0_14px_34px_-18px_rgba(11,99,214,0.35)] transition-[border-color,box-shadow]">
               <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 text-[#0b63d6] border border-sky-100 flex items-center justify-center shrink-0"><Award size={18} /></span>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 font-inter">
                 <div className="text-[13px] font-normal text-slate-800 truncate tracking-tight">{a.campaignName}</div>
-                <div className="mt-0.5 text-[11px] text-slate-500 font-mono truncate">{a.applicationCode} • Năm học {a.schoolYear} • {a.evidenceCount} minh chứng</div>
+                <div className="mt-0.5 text-[12px] text-slate-500 font-normal truncate">Năm học {a.schoolYear} • {a.evidenceCount} minh chứng</div>
               </div>
               <SubmissionStatusBadge status={a.status} />
               <button
@@ -405,9 +404,8 @@ export function StudentDetailPage() {
                 {g.items.map((e) => (
                   <div key={e.id} className="px-4 sm:px-5 py-3 flex items-center gap-3 hover:bg-sky-50/50 transition-colors group">
                     <span className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-sky-50 group-hover:text-sky-600 group-hover:border-sky-100 transition-colors"><FileText size={15} /></span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-normal text-slate-800 truncate">{e.criterionCode} — {e.criterionTitle}</div>
-                      <div className="mt-0.5 text-[11px] text-slate-500 truncate">Đơn {e.applicationCode}</div>
+                    <div className="flex-1 min-w-0 font-inter">
+                      <div className="text-[13px] font-normal text-slate-800 truncate" title={e.criterionTitle}>{e.criterionTitle}</div>
                     </div>
                     <EvidenceStatusBadge status={e.status} />
                     <button

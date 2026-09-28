@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import {
   CriterionType,
+  formatStandardDescription,
+  formatStandardTitle,
   type CriterionResponse,
   type StandardResponse,
 } from '../../../types/admin/standard';
@@ -131,13 +133,13 @@ export function CriterionTree({
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-slate-800">
-                      {std.title}
+                      {formatStandardTitle(std.title)}
                     </h3>
                     {std.groupCode && <StandardGroupBadge groupCode={std.groupCode} />}
                   </div>
                   {std.description && (
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {std.description}
+                      {formatStandardDescription(std.description)}
                     </p>
                   )}
                 </div>

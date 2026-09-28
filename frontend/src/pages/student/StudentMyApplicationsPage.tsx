@@ -292,7 +292,7 @@ export const StudentMyApplicationsPage: React.FC<StudentMyApplicationsPageProps>
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
             <h3 className="text-lg font-bold text-slate-800">Xác nhận rút hồ sơ</h3>
             <p className="text-xs text-slate-500 mt-1">
-              Bạn có chắc chắn muốn rút hồ sơ <strong>{withdrawModalApp.applicationCode}</strong>? Hồ sơ sẽ được chuyển về trạng thái rút để bạn có thể chỉnh sửa lại.
+              Bạn có chắc chắn muốn rút hồ sơ tham gia danh hiệu <strong>{withdrawModalApp.campaignName}</strong>? Hồ sơ sẽ được chuyển về trạng thái rút để bạn có thể chỉnh sửa lại.
             </p>
 
             <div className="mt-4">

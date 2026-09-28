@@ -145,32 +145,50 @@ export const StudentEvidenceGroupModal: React.FC<StudentEvidenceGroupModalProps>
       onClick={onClose}
     >
       <div
-        className="w-full max-w-5xl max-h-[90vh] bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 font-inter font-['Inter',_sans-serif]"
+        className="w-full max-w-5xl h-[92vh] max-h-[95vh] bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 font-inter font-['Inter',_sans-serif]"
         style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/60 via-slate-50/30 to-white shrink-0">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-bold text-slate-900 truncate">
-                Chi tiết minh chứng — {snap.fullName || 'Sinh viên'}
-              </h3>
-              {snap.studentCode && (
-                <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-semibold">
-                  MSSV: {snap.studentCode}
-                </span>
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-3 bg-white shrink-0">
+          <div className="flex items-center gap-3.5 min-w-0">
+            {/* Student Circular Avatar */}
+            <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 ring-2 ring-blue-500/20 shadow-xs bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+              {snap.avatarUrl ? (
+                <img
+                  src={snap.avatarUrl}
+                  alt={snap.fullName || 'Sinh viên'}
+                  className="w-full h-full object-cover rounded-full"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span>{(snap.fullName?.charAt(0) || 'S').toUpperCase()}</span>
               )}
             </div>
-            <div className="flex items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-1 flex-wrap">
-              {snap.administrativeClass && <span>Lớp: <strong className="text-slate-700">{snap.administrativeClass}</strong></span>}
-              {snap.faculty && <span>• Khoa: <strong className="text-slate-700">{snap.faculty}</strong></span>}
-              <span>• Chiến dịch: <strong className="text-slate-700">{group.campaignName}</strong></span>
-              <span>• <strong className="text-blue-600">{evidences.length}</strong> minh chứng</span>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5 flex-wrap font-inter">
+                <h3 className="text-sm font-semibold text-slate-900 truncate">
+                  {snap.fullName || 'Sinh viên'}
+                </h3>
+                {snap.studentCode && (
+                  <span className="text-sm font-semibold text-slate-600">
+                    MSSV: {snap.studentCode}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-1 flex-wrap">
+                {snap.administrativeClass && <span>Lớp: <strong className="text-slate-700 font-medium">{snap.administrativeClass}</strong></span>}
+                {snap.faculty && <span>• Khoa: <strong className="text-slate-700 font-medium">{snap.faculty}</strong></span>}
+                <span>• Chiến dịch: <strong className="text-slate-700 font-medium">{group.campaignName}</strong></span>
+                <span>• <strong className="text-blue-600 font-semibold">{evidences.length}</strong> minh chứng</span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
               onClick={() => onOpenFullApp(group.applicationId)}
@@ -182,10 +200,10 @@ export const StudentEvidenceGroupModal: React.FC<StudentEvidenceGroupModalProps>
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors"
+              className="w-9 h-9 text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title="Đóng"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
         </div>

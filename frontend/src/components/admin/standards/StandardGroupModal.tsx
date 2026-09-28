@@ -3,6 +3,8 @@ import {
   CriterionOperator,
   StandardGroupCode,
   STANDARD_GROUP_CODE_LABELS,
+  formatStandardDescription,
+  formatStandardTitle,
   type CreateStandardRequest,
   type StandardResponse,
   type UpdateStandardRequest,
@@ -73,8 +75,8 @@ function getInitialGroupState(
   if (standardGroup) {
     return {
       groupCode: standardGroup.groupCode ?? StandardGroupCode.Ethics,
-      title: standardGroup.title,
-      description: standardGroup.description ?? '',
+      title: formatStandardTitle(standardGroup.title),
+      description: formatStandardDescription(standardGroup.description),
       formError: null,
       fieldErrors: {},
     };

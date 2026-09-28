@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useStudentsPaged, useStudentMutations } from '../../hooks/admin/useStudents';
 import type { AdminStudentListItem, StudentFilterParams } from '../../types/admin/student';
 import { AdminPageHeader } from '../../components/admin/common/AdminPageHeader';
-import { ActiveBadge, VerifiedBadge } from '../../components/admin/students/StudentBadges';
+import { ActiveBadge } from '../../components/admin/students/StudentBadges';
 import { StudentDeleteDialog } from '../../components/admin/students/StudentDeleteDialog';
 import { BatchDeleteStudentDialog } from '../../components/admin/students/BatchDeleteStudentDialog';
 import {
@@ -17,7 +17,7 @@ import { canAccessAdmin, isAdmin } from '../../utils/authorization';
 import {
   AlertCircle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Eye, GraduationCap,
   RefreshCw, Search, Trash2, Users, X, Lock, LockOpen,
-  BadgeCheck, UserX, ArrowUpDown, ArrowUp, ArrowDown,
+  UserX, ArrowUpDown, ArrowUp, ArrowDown,
   SlidersHorizontal,
 } from 'lucide-react';
 
@@ -44,7 +44,6 @@ export function StudentListPage() {
   const [cohort, setCohort] = useState('');
   const [schoolYear, setSchoolYear] = useState('');
   const [activeF, setActiveF] = useState('');
-  const [verifiedF, setVerifiedF] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
 
   // Sorting & pagination
@@ -84,13 +83,12 @@ export function StudentListPage() {
     cohort: cohort.trim() ? Number(cohort.trim()) : undefined,
     schoolYear: schoolYear.trim() || undefined,
     isActive: activeF === '' ? undefined : activeF === '1',
-    isVerified: verifiedF === '' ? undefined : verifiedF === '1',
     includeDeleted: showDeleted,
     sortBy,
     sortDir,
     pageIndex,
     pageSize,
-  }), [debounced, school, faculty, major, cls, cohort, schoolYear, activeF, verifiedF, showDeleted, sortBy, sortDir, pageIndex, pageSize]);
+  }), [debounced, school, faculty, major, cls, cohort, schoolYear, activeF, showDeleted, sortBy, sortDir, pageIndex, pageSize]);
 
   const { data, isPending, isError, error, refetch } = useStudentsPaged(params);
   const { deleteStudent, batchDeleteStudents, lockStudent, unlockStudent } = useStudentMutations();
@@ -98,7 +96,6 @@ export function StudentListPage() {
   const total = data?.totalCount ?? 0;
   const totalPages = data?.totalPages ?? 0;
 
-  const verifiedCount = items.filter((i) => i.isVerified).length;
   const activeCount = items.filter((i) => i.isActive).length;
   const inactiveCount = items.length - activeCount;
 
@@ -111,22 +108,13 @@ export function StudentListPage() {
     (cohort.trim() ? 1 : 0) +
     (schoolYear.trim() ? 1 : 0) +
     (activeF !== '' ? 1 : 0) +
-    (verifiedF !== '' ? 1 : 0) +
     (showDeleted ? 1 : 0);
 
   const totalFilterCount = advancedFilterCount + (debounced.trim() ? 1 : 0);
 
-  // Separate status selectors for activity and verification
   const handleActiveChange = (val: string) => {
     setPageIndex(1);
     setActiveF(val);
-    // reset verification filter when changing activity to avoid ambiguous combos
-    // (optional: keep current verification, but UI now separates concerns)
-  };
-
-  const handleVerifiedChange = (val: string) => {
-    setPageIndex(1);
-    setVerifiedF(val);
   };
 
   const handleApplyModalFilters = (v: StudentFilterValues) => {
@@ -137,7 +125,6 @@ export function StudentListPage() {
     setCohort(v.cohort);
     setSchoolYear(v.schoolYear);
     setActiveF(v.activeF);
-    setVerifiedF(v.verifiedF);
     setShowDeleted(v.showDeleted);
     setSortBy(v.sortBy);
     setSortDir(v.sortDir);
@@ -154,7 +141,6 @@ export function StudentListPage() {
     setCohort('');
     setSchoolYear('');
     setActiveF('');
-    setVerifiedF('');
     setShowDeleted(false);
     setSortBy('createdAt');
     setSortDir('desc');
@@ -191,7 +177,7 @@ export function StudentListPage() {
       setBanner({ ok: false, msg: 'Không có dữ liệu để xuất.' });
       return;
     }
-    const head = ['Ho ten', 'MSSV', 'Email', 'Khoa', 'Nganh', 'Lop', 'Khoa hoc', 'Truong', 'Xac minh', 'Hoat dong', 'Ngay tao'];
+    const head = ['Ho ten', 'MSSV', 'Email', 'Khoa', 'Nganh', 'Lop', 'Khoa hoc', 'Truong', 'Hoat dong', 'Ngay tao'];
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = [head.join(',')].concat(
       rows.map((r) => [
@@ -203,7 +189,6 @@ export function StudentListPage() {
         esc(r.administrativeClass),
         esc(r.academicYear),
         esc(r.school),
-        esc(r.isVerified ? 'Da xac minh' : 'Chua xac minh'),
         esc(r.isActive ? 'Hoat dong' : 'Vo hieu'),
         esc(fmtDate(r.createdAt)),
       ].join(','))
@@ -287,19 +272,19 @@ export function StudentListPage() {
   // ── Resizable columns (Excel-like): lưu width từng cột, kéo ở mép phải header ──
   type StudentColKey =
     | 'check' | 'stt' | 'fullname' | 'email' | 'studentcode'
-    | 'class' | 'faculty' | 'major' | 'verified' | 'status' | 'createdAt' | 'actions';
+    | 'class' | 'faculty' | 'major' | 'status' | 'createdAt' | 'actions';
 
   const DEFAULT_COL_WIDTHS: Record<StudentColKey, number> = {
     check: 44, stt: 52, fullname: 190, email: 230, studentcode: 120,
-    class: 110, faculty: 160, major: 170, verified: 128, status: 148,
+    class: 110, faculty: 160, major: 170, status: 148,
     createdAt: 115, actions: 124,
   };
   const MIN_COL_WIDTHS: Record<StudentColKey, number> = {
     check: 40, stt: 44, fullname: 120, email: 150, studentcode: 88,
-    class: 80, faculty: 100, major: 100, verified: 108, status: 122,
+    class: 80, faculty: 100, major: 100, status: 122,
     createdAt: 96, actions: 110,
   };
-  const COL_STORAGE_KEY = 'sv5t-student-table-colwidths-v1';
+  const COL_STORAGE_KEY = 'sv5t-student-table-colwidths-v2';
 
   const [colWidths, setColWidths] = useState<Record<StudentColKey, number>>(() => {
     try {
@@ -438,11 +423,10 @@ export function StudentListPage() {
         </div>
       )}
 
-      {/* 4 Stat Cards - Bé, đơn giản, giảm height tối đa, trực quan cho người dùng */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 3 Stat Cards - Bé, đơn giản, giảm height tối đa, trực quan cho người dùng */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { icon: Users, label: 'Tổng sinh viên', value: total.toLocaleString('vi-VN'), color: 'text-blue-600 bg-blue-50' },
-          { icon: BadgeCheck, label: 'Đã xác minh', value: String(verifiedCount), color: 'text-emerald-600 bg-emerald-50' },
           { icon: GraduationCap, label: 'Đang hoạt động', value: String(activeCount), color: 'text-violet-600 bg-violet-50' },
           { icon: UserX, label: 'Vô hiệu hoá', value: String(inactiveCount), color: 'text-amber-600 bg-amber-50' },
         ].map((item) => (
@@ -490,11 +474,11 @@ export function StudentListPage() {
               )}
             </div>
 
-            {/* Cum phai: 2 selects + nut filter icon */}
+            {/* Cum phai: select + nut filter icon */}
             <div className="flex flex-1 flex-col sm:flex-row sm:justify-end sm:items-center gap-1.5 lg:pl-2">
               <div className="flex w-full sm:w-auto gap-1.5">
                 {/* Activity status */}
-                <div className="relative w-full sm:w-[150px] shrink-0">
+                <div className="relative w-full sm:w-[170px] shrink-0">
                   <select
                     value={activeF}
                     onChange={(e) => handleActiveChange(e.target.value)}
@@ -503,19 +487,6 @@ export function StudentListPage() {
                     <option value="">Tất cả trạng thái</option>
                     <option value="1">Đang hoạt động</option>
                     <option value="0">Vô hiệu hoá</option>
-                  </select>
-                  <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-                {/* Verification status */}
-                <div className="relative w-full sm:w-[150px] shrink-0">
-                  <select
-                    value={verifiedF}
-                    onChange={(e) => handleVerifiedChange(e.target.value)}
-                    className="appearance-none w-full h-9 rounded-md border border-slate-300 hover:border-slate-400 bg-white pl-2.5 pr-7 py-0 text-[12px] leading-9 font-normal text-slate-800 focus:border-[#1683ff] focus:ring-1 focus:ring-[#1683ff]/25 focus:outline-none cursor-pointer transition-colors shadow-2xs"
-                  >
-                    <option value="">Tất cả xác minh</option>
-                    <option value="1">Đã xác minh</option>
-                    <option value="0">Chưa xác minh</option>
                   </select>
                   <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -607,15 +578,6 @@ export function StudentListPage() {
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50/80 text-violet-600 font-normal text-[11px] border border-violet-100">
                   {activeF === '1' ? 'Đang hoạt động' : 'Vô hiệu hóa'}
                   <button type="button" onClick={() => setActiveF('')} className="hover:text-rose-600 cursor-pointer">
-                    <X size={11} />
-                  </button>
-                </span>
-              )}
-
-              {verifiedF !== '' && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50/80 text-emerald-600 font-normal text-[11px] border border-emerald-100">
-                  {verifiedF === '1' ? 'Đã xác minh' : 'Chưa xác minh'}
-                  <button type="button" onClick={() => setVerifiedF('')} className="hover:text-rose-600 cursor-pointer">
                     <X size={11} />
                   </button>
                 </span>
@@ -729,13 +691,7 @@ export function StudentListPage() {
                   <ResizeHandle colKey="major" />
                 </th>
 
-                {/* 9. Xác minh */}
-                <th className={col('verified', 'py-3.5 text-center font-th-inter text-[12px] uppercase tracking-[0.04em] text-black whitespace-nowrap overflow-hidden')} style={{ width: colWidths.verified }}>
-                  <span className="block truncate">Xác minh</span>
-                  <ResizeHandle colKey="verified" />
-                </th>
-
-                {/* 10. Trạng thái */}
+                {/* 9. Trạng thái */}
                 <th className={col('status', 'py-3.5 text-center font-th-inter text-[12px] uppercase tracking-[0.04em] text-black whitespace-nowrap overflow-hidden')} style={{ width: colWidths.status }}>
                   <span className="block truncate">Trạng thái</span>
                   <ResizeHandle colKey="status" />
@@ -780,7 +736,6 @@ export function StudentListPage() {
                       <td className="px-3 py-2"><div className="h-3.5 bg-slate-200 rounded w-2/3 ml-auto" /></td>
                       <td className="px-3 py-2"><div className="h-3.5 bg-slate-200 rounded w-3/4 ml-auto" /></td>
                       <td className="px-3 py-2"><div className="h-3.5 bg-slate-200 rounded w-3/4 ml-auto" /></td>
-                      <td className="px-3 py-2"><div className="h-5 bg-slate-200 rounded-full w-16 mx-auto" /></td>
                       <td className="px-3 py-2"><div className="h-5 bg-slate-200 rounded-full w-[72px] mx-auto" /></td>
                       <td className="px-3 py-2"><div className="h-3.5 bg-slate-200 rounded w-14 mx-auto" /></td>
                       <td className="px-3 py-2.5 text-center"><div className="h-7 bg-slate-200 rounded w-20 mx-auto" /></td>
@@ -792,7 +747,7 @@ export function StudentListPage() {
               {/* Error State */}
               {!isPending && isError && (
                 <tr>
-                  <td colSpan={12} className="py-10 text-center">
+                  <td colSpan={11} className="py-10 text-center">
                     <div className="space-y-2">
                       <AlertCircle size={24} className="text-rose-500 mx-auto" />
                       <div className="text-sm font-medium text-slate-700">Không thể tải dữ liệu</div>
@@ -812,7 +767,7 @@ export function StudentListPage() {
               {/* Empty State */}
               {!isPending && !isError && items.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-slate-500">
+                  <td colSpan={11} className="py-12 text-center text-slate-500">
                     <div className="space-y-2">
                       <div className="text-sm font-medium text-slate-600">Chưa có sinh viên phù hợp</div>
                       <p className="text-xs text-slate-400">
@@ -899,13 +854,6 @@ export function StudentListPage() {
                   {/* Ngành */}
                   <td className="px-3 py-2.5 text-right align-middle text-slate-600 overflow-hidden">
                     <div className="truncate text-right" title={s.major || s.school || ''}>{s.major || s.school || '—'}</div>
-                  </td>
-
-                  {/* Xác minh — luôn 1 dòng, không wrap dù kéo hẹp */}
-                  <td className="px-3 py-2.5 text-center align-middle overflow-hidden whitespace-nowrap">
-                    <div className="inline-flex justify-center max-w-full overflow-hidden whitespace-nowrap">
-                      <VerifiedBadge verified={s.isVerified} />
-                    </div>
                   </td>
 
                   {/* Trạng thái — luôn 1 dòng, không wrap dù kéo hẹp */}

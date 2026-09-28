@@ -9,7 +9,6 @@ export interface StudentFilterValues {
   cohort: string;
   schoolYear: string;
   activeF: string;
-  verifiedF: string;
   showDeleted: boolean;
   sortBy: string;
   sortDir: 'asc' | 'desc';
@@ -41,14 +40,14 @@ export function StudentFilterModal({ isOpen, onClose, initialValues, onApply, on
 
   const handleApply = () => { onApply(values); onClose(); };
   const handleReset = () => {
-    const d: StudentFilterValues = { school: '', faculty: '', major: '', cls: '', cohort: '', schoolYear: '', activeF: '', verifiedF: '', showDeleted: false, sortBy: 'createdAt', sortDir: 'desc' };
+    const d: StudentFilterValues = { school: '', faculty: '', major: '', cls: '', cohort: '', schoolYear: '', activeF: '', showDeleted: false, sortBy: 'createdAt', sortDir: 'desc' };
     setValues(d); onReset(); onClose();
   };
 
   const activeCount =
     (values.school.trim() ? 1 : 0) + (values.faculty.trim() ? 1 : 0) + (values.major.trim() ? 1 : 0) + (values.cls.trim() ? 1 : 0) +
     (values.cohort.trim() ? 1 : 0) + (values.schoolYear.trim() ? 1 : 0) +
-    (values.activeF !== '' ? 1 : 0) + (values.verifiedF !== '' ? 1 : 0) + (values.showDeleted ? 1 : 0);
+    (values.activeF !== '' ? 1 : 0) + (values.showDeleted ? 1 : 0);
 
   const inputCls = 'w-full h-10 px-3 text-[13px] font-normal text-slate-700 placeholder:text-slate-400 border border-slate-200 rounded-xl bg-white outline-none transition-colors focus:border-slate-400';
   const labelCls = 'block text-[13px] font-medium text-slate-600 mb-1.5';
@@ -104,21 +103,13 @@ export function StudentFilterModal({ isOpen, onClose, initialValues, onApply, on
           <div className="h-px bg-slate-100" />
           <div>
             <p className="text-[13px] font-semibold text-slate-800">Trạng thái hồ sơ</p>
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mt-3 max-w-sm">
               <div>
                 <label className={labelCls}>Tình trạng tài khoản</label>
                 <div className={segWrap}>
                   <button type="button" onClick={() => setValues({ ...values, activeF: '' })} className={segBtn(values.activeF === '', 'text-blue-600')}>Tất cả</button>
                   <button type="button" onClick={() => setValues({ ...values, activeF: '1' })} className={segBtn(values.activeF === '1', 'text-blue-600')}>Hoạt động</button>
                   <button type="button" onClick={() => setValues({ ...values, activeF: '0' })} className={segBtn(values.activeF === '0', 'text-blue-600')}>Vô hiệu hoá</button>
-                </div>
-              </div>
-              <div>
-                <label className={labelCls}>Xác minh hồ sơ</label>
-                <div className={segWrap}>
-                  <button type="button" onClick={() => setValues({ ...values, verifiedF: '' })} className={segBtn(values.verifiedF === '', 'text-emerald-600')}>Tất cả</button>
-                  <button type="button" onClick={() => setValues({ ...values, verifiedF: '1' })} className={segBtn(values.verifiedF === '1', 'text-emerald-600')}>Đã duyệt</button>
-                  <button type="button" onClick={() => setValues({ ...values, verifiedF: '0' })} className={segBtn(values.verifiedF === '0', 'text-emerald-600')}>Chưa duyệt</button>
                 </div>
               </div>
             </div>

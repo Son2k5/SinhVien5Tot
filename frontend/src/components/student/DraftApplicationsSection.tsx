@@ -107,7 +107,7 @@ export const DraftApplicationsSection: React.FC<DraftApplicationsSectionProps> =
                   </p>
 
                   <p className="text-xs text-slate-400 leading-relaxed pt-0.5">
-                    Mã hồ sơ: <span className="font-semibold text-slate-600">{app.applicationCode}</span> • Năm học: <span className="font-semibold text-slate-600">{app.schoolYear}</span> • Đã lưu: <span className="font-semibold text-blue-600">{app.totalEvidences} minh chứng</span>
+                    Năm học: <span className="font-semibold text-slate-600">{app.schoolYear}</span> • Đã lưu: <span className="font-semibold text-blue-600">{app.totalEvidences} minh chứng</span>
                   </p>
 
                   {/* Cặp nút thao tác: '+ Truy cập' và 'Xóa' */}

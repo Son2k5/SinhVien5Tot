@@ -615,7 +615,7 @@ export function EvidenceReviewWorkspacePage() {
       });
       setToastMessage({
         type: 'success',
-        text: `Đã duyệt đạt tiêu chí [${item.criterionCode}] cho sinh viên!`,
+        text: `Đã duyệt đạt tiêu chí "${item.criterionTitle}" cho sinh viên!`,
       });
       setTimeout(() => setToastMessage(null), 3000);
       void refetch();
