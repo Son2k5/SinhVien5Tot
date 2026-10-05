@@ -3,7 +3,9 @@ using MediatR;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Student.Abstractions;
+using SV5T.Application.Notifications;
 using SV5T.Domain.Campaigns.Enums;
+using SV5T.Domain.Notifications;
 using SV5T.Domain.Submissions;
 using SV5T.Domain.Submissions.Enums;
 
@@ -26,7 +28,8 @@ public sealed class DecideApplicationCommandValidator : AbstractValidator<Decide
 }
 
 public sealed class DecideApplicationHandler(IReviewApplicationRepository applications,
-    IStudentCriterionRepository criteria, IUnitOfWork uow, ICurrentUser currentUser)
+    IStudentCriterionRepository criteria, IUnitOfWork uow, ICurrentUser currentUser,
+    INotificationQueue? notificationQueue = null)
     : IRequestHandler<DecideApplicationCommand, ReviewApplicationResponse>
 {
     public async Task<ReviewApplicationResponse> Handle(DecideApplicationCommand command, CancellationToken ct)
@@ -83,6 +86,30 @@ public sealed class DecideApplicationHandler(IReviewApplicationRepository applic
             }, token);
             await uow.SaveChangesAsync(token);
         }, ct);
+        if (app.ApplicantUserId is Guid applicantId)
+        {
+            var content = NotificationContentBuilder.Build(
+                NotificationType.ApplicationDecided,
+                new NotificationContentData(
+                    ApplicationCode: app.ApplicationCode,
+                    Decision: command.Request.Decision switch
+                    {
+                        SubmissionStatus.Approved => "đã được phê duyệt",
+                        SubmissionStatus.Rejected => "đã bị từ chối",
+                        _ => "cần được chỉnh sửa"
+                    },
+                    ReviewerNote: note));
+            notificationQueue?.TryEnqueue(new NotificationJob(
+                NotificationType.ApplicationDecided,
+                NotificationTargetType.Application,
+                app.Id,
+                app.Id,
+                NotificationAudience.SingleUser,
+                applicantId,
+                content.Title,
+                content.Body,
+                $"ApplicationDecided:{app.Id}:{command.Request.Decision}:{now:O}"));
+        }
         return ApplicationReviewSupport.Map(app, progress);
     }
 }

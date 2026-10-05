@@ -994,7 +994,6 @@ export function StudentListPage() {
           cohort,
           schoolYear,
           activeF,
-          verifiedF,
           showDeleted,
           sortBy,
           sortDir,

@@ -9,6 +9,7 @@ using SV5T.Domain.Welcome;
 using SV5T.Domain.Campaigns;
 using SV5T.Domain.Criteria;
 using SV5T.Domain.Evidences;
+using SV5T.Domain.Notifications;
 using SV5T.Domain.Standards;
 using SV5T.Domain.Submissions;
 using SubmissionApplication = SV5T.Domain.Submissions.Application;
@@ -40,6 +41,7 @@ public sealed class ApplicationDbContext(
     public DbSet<Evidence> Evidences => Set<Evidence>();
     public DbSet<ReviewLog> ReviewLogs => Set<ReviewLog>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

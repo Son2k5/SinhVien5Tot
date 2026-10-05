@@ -5,7 +5,9 @@ using SV5T.Application.Admin.Support;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Evidences.Abstractions;
+using SV5T.Application.Notifications;
 using SV5T.Domain.Evidences;
+using SV5T.Domain.Notifications;
 using SV5T.Domain.Submissions;
 using SV5T.Domain.Submissions.Enums;
 
@@ -14,7 +16,8 @@ namespace SV5T.Application.Admin.Evidences.Commands.ReviewEvidence;
 public sealed class ReviewEvidenceHandler(
     IEvidenceRepository evidenceRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser
+    ICurrentUser currentUser,
+    INotificationQueue? notificationQueue = null
 ) : IRequestHandler<ReviewEvidenceCommand, EvidenceResponse>
 {
     public async Task<EvidenceResponse> Handle(
@@ -112,6 +115,31 @@ public sealed class ReviewEvidenceHandler(
         }, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        if (command.Request.Decision != EvidenceStatus.Approved &&
+            evidence.Application?.ApplicantUserId is Guid applicantId)
+        {
+            var content = NotificationContentBuilder.Build(
+                NotificationType.EvidenceReviewed,
+                new NotificationContentData(
+                    ApplicationCode: evidence.Application.ApplicationCode,
+                    Decision: command.Request.Decision switch
+                    {
+                        EvidenceStatus.Rejected => "đã bị từ chối",
+                        EvidenceStatus.NeedsRevision => "cần được bổ sung",
+                        _ => "đã được cập nhật"
+                    },
+                    ReviewerNote: evidence.ReviewerNote));
+            notificationQueue?.TryEnqueue(new NotificationJob(
+                NotificationType.EvidenceReviewed,
+                NotificationTargetType.Evidence,
+                evidence.Id,
+                evidence.ApplicationId,
+                NotificationAudience.SingleUser,
+                applicantId,
+                content.Title,
+                content.Body,
+                $"EvidenceReviewed:{evidence.Id}:{now:O}"));
+        }
         return EvidenceReviewMappings.MapToResponse(evidence);
     }
 }

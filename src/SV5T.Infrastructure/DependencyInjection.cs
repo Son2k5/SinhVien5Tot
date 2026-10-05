@@ -27,6 +27,8 @@ using SV5T.Infrastructure.Email;
 using SV5T.Infrastructure.Health;
 using SV5T.Infrastructure.Identity;
 using SV5T.Infrastructure.Options;
+using SV5T.Infrastructure.Notifications;
+using SV5T.Application.Notifications;
 using SV5T.Infrastructure.Persistence.Context;
 using SV5T.Infrastructure.Persistence.Repositories.Admin;
 using SV5T.Infrastructure.Persistence.Repositories.Auth;
@@ -219,6 +221,11 @@ public static class DependencyInjection
         services.AddScoped<IPortalContentRepository, PortalContentRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddSingleton<NotificationQueue>();
+        services.AddSingleton<INotificationQueue>(provider =>
+            provider.GetRequiredService<NotificationQueue>());
+        services.AddHostedService<NotificationDispatchWorker>();
 
         // Admin & Management Repositories
         services.AddScoped<StandardSetRepository>();

@@ -3,14 +3,18 @@ using SV5T.Application.Admin.Dtos;
 using SV5T.Application.Campaigns.Abstractions;
 using SV5T.Application.Common.Abstractions;
 using SV5T.Application.Common.Exceptions;
+using SV5T.Application.Notifications;
 using SV5T.Domain.Campaigns;
+using SV5T.Domain.Campaigns.Enums;
+using SV5T.Domain.Notifications;
 
 namespace SV5T.Application.Admin.Campaigns.Commands.UpdateCampaignStatus;
 
 public sealed class UpdateCampaignStatusHandler(
     ICampaignRepository campaignRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser
+    ICurrentUser currentUser,
+    INotificationQueue? notificationQueue = null
 ) : IRequestHandler<UpdateCampaignStatusCommand, CampaignDetailResponse>
 {
     public async Task<CampaignDetailResponse> Handle(
@@ -33,11 +37,29 @@ public sealed class UpdateCampaignStatusHandler(
                 "Không tìm thấy chiến dịch.",
                 "campaign_not_found"
             );
+        var previousStatus = campaign.Status;
         campaign.Status = request.Request.Status;
         campaign.UpdatedAt = DateTime.UtcNow;
         campaign.UpdatedBy = actorId.ToString();
         await campaignRepository.UpdateAsync(campaign, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        if (campaign.Status is CampaignStatus.Open or CampaignStatus.Published &&
+            previousStatus is not (CampaignStatus.Open or CampaignStatus.Published))
+        {
+            var content = NotificationContentBuilder.Build(
+                NotificationType.CampaignPublished,
+                new NotificationContentData(CampaignName: campaign.Name));
+            notificationQueue?.TryEnqueue(new NotificationJob(
+                NotificationType.CampaignPublished,
+                NotificationTargetType.Campaign,
+                campaign.Id,
+                null,
+                NotificationAudience.AllStudents,
+                null,
+                content.Title,
+                content.Body,
+                $"CampaignPublished:{campaign.Id}"));
+        }
         return Map(campaign);
     }
 

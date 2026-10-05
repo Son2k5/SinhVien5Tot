@@ -4,6 +4,8 @@ using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Student.Abstractions;
 using SV5T.Application.Student.Dtos;
 using SV5T.Application.Student.Support;
+using SV5T.Application.Notifications;
+using SV5T.Domain.Notifications;
 using SV5T.Domain.Submissions;
 using SV5T.Domain.Submissions.Enums;
 
@@ -14,7 +16,8 @@ public sealed class SubmitApplicationHandler(
     IStudentEvidenceRepository evidences,
     IStudentCriterionRepository criteria,
     IUnitOfWork uow,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    INotificationQueue? notificationQueue = null)
     : IRequestHandler<SubmitApplicationCommand, StudentApplicationDetailResponse>
 {
     public async Task<StudentApplicationDetailResponse> Handle(
@@ -96,6 +99,20 @@ public sealed class SubmitApplicationHandler(
 
             await uow.SaveChangesAsync(ct);
         }, cancellationToken);
+
+        var content = NotificationContentBuilder.Build(
+            NotificationType.ApplicationSubmitted,
+            new NotificationContentData(ApplicationCode: app.ApplicationCode));
+        notificationQueue?.TryEnqueue(new NotificationJob(
+            NotificationType.ApplicationSubmitted,
+            NotificationTargetType.Application,
+            app.Id,
+            app.Id,
+            NotificationAudience.Reviewers,
+            null,
+            content.Title,
+            content.Body,
+            $"ApplicationSubmitted:{app.Id}:{app.Status}:{now:O}"));
 
         return new StudentApplicationDetailResponse(
             app.Id,

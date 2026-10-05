@@ -4,6 +4,8 @@ using SV5T.Application.Common.Exceptions;
 using SV5T.Application.Student.Abstractions;
 using SV5T.Application.Student.Dtos;
 using SV5T.Application.Student.Support;
+using SV5T.Application.Notifications;
+using SV5T.Domain.Notifications;
 using SV5T.Domain.Submissions;
 using SV5T.Domain.Submissions.Enums;
 
@@ -13,7 +15,8 @@ public sealed class WithdrawApplicationHandler(
     IStudentApplicationRepository applications,
     IStudentEvidenceRepository evidences,
     IUnitOfWork uow,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    INotificationQueue? notificationQueue = null)
     : IRequestHandler<WithdrawApplicationCommand, StudentApplicationDetailResponse>
 {
     public async Task<StudentApplicationDetailResponse> Handle(
@@ -57,6 +60,20 @@ public sealed class WithdrawApplicationHandler(
 
             await uow.SaveChangesAsync(ct);
         }, cancellationToken);
+
+        var content = NotificationContentBuilder.Build(
+            NotificationType.ApplicationWithdrawn,
+            new NotificationContentData(ApplicationCode: app.ApplicationCode));
+        notificationQueue?.TryEnqueue(new NotificationJob(
+            NotificationType.ApplicationWithdrawn,
+            NotificationTargetType.Application,
+            app.Id,
+            app.Id,
+            NotificationAudience.Reviewers,
+            null,
+            content.Title,
+            content.Body,
+            $"ApplicationWithdrawn:{app.Id}:{now:O}"));
 
         var evidenceList = await evidences.GetByApplicationAsync(app.Id, cancellationToken);
 

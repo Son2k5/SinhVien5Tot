@@ -1,7 +1,19 @@
 Thông tin đăng nhập mặc định:
 
 Email: admin@ms.hanu.edu
-Mật khẩu: Admin@123
+Mật khẩu: Chiconanh97
 
 
 dotnet watch --project src/SV5T.Api/SV5T.Api.csproj --launch-profile https
+
+Lenh chay du an 
+docker ps
+Dừng container của dự án khác:
+
+
+docker stop <tên_container_hoặc_id_của_dự_án_khác>
+
+
+
+docker compose up -d
+Kiểm tra thấy sv5t-redis hiển thị Up ... (healthy) là xong.
