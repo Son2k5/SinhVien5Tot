@@ -1,13 +1,15 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { DashboardFooter } from '../components/dashboard/DashboardFooter';
-import { DashboardHeader } from '../components/dashboard/DashboardHeader';
-import { SystemLauncher } from '../components/dashboard/SystemLauncher';
-import { formatUserRole } from '../components/dashboard/home/homeDashboardConfig';
-import { UserProfileForm } from '../components/profile/UserProfileForm';
-import { useWelcomeDashboard } from '../hooks/dashboard/useWelcomeDashboard';
-import { useLauncher } from '../hooks/dashboard/useLauncher';
-import type { User } from '../types/auth';
+import { SiteFooter as DashboardFooter } from '../components/common/SiteFooter';
+import {
+  DashboardHeader,
+  SystemLauncher,
+  useWelcomeDashboard,
+  useLauncher,
+  formatUserRole,
+} from '../features/home-dashboard';
+import { UserProfileForm } from '../features/user-profile';
+import type { User } from '../features/auth/types/auth.types';
 import './HomePage.css';
 import './UserProfilePage.css';
 

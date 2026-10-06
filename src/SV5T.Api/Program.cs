@@ -10,6 +10,8 @@ using SV5T.Api.Middlewares;
 using SV5T.Api.Security;
 using SV5T.Application;
 using SV5T.Application.Common.Abstractions;
+using SV5T.Application.Chat;
+using SV5T.Api.Hubs;
 using SV5T.Infrastructure;
 using SV5T.Infrastructure.Configuration;
 
@@ -124,6 +126,9 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IChatNotifier, SignalRChatNotifier>();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -171,6 +176,54 @@ builder.Services.AddRateLimiter(options =>
     AddIpPolicy(options, AuthRateLimitPolicies.Otp, 10, TimeSpan.FromMinutes(1));
     AddIpPolicy(options, AuthRateLimitPolicies.Email, 5, TimeSpan.FromMinutes(10));
     AddIpPolicy(options, AuthRateLimitPolicies.Refresh, 30, TimeSpan.FromMinutes(1));
+    options.AddPolicy("chat-send", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromSeconds(10),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+    options.AddPolicy("article-image-upload", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+    options.AddPolicy("profile-write", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+    options.AddPolicy("staff-write", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
 });
 
 var allowedOrigins = builder.Configuration
@@ -208,10 +261,11 @@ else
 
 app.UseHttpsRedirection();
 app.UseCors();
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false

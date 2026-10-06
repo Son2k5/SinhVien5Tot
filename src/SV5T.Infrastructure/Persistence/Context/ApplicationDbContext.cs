@@ -10,6 +10,8 @@ using SV5T.Domain.Campaigns;
 using SV5T.Domain.Criteria;
 using SV5T.Domain.Evidences;
 using SV5T.Domain.Notifications;
+using SV5T.Domain.Chat;
+using SV5T.Domain.Articles;
 using SV5T.Domain.Standards;
 using SV5T.Domain.Submissions;
 using SubmissionApplication = SV5T.Domain.Submissions.Application;
@@ -42,6 +44,12 @@ public sealed class ApplicationDbContext(
     public DbSet<ReviewLog> ReviewLogs => Set<ReviewLog>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<ConversationParticipant> ConversationParticipants => Set<ConversationParticipant>();
+    public DbSet<Message> Messages => Set<Message>();
+    public DbSet<ChatBlock> ChatBlocks => Set<ChatBlock>();
+    public DbSet<Article> Articles => Set<Article>();
+    public DbSet<ArticleImage> ArticleImages => Set<ArticleImage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +57,9 @@ public sealed class ApplicationDbContext(
         var protectedString = new ValueConverter<string, string>(
             value => piiProtector.Protect(value),
             value => piiProtector.Unprotect(value));
+        var protectedNullableString = new ValueConverter<string?, string?>(
+            value => value == null ? null : piiProtector.Protect(value),
+            value => value == null ? null : piiProtector.Unprotect(value));
         modelBuilder.Entity<UserProfile>()
             .Property(profile => profile.IdentityCardNumber)
             .HasConversion(protectedString);
@@ -58,6 +69,9 @@ public sealed class ApplicationDbContext(
         modelBuilder.Entity<UserProfile>()
             .Property(profile => profile.PhoneNumber)
             .HasConversion(protectedString);
+        modelBuilder.Entity<User>()
+            .Property(user => user.PhoneNumber)
+            .HasConversion(protectedNullableString);
         modelBuilder.Entity<UserAddress>()
             .Property(address => address.StreetAddress)
             .HasConversion(protectedString);

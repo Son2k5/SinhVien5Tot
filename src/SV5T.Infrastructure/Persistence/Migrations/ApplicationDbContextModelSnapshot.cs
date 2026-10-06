@@ -59,6 +59,117 @@ namespace SV5T.Migrations
                     b.ToTable("admin_audit_logs", (string)null);
                 });
 
+            modelBuilder.Entity("SV5T.Domain.Articles.Article", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContentJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid?>("CoverImageId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Excerpt")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorUserId");
+
+                    b.HasIndex("Category", "Status");
+
+                    b.HasIndex("Status", "IsPinned", "PublishedAt", "Id");
+
+                    b.ToTable("articles", (string)null);
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Articles.ArticleImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ArticleId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("int");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticleId");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.HasIndex("UploadedByUserId", "ArticleId", "CreatedAt");
+
+                    b.ToTable("article_images", (string)null);
+                });
+
             modelBuilder.Entity("SV5T.Domain.Auth.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -189,6 +300,119 @@ namespace SV5T.Migrations
                     b.HasIndex("SchoolYear", "Level", "AwardType", "Status");
 
                     b.ToTable("campaigns", (string)null);
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Chat.ChatBlock", b =>
+                {
+                    b.Property<Guid>("BlockerUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("BlockedUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("BlockerUserId", "BlockedUserId");
+
+                    b.HasIndex("BlockedUserId");
+
+                    b.ToTable("chat_blocks", (string)null);
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Chat.Conversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("LastMessageAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastMessagePreview")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("PairKey")
+                        .IsRequired()
+                        .HasMaxLength(73)
+                        .HasColumnType("varchar(73)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastMessageAt");
+
+                    b.HasIndex("PairKey")
+                        .IsUnique();
+
+                    b.ToTable("chat_conversations", (string)null);
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Chat.ConversationParticipant", b =>
+                {
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LastReadAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("ConversationId", "UserId");
+
+                    b.HasIndex("UserId", "ConversationId");
+
+                    b.ToTable("chat_conversation_participants", (string)null);
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Chat.Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ApplicationRefId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<Guid>("ClientMessageId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("SenderUserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationRefId");
+
+                    b.HasIndex("SenderUserId");
+
+                    b.HasIndex("ConversationId", "CreatedAt", "Id");
+
+                    b.HasIndex("ConversationId", "SenderUserId", "ClientMessageId")
+                        .IsUnique();
+
+                    b.ToTable("chat_messages", (string)null);
                 });
 
             modelBuilder.Entity("SV5T.Domain.Criteria.Criterion", b =>
@@ -679,6 +903,10 @@ namespace SV5T.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
+
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
@@ -688,6 +916,7 @@ namespace SV5T.Migrations
                         .HasDefaultValue(1);
 
                     b.Property<DateTime?>("UpdatedAt")
+                        .IsConcurrencyToken()
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -962,6 +1191,35 @@ namespace SV5T.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SV5T.Domain.Articles.Article", b =>
+                {
+                    b.HasOne("SV5T.Domain.Users.User", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Articles.ArticleImage", b =>
+                {
+                    b.HasOne("SV5T.Domain.Articles.Article", "Article")
+                        .WithMany("Images")
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SV5T.Domain.Users.User", "UploadedByUser")
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Article");
+
+                    b.Navigation("UploadedByUser");
+                });
+
             modelBuilder.Entity("SV5T.Domain.Auth.RefreshToken", b =>
                 {
                     b.HasOne("SV5T.Domain.Users.User", "User")
@@ -989,6 +1247,68 @@ namespace SV5T.Migrations
                     b.Navigation("PrerequisiteCampaign");
 
                     b.Navigation("StandardSet");
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Chat.ChatBlock", b =>
+                {
+                    b.HasOne("SV5T.Domain.Users.User", "Blocked")
+                        .WithMany()
+                        .HasForeignKey("BlockedUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SV5T.Domain.Users.User", "Blocker")
+                        .WithMany()
+                        .HasForeignKey("BlockerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Blocked");
+
+                    b.Navigation("Blocker");
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Chat.ConversationParticipant", b =>
+                {
+                    b.HasOne("SV5T.Domain.Chat.Conversation", "Conversation")
+                        .WithMany("Participants")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SV5T.Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Chat.Message", b =>
+                {
+                    b.HasOne("SV5T.Domain.Submissions.Application", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationRefId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SV5T.Domain.Chat.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SV5T.Domain.Users.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("SV5T.Domain.Criteria.Criterion", b =>
@@ -1122,11 +1442,23 @@ namespace SV5T.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SV5T.Domain.Articles.Article", b =>
+                {
+                    b.Navigation("Images");
+                });
+
             modelBuilder.Entity("SV5T.Domain.Campaigns.Campaign", b =>
                 {
                     b.Navigation("Applications");
 
                     b.Navigation("DependentCampaigns");
+                });
+
+            modelBuilder.Entity("SV5T.Domain.Chat.Conversation", b =>
+                {
+                    b.Navigation("Messages");
+
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("SV5T.Domain.Criteria.Criterion", b =>

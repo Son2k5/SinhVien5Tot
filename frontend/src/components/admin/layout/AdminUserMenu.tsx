@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { KeyRound, LogOut, UserRound } from 'lucide-react';
-import type { User } from '../../../types/auth';
+import type { User } from '../../../features/auth/types/auth.types';
 import { roleLabel } from './adminNavConfig';
 
 interface AdminUserMenuProps {
@@ -27,12 +27,12 @@ export function AdminUserMenu({
       </div>
 
       <NavLink
-        to="/admin/account"
+        to="/admin/profile"
         onClick={onClose}
         className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
       >
         <UserRound size={15} />
-        <span>Thông tin tài khoản</span>
+        <span>Hồ sơ cá nhân</span>
       </NavLink>
 
       <NavLink

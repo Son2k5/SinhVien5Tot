@@ -25,6 +25,18 @@ public sealed class JwtSecurityEvents : JwtBearerEvents
     {
         _logger = logger;
     }
+
+    public override Task MessageReceived(MessageReceivedContext context)
+    {
+        if (context.HttpContext.Request.Path.StartsWithSegments("/hubs/chat") &&
+            context.Request.Query.TryGetValue("access_token", out var token) &&
+            !string.IsNullOrWhiteSpace(token))
+        {
+            context.Token = token;
+        }
+
+        return Task.CompletedTask;
+    }
     public override async Task TokenValidated(TokenValidatedContext context)
     {
         var principal = context.Principal;

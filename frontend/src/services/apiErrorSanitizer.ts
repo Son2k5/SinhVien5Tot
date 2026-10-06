@@ -77,7 +77,7 @@ function isSafeUserFacingMessage(text: unknown): text is string {
 
   // Chan chan system leak: stack/SQL/CLR/URL/path/JSON
   const unsafePatterns = [
-    /[{}\[\]<>|]/,
+    /[{}[\]<>|]/,
     /\\/u,
     /at\s+[A-Za-z0-9_.]+\(/i,
     /\b(exception|stack|trace|nullreference|unhandled|econn|timeout|socket|refused)\b/i,

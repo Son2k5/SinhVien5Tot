@@ -1,27 +1,25 @@
 import { useCallback, useState } from 'react';
-import { DashboardFooter } from '../components/dashboard/DashboardFooter';
-import { DashboardHeader } from '../components/dashboard/DashboardHeader';
-import { SystemLauncher } from '../components/dashboard/SystemLauncher';
+import { SiteFooter as DashboardFooter } from '../components/common/SiteFooter';
 import {
-  FiveGoodJourneySection,
-  CriterionDetailsDialog,
   AdminFeedbackSection,
+  CriterionDetailsDialog,
   DashboardFallbackNotice,
-  FeaturedActivitiesSection,
+  DashboardHeader,
+  DashboardWelcomeBanner,
+  FiveGoodJourneySection,
   HomeDashboardSkeleton,
   MotivationBanner,
   NewsSection,
   SystemFeatureSection,
-  DashboardWelcomeBanner,
-  YouthGallerySection,
+  SystemLauncher,
   dashboardCriteria,
   formatUserRole,
-} from '../components/dashboard/home';
-import type { CriterionDefinition } from '../components/dashboard/home';
-import { resolveCriteriaProgress, resolveNewsItems, resolveYouthGallery } from '../mocks/welcomeContent';
-import { useWelcomeDashboard } from '../hooks/dashboard/useWelcomeDashboard';
-import { useLauncher } from '../hooks/dashboard/useLauncher';
-import type { User } from '../types/auth';
+  useLauncher,
+  useWelcomeDashboard,
+  type CriterionDefinition,
+} from '../features/home-dashboard';
+import { resolveCriteriaProgress } from '../mocks/welcomeContent';
+import type { User } from '../features/auth/types/auth.types';
 import './HomePage.css';
 
 interface HomePageProps {
@@ -59,8 +57,6 @@ export function HomePage({ user, onLogout }: HomePageProps) {
   } = useLauncher(features, true);
 
   const closeCriterion = useCallback(() => setSelectedCriterion(null), []);
-  const newsItems = resolveNewsItems(dashboard.news);
-  const youthGallery = resolveYouthGallery(dashboard.youthGallery);
   const criteriaProgress = resolveCriteriaProgress(dashboard.criteriaProgress);
   const selectedProgress = selectedCriterion
     ? criteriaProgress.find((item) => item.key === selectedCriterion.key)
@@ -99,7 +95,9 @@ export function HomePage({ user, onLogout }: HomePageProps) {
       />
 
       <main id="welcome-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 outline-none">
-        {isLoading ? <HomeDashboardSkeleton /> : (
+        {isLoading ? (
+          <HomeDashboardSkeleton />
+        ) : (
           <div className="sv2-content space-y-10 sm:space-y-14">
             {isError && <DashboardFallbackNotice error={error} onRetry={() => void refetch()} />}
             <DashboardWelcomeBanner
@@ -110,9 +108,7 @@ export function HomePage({ user, onLogout }: HomePageProps) {
             />
             <SystemFeatureSection features={features} onOpenAll={openLauncher} />
             <FiveGoodJourneySection criteria={dashboardCriteria} progressItems={criteriaProgress} onSelect={setSelectedCriterion} />
-            <FeaturedActivitiesSection items={newsItems} />
-            <NewsSection items={newsItems} />
-            <YouthGallerySection items={youthGallery} />
+            <NewsSection />
             <MotivationBanner />
             <AdminFeedbackSection displayName={displayName} />
           </div>
@@ -127,3 +123,5 @@ export function HomePage({ user, onLogout }: HomePageProps) {
     </div>
   );
 }
+
+export default HomePage;

@@ -5,7 +5,7 @@ import {
   AWARD_TYPE_LABELS,
   CampaignStatus,
   CAMPAIGN_STATUS_LABELS,
-} from '../../../types/admin/campaign';
+} from '../../../features/campaigns/types/campaign.types';
 import {
   CriterionEvaluationType,
   CriterionOperator,
@@ -17,7 +17,7 @@ import {
   STANDARD_GROUP_CODE_LABELS,
   StandardSetStatus,
   STANDARD_SET_STATUS_LABELS,
-} from '../../../types/admin/standard';
+} from '../../../features/standards/types/standard.types';
 import {
   AlertCircle,
   Archive,

@@ -1,5 +1,5 @@
 import { ArrowRight, CheckCircle2, Construction, ShieldCheck } from 'lucide-react';
-import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { AdminPageHeader } from '../../components/admin/common/AdminPageHeader';
 
 const sections = {
   campaigns: ['Quản lý chiến dịch', 'Theo dõi danh sách, tiến độ và thời hạn của các chiến dịch Sinh viên 5 tốt.'],

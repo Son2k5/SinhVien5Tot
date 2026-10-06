@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { User } from '../types/auth';
-import { authService } from '../services/authService';
+import type { User } from '../features/auth/types/auth.types';
+import { authService } from '../features/auth/services/auth.service';
 import {
   clearSessionActivity,
   markSessionActivity,

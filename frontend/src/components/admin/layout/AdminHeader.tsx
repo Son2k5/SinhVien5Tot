@@ -2,14 +2,14 @@ import { type RefObject } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  Bell,
   ChevronDown,
   Menu,
-  MessageSquareText,
   Search,
 } from 'lucide-react';
-import type { User } from '../../../types/auth';
+import type { User } from '../../../features/auth/types/auth.types';
 import { roleLabel } from './adminNavConfig';
+import { NotificationBell } from '../../../features/notifications/components/NotificationBell';
+import { ChatNavButton } from '../../../features/chat/components/ChatNavButton';
 import sv5tLogo from '../../../assets/home-page/layer-2.png';
 
 interface AdminHeaderProps {
@@ -21,8 +21,8 @@ interface AdminHeaderProps {
   collapsed?: boolean;
   chatOpen: boolean;
   onToggleChat: () => void;
-  notificationOpen: boolean;
-  onToggleNotification: () => void;
+  /** Fired when the notification dropdown opens (close sibling popovers). */
+  onNotificationOpen: () => void;
   accountOpen: boolean;
   onToggleAccount: () => void;
   popoverRef: RefObject<HTMLDivElement | null>;
@@ -36,10 +36,9 @@ export function AdminHeader({
   onSearchChange,
   onOpenMobile,
   collapsed = false,
-  chatOpen,
-  onToggleChat,
-  notificationOpen,
-  onToggleNotification,
+  chatOpen: _chatOpen,
+  onToggleChat: _onToggleChat,
+  onNotificationOpen,
   accountOpen,
   onToggleAccount,
   popoverRef,
@@ -142,46 +141,12 @@ export function AdminHeader({
       {/* Right: Actions (Chat, Notifications, User Profile) */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0" ref={popoverRef}>
         {/* 1. Chat with User Button */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={onToggleChat}
-            className={`relative p-2 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
-              chatOpen
-                ? 'bg-blue-50 text-blue-600 ring-2 ring-blue-100'
-                : 'text-slate-600 hover:text-blue-600 hover:bg-slate-100/80'
-            }`}
-            aria-label="Tin nhắn & Trò chuyện với sinh viên"
-            title="Tin nhắn & Hỗ trợ sinh viên"
-            aria-expanded={chatOpen}
-          >
-            <MessageSquareText size={19} />
-            <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 grid place-items-center text-white bg-blue-600 text-[9px] font-extrabold rounded-full ring-2 ring-white animate-pulse">
-              2
-            </span>
-          </button>
+        <div className="relative flex items-center">
+          <ChatNavButton />
         </div>
 
         {/* 2. Notification Bell */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={onToggleNotification}
-            className={`relative p-2 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 ${
-              notificationOpen
-                ? 'bg-blue-50 text-blue-600 ring-2 ring-blue-100'
-                : 'text-slate-600 hover:text-blue-600 hover:bg-slate-100/80'
-            }`}
-            aria-label="Thông báo hệ thống"
-            title="Thông báo hệ thống"
-            aria-expanded={notificationOpen}
-          >
-            <Bell size={19} />
-            <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 grid place-items-center text-white bg-rose-500 text-[9px] font-extrabold rounded-full ring-2 ring-white">
-              3
-            </span>
-          </button>
-        </div>
+        <NotificationBell onOpen={onNotificationOpen} />
 
         {/* 3. User Avatar & Display Name Button */}
         <div className="relative">
@@ -197,9 +162,17 @@ export function AdminHeader({
             aria-expanded={accountOpen}
           >
             {/* User Avatar */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 text-white font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white flex-shrink-0">
-              {initial}
-            </div>
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={displayName}
+                className="w-8 h-8 rounded-full object-cover ring-2 ring-white flex-shrink-0 shadow-xs"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 text-white font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white flex-shrink-0">
+                {initial}
+              </div>
+            )}
 
             {/* Name and Role (Desktop) */}
             <div className="hidden md:flex flex-col text-left min-w-0">

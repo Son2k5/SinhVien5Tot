@@ -1,5 +1,5 @@
-import type { User } from '../types/auth';
-import type { CriterionProgress, PortalContent, PortalContentSource, SystemFeature, WelcomeDashboard, YouthGalleryItem } from '../types/welcome';
+import type { User } from '../features/auth/types/auth.types';
+import type { CriterionProgress, PortalContent, PortalContentSource, SystemFeature, WelcomeDashboard, YouthGalleryItem } from '../features/home-dashboard/types/home-dashboard.types';
 import welcomeHero from '../assets/welcome-hero.jpg';
 import campusActivity from '../assets/home-page/artboard-1.png';
 import studentActivity from '../assets/hero.png';

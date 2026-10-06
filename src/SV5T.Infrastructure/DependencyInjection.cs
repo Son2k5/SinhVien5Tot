@@ -29,6 +29,8 @@ using SV5T.Infrastructure.Identity;
 using SV5T.Infrastructure.Options;
 using SV5T.Infrastructure.Notifications;
 using SV5T.Application.Notifications;
+using SV5T.Application.Chat;
+using SV5T.Infrastructure.Chat;
 using SV5T.Infrastructure.Persistence.Context;
 using SV5T.Infrastructure.Persistence.Repositories.Admin;
 using SV5T.Infrastructure.Persistence.Repositories.Auth;
@@ -39,6 +41,8 @@ using SV5T.Infrastructure.Persistence.UnitOfWork;
 using SV5T.Infrastructure.Security.Hashing;
 using SV5T.Infrastructure.Security.Pii;
 using SV5T.Infrastructure.Storage;
+using SV5T.Application.Articles;
+using SV5T.Infrastructure.Articles;
 
 namespace SV5T.Infrastructure;
 
@@ -212,6 +216,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAvatarStorage, CloudinaryAvatarStorage>();
+        services.AddScoped<IArticleImageStorage, CloudinaryArticleImageStorage>();
         services.AddScoped<IEvidenceFileStorage, CloudinaryEvidenceFileStorage>();
         services.AddScoped<IStudentApplicationRepository, StudentApplicationRepository>();
         services.AddScoped<IStudentCampaignRepository, StudentCampaignRepository>();
@@ -222,10 +227,12 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IChatRepository, ChatRepository>();
         services.AddSingleton<NotificationQueue>();
         services.AddSingleton<INotificationQueue>(provider =>
             provider.GetRequiredService<NotificationQueue>());
         services.AddHostedService<NotificationDispatchWorker>();
+        services.AddHostedService<ArticleImageCleanupWorker>();
 
         // Admin & Management Repositories
         services.AddScoped<StandardSetRepository>();

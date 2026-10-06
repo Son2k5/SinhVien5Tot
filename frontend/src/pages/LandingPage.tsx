@@ -1,37 +1,22 @@
-import { useEffect, useState } from 'react';
 import { SiteFooter } from '../components/common/SiteFooter';
-import { LandingHeader } from '../components/landing/LandingHeader';
-import { LandingHeroSection } from '../components/landing/LandingHeroSection';
-import { StatsSection } from '../components/landing/StatsSection';
-import { AboutSection } from '../components/landing/AboutSection';
-import { CriteriaSection } from '../components/landing/CriteriaSection';
-import { FeaturesSection } from '../components/landing/FeaturesSection';
-import { ProcessJourney } from '../components/landing/ProcessJourney';
-import { GallerySection } from '../components/landing/GallerySection';
-import { WhyChooseSection } from '../components/landing/WhyChooseSection';
-import { FeedbackSection } from '../components/landing/FeedbackSection';
-import { FaqSection } from '../components/landing/FaqSection';
-import { CtaSection } from '../components/landing/CtaSection';
 import { feedbackMockData } from '../mocks/feedback';
-import { useReveal } from '../hooks/landing/useReveal';
+import {
+  AboutSection,
+  CriteriaSection,
+  CtaSection,
+  FaqSection,
+  FeaturesSection,
+  FeedbackSection,
+  LandingHeader,
+  LandingHeroSection,
+  ProcessJourney,
+  StatsSection,
+  WhyChooseSection,
+  useLanding,
+} from '../features/landing';
 
 export function LandingPage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [scrolled, setScrolled] = useState(false);
-
-  useReveal();
-
-  useEffect(() => {
-    const update = () => {
-      const height = document.documentElement.scrollHeight - window.innerHeight;
-      setScrollProgress(height > 0 ? (window.scrollY / height) * 100 : 0);
-      setScrolled(window.scrollY > 32);
-    };
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    return () => window.removeEventListener('scroll', update);
-  }, []);
+  const { mobileOpen, scrollProgress, scrolled, toggleMobile, closeMobile } = useLanding();
 
   return (
     <div className={`overflow-clip bg-white [--navy:#365d7d] [--muted:#61788f] [--landing-heading:#365d7d] [--landing-body:#536f88] [--landing-muted:#61788f] text-[var(--landing-body)] font-['Be_Vietnam_Pro',_ui-sans-serif,_system-ui,_sans-serif] [font-optical-sizing:auto] [-webkit-font-smoothing:antialiased] [text-rendering:optimizeLegibility] [&_button]:font-[inherit] [&_input]:font-[inherit] [&_textarea]:font-[inherit] [&_select]:font-[inherit] [&_.feature-card:first-child_h3]:text-[var(--landing-heading)] [&_.feature-card:first-child_p]:text-[var(--landing-body)]`}>
@@ -39,8 +24,8 @@ export function LandingPage() {
         scrolled={scrolled}
         scrollProgress={scrollProgress}
         mobileOpen={mobileOpen}
-        onToggleMobile={() => setMobileOpen(!mobileOpen)}
-        onCloseMobile={() => setMobileOpen(false)}
+        onToggleMobile={toggleMobile}
+        onCloseMobile={closeMobile}
       />
 
       <main>
@@ -50,7 +35,6 @@ export function LandingPage() {
         <CriteriaSection />
         <FeaturesSection />
         <ProcessJourney />
-        <GallerySection />
         <WhyChooseSection />
         <FeedbackSection feedbackItems={feedbackMockData} />
         <FaqSection />
@@ -61,3 +45,5 @@ export function LandingPage() {
     </div>
   );
 }
+
+export default LandingPage;

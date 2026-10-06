@@ -16,6 +16,8 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity
 
     public string? DisplayName { get; set; }
 
+    public string? PhoneNumber { get; set; }
+
     public string PasswordHash { get; set; } = string.Empty;
 
     public Role Role { get; set; } = Role.User;

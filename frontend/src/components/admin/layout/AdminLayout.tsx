@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import type { User } from '../../../types/auth';
+import type { User } from '../../../features/auth/types/auth.types';
 import { getVisibleMenuGroups } from './adminNavConfig';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
 import { AdminChatPopover } from './AdminChatPopover';
-import { AdminNotificationPopover } from './AdminNotificationPopover';
 import { AdminUserMenu } from './AdminUserMenu';
+import { useChatRealtime } from '../../../features/chat/hooks/useChatRealtime';
+import { AlertCircle, X } from 'lucide-react';
 import '../../../pages/admin/AdminDashboard.css';
 
 interface AdminLayoutProps {
@@ -19,9 +20,21 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [accessNotice, setAccessNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    const state = location.state as { accessDeniedMessage?: string } | null;
+    if (state?.accessDeniedMessage) {
+      setAccessNotice(state.accessDeniedMessage);
+      window.history.replaceState({}, '');
+      const timer = setTimeout(() => setAccessNotice(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
+
+  useChatRealtime();
 
   const popoverRef = useRef<HTMLDivElement>(null);
   const displayName = user.name || user.email.split('@')[0];
@@ -31,7 +44,6 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
   useEffect(() => {
     setMobileOpen(false);
     setChatOpen(false);
-    setNotificationOpen(false);
     setAccountOpen(false);
   }, [location.pathname, location.search]);
 
@@ -47,12 +59,11 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
 
   // Xử lý đóng popovers khi click bên ngoài hoặc bấm phím Escape
   useEffect(() => {
-    if (!chatOpen && !notificationOpen && !accountOpen) return;
+    if (!chatOpen && !accountOpen) return;
 
     const close = (event: PointerEvent) => {
       if (!popoverRef.current?.contains(event.target as Node)) {
         setChatOpen(false);
-        setNotificationOpen(false);
         setAccountOpen(false);
       }
     };
@@ -60,7 +71,6 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setChatOpen(false);
-        setNotificationOpen(false);
         setAccountOpen(false);
       }
     };
@@ -71,7 +81,7 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
       document.removeEventListener('pointerdown', close);
       window.removeEventListener('keydown', closeOnEscape);
     };
-  }, [chatOpen, accountOpen, notificationOpen]);
+  }, [chatOpen, accountOpen]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-700 flex flex-col font-['Be_Vietnam_Pro',sans-serif]">
@@ -94,12 +104,9 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
         chatOpen={chatOpen}
         onToggleChat={() => {
           setChatOpen((prev) => !prev);
-          setNotificationOpen(false);
           setAccountOpen(false);
         }}
-        notificationOpen={notificationOpen}
-        onToggleNotification={() => {
-          setNotificationOpen((prev) => !prev);
+        onNotificationOpen={() => {
           setChatOpen(false);
           setAccountOpen(false);
         }}
@@ -107,18 +114,12 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
         onToggleAccount={() => {
           setAccountOpen((prev) => !prev);
           setChatOpen(false);
-          setNotificationOpen(false);
         }}
         popoverRef={popoverRef}
       >
         {/* Chat Popover */}
         {chatOpen && (
           <AdminChatPopover onClose={() => setChatOpen(false)} />
-        )}
-
-        {/* Notifications Popover */}
-        {notificationOpen && (
-          <AdminNotificationPopover onClose={() => setNotificationOpen(false)} />
         )}
 
         {/* User Profile Menu */}
@@ -159,6 +160,26 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
             className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto outline-none"
             tabIndex={-1}
           >
+            {accessNotice && (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200"
+              >
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">{accessNotice}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAccessNotice(null)}
+                  className="p-1 text-amber-600 hover:text-amber-800 rounded hover:bg-amber-100/60 cursor-pointer transition-colors"
+                  aria-label="Đóng thông báo"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
             <Outlet />
           </main>
         </div>

@@ -10,8 +10,9 @@ import {
   Settings,
   UserCog,
   Users,
+  Newspaper,
 } from 'lucide-react';
-import type { User } from '../../../types/auth';
+import type { User } from '../../../features/auth/types/auth.types';
 import { isAdmin, normalizeRole } from '../../../utils/authorization';
 
 export interface MenuItem {
@@ -62,6 +63,7 @@ export const menuGroups: MenuGroup[] = [
   {
     label: 'Quản trị chương trình',
     items: [
+      { label: 'Tin tức & sự kiện', to: '/admin/articles', icon: Newspaper },
       { label: 'Cấu hình tiêu chuẩn', to: '/admin/standards', icon: BookOpenCheck, adminOnly: true },
       { label: 'Danh hiệu tập thể', to: '/admin/collectives', icon: Medal },
       { label: 'Báo cáo & Thống kê', to: '/admin/reports', icon: BarChart3 },
@@ -71,6 +73,7 @@ export const menuGroups: MenuGroup[] = [
     label: 'Hệ thống',
     items: [
       { label: 'Quản lý sinh viên', to: '/admin/students', icon: Users },
+      { label: 'Quản lý nhân sự', to: '/admin/staff', icon: UserCog, adminOnly: true },
       { label: 'Người dùng & Phân quyền', to: '/admin/roles', icon: UserCog, adminOnly: true },
       { label: 'Cài đặt hệ thống', to: '/admin/settings', icon: Settings },
     ],
@@ -82,13 +85,16 @@ export const pageTitles: Record<string, string> = {
   '/admin/campaigns': 'Chiến dịch',
   '/admin/applications': 'Hồ sơ đăng ký',
   '/admin/evidence': 'Thẩm định minh chứng',
+  '/admin/articles': 'Tin tức & sự kiện',
   '/admin/standards': 'Cấu hình tiêu chuẩn',
   '/admin/collectives': 'Danh hiệu tập thể',
   '/admin/reports': 'Báo cáo & Thống kê',
   '/admin/students': 'Quản lý sinh viên',
+  '/admin/staff': 'Quản lý nhân sự',
   '/admin/roles': 'Người dùng & Phân quyền',
   '/admin/settings': 'Cài đặt hệ thống',
   '/admin/account': 'Thông tin tài khoản',
+  '/admin/profile': 'Hồ sơ cá nhân',
   '/admin/change-password': 'Đổi mật khẩu',
 };
 
@@ -97,7 +103,7 @@ export function getPageInfo(pathname: string): { section: string; title: string 
     if (['/admin', '/admin/campaigns', '/admin/applications', '/admin/evidence'].includes(pathname)) {
       return { section: 'Tổng quan', title: pageTitles[pathname] };
     }
-    if (['/admin/standards', '/admin/collectives', '/admin/reports'].includes(pathname)) {
+    if (['/admin/articles', '/admin/standards', '/admin/collectives', '/admin/reports'].includes(pathname)) {
       return { section: 'Quản trị', title: pageTitles[pathname] };
     }
     return { section: 'Hệ thống', title: pageTitles[pathname] };
@@ -105,11 +111,17 @@ export function getPageInfo(pathname: string): { section: string; title: string 
   if (pathname.startsWith('/admin/campaigns/')) {
     return { section: 'Chiến dịch', title: 'Chi tiết chiến dịch' };
   }
+  if (pathname.startsWith('/admin/articles/')) {
+    return { section: 'Tin tức', title: 'Quản lý bài viết' };
+  }
   if (pathname.startsWith('/admin/standards/')) {
     return { section: 'Tiêu chuẩn', title: 'Chi tiết tiêu chuẩn' };
   }
   if (pathname.startsWith('/admin/students/')) {
     return { section: 'Sinh viên', title: 'Chi tiết sinh viên' };
+  }
+  if (pathname.startsWith('/admin/staff')) {
+    return { section: 'Hệ thống', title: 'Quản lý nhân sự' };
   }
   return { section: 'Quản trị', title: 'SV5T Portal' };
 }

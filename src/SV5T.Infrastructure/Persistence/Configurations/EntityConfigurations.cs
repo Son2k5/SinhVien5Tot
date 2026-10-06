@@ -30,6 +30,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(user => user.DisplayName).HasMaxLength(100);
 
+        builder.Property(user => user.PhoneNumber).HasMaxLength(2048);
+
         builder.Property(user => user.PasswordHash)
             .HasMaxLength(255)
             .IsRequired();
@@ -39,6 +41,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.AvatarResourceType).HasMaxLength(50);
         builder.Property(user => user.CreatedBy).HasMaxLength(100);
         builder.Property(user => user.UpdatedBy).HasMaxLength(100);
+        builder.Property(user => user.UpdatedAt).IsConcurrencyToken();
         builder.Property(user => user.SecurityVersion).HasDefaultValue(1);
         builder.Property(user => user.IsDeleted).HasDefaultValue(false);
         builder.Property(user => user.DeleteReason).HasMaxLength(500);
