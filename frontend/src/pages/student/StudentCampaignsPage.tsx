@@ -63,7 +63,7 @@ export const StudentCampaignsPage: React.FC<StudentCampaignsPageProps> = ({
   } = useStudentCampaigns();
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-['Inter',_sans-serif]">
+    <div className="authenticated-page-background min-h-screen text-slate-800 flex flex-col font-['Inter',_sans-serif]">
       <DashboardHeader
         displayName={displayName}
         role={formatUserRole(user.role)}

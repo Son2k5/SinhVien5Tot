@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" fill="none">
+  <g stroke-linecap="round">
+    <path d="M-110 188C118 20 330 302 616 138C902-26 1174 26 1710 218" stroke="#60A5FA" stroke-opacity=".20" stroke-width="1.25"/>
+    <path d="M-126 222C110 58 338 336 632 170C926 4 1192 62 1718 252" stroke="#38BDF8" stroke-opacity=".14" stroke-width="1"/>
+    <path d="M-144 254C102 96 346 368 650 202C954 36 1212 98 1728 286" stroke="#93C5FD" stroke-opacity=".16" stroke-width="1" stroke-dasharray="9 13"/>
+
+    <path d="M282 930C516 690 720 986 978 786C1236 586 1436 668 1696 850" stroke="#60A5FA" stroke-opacity=".16" stroke-width="1.2"/>
+    <path d="M236 960C486 712 716 1030 994 816C1272 602 1466 700 1728 884" stroke="#38BDF8" stroke-opacity=".12" stroke-width="1"/>
+    <path d="M342 888C554 680 740 942 962 758C1184 574 1406 630 1658 804" stroke="#93C5FD" stroke-opacity=".14" stroke-width="1" stroke-dasharray="5 11"/>
+
+    <path d="M1324 312C1410 270 1502 296 1552 370C1602 444 1586 540 1514 594" stroke="#7DD3FC" stroke-opacity=".13" stroke-width="1"/>
+    <path d="M1356 336C1424 304 1494 326 1534 384C1574 442 1560 516 1504 558" stroke="#60A5FA" stroke-opacity=".12" stroke-width="1" stroke-dasharray="7 12"/>
+  </g>
+</svg>

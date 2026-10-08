@@ -59,12 +59,36 @@ export interface YouthGalleryItem {
   location: string;
 }
 
+export interface CriterionDetailItem {
+  id: string;
+  code: string;
+  title: string;
+  description?: string | null;
+  isRequired: boolean;
+  displayOrder: number;
+  isCompleted: boolean;
+  evidenceStatus?: string | null;
+}
+
+export interface StandardJourney {
+  key: CriterionKey;
+  code: string;
+  title: string;
+  description: string;
+  displayOrder: number;
+  progress: number;
+  completedRequirements: number;
+  totalRequirements: number;
+  criteria: CriterionDetailItem[];
+}
+
 export interface WelcomeDashboard {
   user: WelcomeUser;
   features: SystemFeature[];
   notifications: PortalContent[];
   news: PortalContent[];
   criteriaProgress?: CriterionProgress[];
+  standards?: StandardJourney[];
   youthGallery?: YouthGalleryItem[];
   updatedAtUtc: string;
 }

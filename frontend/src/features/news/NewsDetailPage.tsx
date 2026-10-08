@@ -128,31 +128,32 @@ export function NewsDetailPage() {
             )}
           </header>
 
+          {/* Mobile Actions - shown inline on mobile */}
+          <div className="sm:hidden flex items-center gap-4 py-3 border-y border-slate-100 mb-6 text-slate-600">
+            <button title="Chia sẻ" className="flex items-center gap-1.5 text-sm font-medium hover:text-red-700"><Share2 size={16} /> Chia sẻ</button>
+            <button title="Lưu" className="flex items-center gap-1.5 text-sm font-medium hover:text-red-700"><Bookmark size={16} /> Lưu</button>
+            <button title="In bài viết" onClick={() => window.print()} className="flex items-center gap-1.5 text-sm font-medium hover:text-red-700"><Printer size={16} /> In</button>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-6 lg:gap-8 relative">
             {/* Left Action Bar (Floating vertical style) */}
             <div className="hidden sm:block shrink-0 w-14">
-              <div className="sticky top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 py-4 px-2 bg-white rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-slate-100/80">
-                <button title="Chia sẻ" className="p-2.5 text-slate-600 hover:text-red-700 transition-colors rounded-full hover:bg-slate-50">
+              <div className="sticky top-28 flex flex-col items-center gap-3 py-4 px-2 bg-white rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-slate-100/80">
+                <button title="Chia sẻ" className="p-2.5 text-slate-600 hover:text-red-700 transition-colors rounded-full hover:bg-slate-50 cursor-pointer">
                   <Share2 size={18} />
                 </button>
                 <div className="w-8 h-[1px] bg-slate-100" />
-                <button title="Lưu bài viết" className="p-2.5 text-slate-600 hover:text-red-700 transition-colors rounded-full hover:bg-slate-50">
+                <button title="Lưu bài viết" className="p-2.5 text-slate-600 hover:text-red-700 transition-colors rounded-full hover:bg-slate-50 cursor-pointer">
                   <Bookmark size={18} />
                 </button>
                 <div className="w-8 h-[1px] bg-slate-100" />
-                <button title="Làm mới" onClick={() => window.location.reload()} className="p-2.5 text-slate-600 hover:text-red-700 transition-colors rounded-full hover:bg-slate-50">
+                <button title="Làm mới" onClick={() => window.location.reload()} className="p-2.5 text-slate-600 hover:text-red-700 transition-colors rounded-full hover:bg-slate-50 cursor-pointer">
                   <RefreshCcw size={18} />
                 </button>
                 <div className="w-8 h-[1px] bg-slate-100" />
-                <button title="In bài viết" onClick={() => window.print()} className="p-2.5 text-slate-600 hover:text-red-700 transition-colors rounded-full hover:bg-slate-50">
+                <button title="In bài viết" onClick={() => window.print()} className="p-2.5 text-slate-600 hover:text-red-700 transition-colors rounded-full hover:bg-slate-50 cursor-pointer">
                   <Printer size={18} />
                 </button>
-              </div>
-              
-              {/* Mobile Actions - shown inline on mobile */}
-              <div className="sm:hidden flex items-center gap-4 py-4 border-y border-slate-100 mb-6 text-slate-600">
-                <button title="Chia sẻ" className="flex items-center gap-1.5 text-sm font-medium hover:text-red-700"><Share2 size={16} /> Chia sẻ</button>
-                <button title="Lưu" className="flex items-center gap-1.5 text-sm font-medium hover:text-red-700"><Bookmark size={16} /> Lưu</button>
               </div>
             </div>
 

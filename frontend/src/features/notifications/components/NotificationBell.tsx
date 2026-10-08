@@ -72,7 +72,7 @@ export function NotificationBell({ onOpen }: NotificationBellProps) {
             : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100/80'
         }`}
       >
-        <Bell size={19} aria-hidden="true" />
+        <Bell size={18} aria-hidden="true" />
         {unreadCount > 0 && (
           <span
             aria-hidden="true"

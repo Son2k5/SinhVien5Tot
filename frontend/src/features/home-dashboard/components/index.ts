@@ -1,10 +1,10 @@
-export { FeaturedActivitiesSection, MotivationBanner, NewsSection } from './ContentSections';
+export { MotivationBanner, NewsSection } from './ContentSections';
 export { FiveGoodJourneySection } from './CriteriaSections';
 export { CriterionDetailsDialog } from './CriterionDetailsDialog';
 export { DashboardFallbackNotice, HomeDashboardSkeleton } from './DashboardFeedback';
 export { DashboardWelcomeBanner } from './DashboardWelcomeBanner';
-export { AdminFeedbackSection, SystemFeatureSection, YouthGallerySection } from './DashboardDiscoverySections';
-export { dashboardCriteria, formatUserRole } from './homeDashboardConfig';
+export { AdminFeedbackSection, SystemFeatureSection } from './DashboardDiscoverySections';
+export { dashboardCriteria, formatUserRole, mergeDashboardCriteriaWithStandards } from './homeDashboardConfig';
 export type { CriterionDefinition } from './homeDashboardConfig';
 export { DashboardHeader } from './DashboardHeader';
 export { SystemLauncher } from './SystemLauncher';

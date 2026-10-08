@@ -163,6 +163,8 @@ export interface StudentEvidenceItemResponse {
   dataJson?: string | null;
   attachmentsJson?: string | null;
   reviewerNote?: string | null;
+  reviewerName?: string | null;
+  score?: number | null;
   reviewedAt?: string | null;
   rowVersion: string;
   createdAt: string;

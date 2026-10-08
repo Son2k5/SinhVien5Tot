@@ -107,3 +107,23 @@ img { max-width: 100%; }
 .tone-green { color: #0b8c85; background: #edfaf8; }
 .tone-orange { color: #087ca9; background: #ebf9fe; }
 .tone-cyan { color: #1592bd; background: #edfaff; }
+
+/* Authenticated workspace background
+   A quiet blue mesh keeps white content surfaces visually distinct without
+   competing with dense dashboard information. */
+.authenticated-page-background {
+  background-color: #f3f8fe;
+  background-image:
+    url('./assets/authenticated-background-lines.svg'),
+    radial-gradient(circle at 7% 8%, rgba(56, 189, 248, 0.14) 0, transparent 27rem),
+    radial-gradient(circle at 94% 12%, rgba(59, 130, 246, 0.1) 0, transparent 24rem),
+    radial-gradient(circle at 72% 94%, rgba(125, 211, 252, 0.13) 0, transparent 28rem),
+    linear-gradient(128deg, transparent 0 58%, rgba(255, 255, 255, 0.46) 58% 72%, transparent 72%),
+    linear-gradient(rgba(51, 112, 178, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51, 112, 178, 0.025) 1px, transparent 1px),
+    linear-gradient(135deg, #f9fcff 0%, #eef6ff 46%, #f5faff 100%);
+  background-position: center top, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-repeat: repeat-y, no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat, no-repeat;
+  background-size: 1600px 900px, auto, auto, auto, auto, 56px 56px, 56px 56px, auto;
+  background-attachment: fixed;
+}

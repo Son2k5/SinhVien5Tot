@@ -17,6 +17,9 @@ export const studentCampaignsQueryKeys = {
   myApplications: ['student-applications', 'my'] as const,
 };
 
+const OPEN_CAMPAIGNS_STALE_TIME_MS = 10_000;
+const OPEN_CAMPAIGNS_REFETCH_INTERVAL_MS = 30_000;
+
 export function useStudentCampaigns() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -33,6 +36,10 @@ export function useStudentCampaigns() {
         level: selectedLevel,
         awardType: AwardType.Individual,
       }),
+    staleTime: OPEN_CAMPAIGNS_STALE_TIME_MS,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: OPEN_CAMPAIGNS_REFETCH_INTERVAL_MS,
   });
 
   // Query: open campaigns for selected Level (Collective)
@@ -43,6 +50,10 @@ export function useStudentCampaigns() {
         level: selectedLevel,
         awardType: AwardType.Collective,
       }),
+    staleTime: OPEN_CAMPAIGNS_STALE_TIME_MS,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: OPEN_CAMPAIGNS_REFETCH_INTERVAL_MS,
   });
 
   const campaignsLoading = individualLoading || collectiveLoading;

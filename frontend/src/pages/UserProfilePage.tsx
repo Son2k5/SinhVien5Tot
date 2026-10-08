@@ -40,7 +40,7 @@ export function UserProfilePage({ user, onLogout }: UserProfilePageProps) {
   } = useLauncher(features);
 
   return (
-    <div className='sv-dashboard min-h-screen'>
+    <div className='sv-dashboard authenticated-page-background min-h-screen'>
       <DashboardHeader
         displayName={displayName}
         role={formatUserRole(user.role)}

@@ -63,6 +63,7 @@ export const StandardGroupTabs: React.FC<StandardGroupTabsProps> = ({
   evidences,
   className = '',
 }) => {
+  // Normalize groupCode matching (case-insensitive or numeric string)
   const isGroupMatch = (cGroup: string, defGroup: string, idx: number) => {
     if (!cGroup) return false;
     const cg = cGroup.trim().toLowerCase();
@@ -78,6 +79,7 @@ export const StandardGroupTabs: React.FC<StandardGroupTabsProps> = ({
           const Icon = def.icon;
           const isActive = activeGroupCode.toLowerCase() === def.groupCode.toLowerCase();
 
+          // Count criteria and submitted evidences for this group
           const groupCriteria = criteria.filter((c) => isGroupMatch(c.groupCode, def.groupCode, idx));
 
           const isOptional = (c: StudentCriterionItemResponse) => {

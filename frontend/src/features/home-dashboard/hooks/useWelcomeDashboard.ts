@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { homeDashboardService } from '../services/home-dashboard.service';
-import { createMockWelcomeDashboard } from '../../../mocks/welcomeContent';
+import type { WelcomeDashboard } from '../types/home-dashboard.types';
 import type { User } from '../../auth/types/auth.types';
 
 export const homeDashboardQueryKeys = {
@@ -9,9 +9,26 @@ export const homeDashboardQueryKeys = {
   user: (userId: string) => [...homeDashboardQueryKeys.all, userId] as const,
 };
 
+const createEmptyDashboard = (user: User): WelcomeDashboard => ({
+  user: {
+    id: user.id,
+    displayName: user.name || user.email.split('@')[0],
+    email: user.email,
+    avatarUrl: user.avatarUrl,
+    faculty: '',
+  },
+  features: [],
+  notifications: [],
+  news: [],
+  criteriaProgress: [],
+  standards: [],
+  youthGallery: [],
+  updatedAtUtc: new Date().toISOString(),
+});
+
 /**
- * Lấy dữ liệu Welcome Dashboard từ server.
- * Fallback về mock data khi chưa có dữ liệu thực.
+ * Lấy dữ liệu Welcome Dashboard thực từ backend API.
+ * Không dùng mock data - trường nào chưa có dữ liệu sẽ để trống.
  */
 export function useWelcomeDashboard(user: User) {
   const query = useQuery({
@@ -20,7 +37,7 @@ export function useWelcomeDashboard(user: User) {
   });
 
   const dashboard = useMemo(
-    () => query.data ?? createMockWelcomeDashboard(user),
+    () => query.data ?? createEmptyDashboard(user),
     [query.data, user],
   );
 

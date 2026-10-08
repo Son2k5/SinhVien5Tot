@@ -7,7 +7,38 @@ public sealed record WelcomeDashboardResponse(
     IReadOnlyList<SystemFeatureDto> Features,
     IReadOnlyList<PortalContentDto> Notifications,
     IReadOnlyList<PortalContentDto> News,
-    DateTime UpdatedAtUtc);
+    DateTime UpdatedAtUtc,
+    IReadOnlyList<CriterionProgressDto>? CriteriaProgress = null,
+    IReadOnlyList<StandardJourneyDto>? Standards = null);
+
+public sealed record CriterionProgressDto(
+    string Key,
+    int Progress,
+    string Status,
+    int CompletedRequirements,
+    int TotalRequirements,
+    DateTime? UpdatedAtUtc = null);
+
+public sealed record StandardJourneyDto(
+    string Key,
+    string Code,
+    string Title,
+    string Description,
+    int DisplayOrder,
+    int Progress,
+    int CompletedRequirements,
+    int TotalRequirements,
+    IReadOnlyList<CriterionJourneyItemDto> Criteria);
+
+public sealed record CriterionJourneyItemDto(
+    Guid Id,
+    string Code,
+    string Title,
+    string? Description,
+    bool IsRequired,
+    int DisplayOrder,
+    bool IsCompleted,
+    string? EvidenceStatus);
 
 public sealed record WelcomeUserDto(
     Guid Id,

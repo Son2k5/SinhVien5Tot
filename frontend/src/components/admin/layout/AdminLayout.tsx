@@ -84,7 +84,7 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
   }, [chatOpen, accountOpen]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-700 flex flex-col font-['Be_Vietnam_Pro',sans-serif]">
+    <div className="authenticated-page-background min-h-screen text-slate-700 flex flex-col font-['Be_Vietnam_Pro',sans-serif]">
       {/* Skip Link for Accessibility */}
       <a
         href="#admin-main"

@@ -50,8 +50,8 @@ export function App() {
       <Route path="/dashboard/applications/:id" element={isAuthenticated && user ? <StudentEvidenceSubmissionPage user={user} onLogout={logout} /> : <Navigate to="/login" replace />} />
       <Route path="/dashboard/evidence" element={<Navigate to="/dashboard/applications" replace />} />
       <Route path="/dashboard/notifications" element={isAuthenticated && user ? <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center p-6"><DashboardSkeleton /></div>}><NotificationsPage user={user} onLogout={logout} /></Suspense> : <Navigate to="/login" replace />} />
-      <Route path="/chat" element={isAuthenticated && user ? <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center p-6"><DashboardSkeleton /></div>}><ChatPage /></Suspense> : <Navigate to="/login" replace />} />
-      <Route path="/chat/:conversationId" element={isAuthenticated && user ? <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center p-6"><DashboardSkeleton /></div>}><ChatPage /></Suspense> : <Navigate to="/login" replace />} />
+      <Route path="/chat" element={isAuthenticated && user ? <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center p-6"><DashboardSkeleton /></div>}><ChatPage user={user} onLogout={logout} /></Suspense> : <Navigate to="/login" replace />} />
+      <Route path="/chat/:conversationId" element={isAuthenticated && user ? <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center p-6"><DashboardSkeleton /></div>}><ChatPage user={user} onLogout={logout} /></Suspense> : <Navigate to="/login" replace />} />
       <Route element={isAuthenticated && user && canAccessAdmin(user) ? <Outlet /> : <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}>
         <Route path="/admin" element={<AdminLayout user={user!} onLogout={logout} />}>
           <Route index element={<AdminDashboardPage />} />

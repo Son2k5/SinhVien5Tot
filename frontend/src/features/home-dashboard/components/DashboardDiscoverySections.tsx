@@ -53,7 +53,6 @@ export function SystemFeatureSection({ features, onOpenAll }: SystemFeatureSecti
     <section className="space-y-4 sm:space-y-5 scroll-mt-24" aria-labelledby="system-feature-title">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <span className="text-[11px] font-bold text-blue-600 tracking-wider uppercase">Trung tâm thao tác</span>
           <h2 id="system-feature-title" className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-0.5">
             Chức năng hệ thống
           </h2>
@@ -146,9 +145,8 @@ export function YouthGallerySection({ items }: { items: YouthGalleryItem[] }) {
         {visibleItems.map((item, index) => (
           <figure
             key={item.id}
-            className={`group relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 min-h-[260px] flex flex-col justify-end ${
-              index === 0 ? 'sm:col-span-2 sm:row-span-2 min-h-[320px] sm:min-h-[360px]' : ''
-            }`}
+            className={`group relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 min-h-[260px] flex flex-col justify-end ${index === 0 ? 'sm:col-span-2 sm:row-span-2 min-h-[320px] sm:min-h-[360px]' : ''
+              }`}
           >
             <img
               src={item.imageUrl}

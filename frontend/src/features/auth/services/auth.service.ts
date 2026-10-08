@@ -28,7 +28,7 @@ function toUser(user: BackendUser): User {
 }
 
 async function getCurrentUser(accessToken: string): Promise<User> {
-  const response = await axiosClient.get<BackendUser>(ENDPOINTS.AUTH.ME || '/users/me', {
+  const response = await axiosClient.get<BackendUser>(ENDPOINTS.AUTH.ME, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   return toUser(response.data);

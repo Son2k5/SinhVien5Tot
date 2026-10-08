@@ -14,7 +14,7 @@ export function ChatNavButton() {
         title="Tin nhắn"
         aria-label="Tin nhắn"
       >
-        <MessageCircle className="w-4.5 h-4.5" />
+        <MessageCircle size={18} aria-hidden="true" />
         {count > 0 && (
           <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 grid place-items-center text-white bg-blue-600 font-['JetBrains_Mono'] text-[9px] font-extrabold rounded-full ring-2 ring-white">
             {count > 99 ? '99+' : count}

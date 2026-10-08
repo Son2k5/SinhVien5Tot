@@ -177,7 +177,7 @@ export function AdminArticleEditorPage() {
   if (!isNew && isLoading) return <div className="p-12 text-center text-slate-500 font-medium">Đang tải dữ liệu bài viết...</div>;
 
   return (
-    <div className="-m-4 sm:-m-6 lg:-m-8 min-h-full bg-white flex flex-col flex-1 font-['Be_Vietnam_Pro',_sans-serif]">
+    <div className="authenticated-page-background -m-4 sm:-m-6 lg:-m-8 min-h-full flex flex-col flex-1 font-['Be_Vietnam_Pro',_sans-serif]">
       {/* Topbar: Edge to edge */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 h-16 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 sm:gap-4">

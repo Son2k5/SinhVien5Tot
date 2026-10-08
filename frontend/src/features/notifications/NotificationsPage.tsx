@@ -143,7 +143,7 @@ function UserNotificationsShell({ user, onLogout }: { user: User; onLogout: () =
   } = useLauncher(features);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 text-slate-700 flex flex-col font-['Be_Vietnam_Pro',ui-sans-serif,system-ui,sans-serif]">
+    <div className="authenticated-page-background min-h-screen text-slate-700 flex flex-col font-['Be_Vietnam_Pro',ui-sans-serif,system-ui,sans-serif]">
       <DashboardHeader
         displayName={displayName}
         role={formatUserRole(user.role)}

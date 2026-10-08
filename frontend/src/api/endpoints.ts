@@ -8,7 +8,7 @@ export const ENDPOINTS = {
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
     REFRESH: '/auth/refresh',
-    ME: '/auth/me',
+    ME: '/users/me',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
     VERIFY_OTP: '/auth/verify-otp',
@@ -59,6 +59,11 @@ export const ENDPOINTS = {
   PROFILE: {
     ME: '/profile',
     AVATAR: '/profile/avatar',
+  },
+  USERS: {
+    ME: '/users/me',
+    PROFILE: '/users/me/profile',
+    AVATAR: '/users/me/avatar',
   },
   WELCOME: '/welcome',
   STUDENT: {
