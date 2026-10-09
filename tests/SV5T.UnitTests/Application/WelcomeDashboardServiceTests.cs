@@ -1,4 +1,12 @@
 using SV5T.Application.Common.Exceptions;
+using SV5T.Application.Common.Models;
+using SV5T.Application.Standards.Abstractions;
+using SV5T.Application.Student.Abstractions;
+using SV5T.Domain.Campaigns;
+using SV5T.Domain.Evidences;
+using SV5T.Domain.Standards;
+using SV5T.Domain.Submissions;
+using SubmissionApplication = SV5T.Domain.Submissions.Application;
 using Xunit;
 
 namespace SV5T.UnitTests.Application;
@@ -22,7 +30,7 @@ public sealed class WelcomeDashboardHandlerTests
             }
         };
         user.DisplayName = user.Email;
-        var handler = new GetWelcomeDashboardHandler(
+        var handler = CreateHandler(
             new FakeCurrentUser(user.Id),
             new FakeUserRepository(user),
             new FakeContentRepository(
@@ -41,7 +49,7 @@ public sealed class WelcomeDashboardHandlerTests
     [Fact]
     public async Task Get_RejectsMissingAuthenticatedSession()
     {
-        var handler = new GetWelcomeDashboardHandler(
+        var handler = CreateHandler(
             new FakeCurrentUser(null),
             new FakeUserRepository(),
             new FakeContentRepository());
@@ -61,7 +69,7 @@ public sealed class WelcomeDashboardHandlerTests
             IsActive = true,
             IsVerified = false
         };
-        var handler = new GetWelcomeDashboardHandler(
+        var handler = CreateHandler(
             new FakeCurrentUser(user.Id),
             new FakeUserRepository(user),
             new FakeContentRepository());
@@ -169,6 +177,62 @@ public sealed class WelcomeDashboardHandlerTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<PortalContent>>(
                 contents.Take(limit).ToArray());
+    }
+
+    private static GetWelcomeDashboardHandler CreateHandler(
+        ICurrentUser currentUser,
+        IUserRepository userRepository,
+        IPortalContentRepository contentRepository,
+        IStudentApplicationRepository? studentApplications = null,
+        IStudentEvidenceRepository? studentEvidences = null,
+        IStandardSetRepository? standardSetRepository = null,
+        IStudentCampaignRepository? studentCampaigns = null) =>
+        new(
+            currentUser,
+            userRepository,
+            contentRepository,
+            studentApplications ?? new FakeStudentApplicationRepository(),
+            studentEvidences ?? new FakeStudentEvidenceRepository(),
+            standardSetRepository ?? new FakeStandardSetRepository(),
+            studentCampaigns ?? new FakeStudentCampaignRepository());
+
+    private sealed class FakeStudentApplicationRepository : IStudentApplicationRepository
+    {
+        public Task<SubmissionApplication?> GetByIdAsync(Guid id, bool tracking = false, CancellationToken cancellationToken = default) => Task.FromResult<SubmissionApplication?>(null);
+        public Task<SubmissionApplication?> GetByIdForUserAsync(Guid id, Guid userId, bool tracking = false, CancellationToken cancellationToken = default) => Task.FromResult<SubmissionApplication?>(null);
+        public Task<SubmissionApplication?> GetByCampaignAndUserAsync(Guid campaignId, Guid userId, bool tracking = false, CancellationToken cancellationToken = default) => Task.FromResult<SubmissionApplication?>(null);
+        public Task<IReadOnlyList<SubmissionApplication>> GetByUserAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SubmissionApplication>>(Array.Empty<SubmissionApplication>());
+        public Task<PagedResult<SubmissionApplication>> GetPagedByUserAsync(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<SubmissionApplication>(Array.Empty<SubmissionApplication>(), 0, pageIndex, pageSize));
+        public Task AddAsync(SubmissionApplication application, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddReviewLogAsync(ReviewLog reviewLog, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class FakeStudentEvidenceRepository : IStudentEvidenceRepository
+    {
+        public Task<Evidence?> GetByIdAsync(Guid id, bool tracking = false, CancellationToken cancellationToken = default) => Task.FromResult<Evidence?>(null);
+        public Task<Evidence?> GetByIdForUserAsync(Guid id, Guid userId, bool tracking = false, CancellationToken cancellationToken = default) => Task.FromResult<Evidence?>(null);
+        public Task<Evidence?> GetByApplicationAndCriterionAsync(Guid applicationId, Guid criterionId, bool tracking = false, CancellationToken cancellationToken = default) => Task.FromResult<Evidence?>(null);
+        public Task<IReadOnlyList<Evidence>> GetByApplicationAsync(Guid applicationId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Evidence>>(Array.Empty<Evidence>());
+        public Task<IReadOnlyList<Evidence>> GetByApplicationForUserAsync(Guid applicationId, Guid userId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Evidence>>(Array.Empty<Evidence>());
+        public Task AddAsync(Evidence evidence, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class FakeStandardSetRepository : IStandardSetRepository
+    {
+        public Task<StandardSet?> GetByIdAsync(Guid id, bool includeStandards = false, bool includeCriteria = false, bool tracking = false, CancellationToken cancellationToken = default) => Task.FromResult<StandardSet?>(null);
+        public Task<IReadOnlyList<StandardSet>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<StandardSet>>(Array.Empty<StandardSet>());
+        public Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<bool> ExistsByAcademicYearAndLevelAsync(string academicYear, SV5T.Domain.Awards.Enums.AwardLevel level, SV5T.Domain.Awards.Enums.AwardType awardType, int version, Guid? excludeId = null, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task AddAsync(StandardSet standardSet, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task UpdateAsync(StandardSet standardSet, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task RemoveAsync(StandardSet standardSet, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class FakeStudentCampaignRepository : IStudentCampaignRepository
+    {
+        public Task<Campaign?> GetByIdAsync(Guid id, bool includeDetails = false, CancellationToken cancellationToken = default) => Task.FromResult<Campaign?>(null);
+        public Task<IReadOnlyList<Campaign>> GetOpenAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Campaign>>(Array.Empty<Campaign>());
+        public Task<PagedResult<Campaign>> GetOpenPagedAsync(int pageIndex, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Campaign>(Array.Empty<Campaign>(), 0, pageIndex, pageSize));
     }
 }
 

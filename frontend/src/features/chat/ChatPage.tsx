@@ -45,12 +45,12 @@ export default function ChatPage({ user, onLogout }: ChatPageProps = {}) {
   const startSupport = useStartSupport();
 
   const authUser = useAuthStore((s) => s.user);
-  const authLogout = useAuthStore((s) => s.logout);
+  const authLogout = useAuthStore((s) => s.clearSession);
   const currentUser = user || authUser;
   const handleLogout = onLogout || authLogout;
 
   const { displayName, avatarUrl, notifications, features } = useWelcomeDashboard(
-    currentUser || { id: '', email: '', role: 1 } as User,
+    currentUser || ({ id: '', email: '', role: 1, name: '' } as unknown as User),
   );
   const {
     launcherOpen,

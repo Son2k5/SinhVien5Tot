@@ -1,235 +1,148 @@
-# SV5T
+# 🎓 SV5T - HỆ THỐNG QUẢN LÝ & XÉT DUYỆT "SINH VIÊN 5 TỐT"
 
-Hệ thống gồm ASP.NET Core 9 Web API và React/TypeScript. Backend giữ mô hình
-Layered Architecture quen thuộc, đồng thời áp dụng ranh giới phụ thuộc của
-Clean Architecture bằng bốn project độc lập để compiler cưỡng chế chiều phụ thuộc.
+> Nền tảng Fullstack số hóa toàn diện quy trình đăng ký, thẩm định minh chứng và xét chọn danh hiệu *"Sinh Viên 5 Tốt"* các cấp theo chuẩn Hội Sinh viên Việt Nam.
 
-## Kiến trúc backend
+[![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![React 19](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Redis 7](https://img.shields.io/badge/Redis-7%20Streams-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+[![MySQL 8](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+---
 
+## 📸 Giao diện Hệ thống (Screenshots)
+| Trang chủ (Landing Page) | Cổng Sinh viên (Student Portal) | Bảng điều khiển Quản trị (Admin) |
+| :---: | :---: | :---: |
+| ![Landing Page](./docs/screenshots/landing.png) | ![Student Portal](./docs/screenshots/student-portal.png) | ![Admin Dashboard](./docs/screenshots/admin-workspace.png) |
+---
+
+## 📌 Bối cảnh & Mục tiêu
+Giải pháp chuyển đổi số thay thế quy trình nộp và thẩm định hồ sơ giấy/file rời rạc truyền thống:
+- **Sinh viên:** Nộp hồ sơ trực tuyến theo cây tiêu chí, xem trước minh chứng PDF/ảnh và theo dõi tiến độ thời gian thực.
+- **Hội đồng Thẩm định (Reviewer):** Workspace chấm duyệt tập trung, phản hồi lý do bổ sung và lưu vết lịch sử đánh giá.
+- **Quản trị viên (Admin):** Quản lý cấu hình bộ tiêu chuẩn linh hoạt theo năm học, điều phối chiến dịch và thống kê KPIs.
+---
+
+## 🛠️ Công nghệ Sử dụng (Tech Stack)
+| Phân tầng | Công nghệ chính |
+| :--- | :--- |
+| **Backend** | ASP.NET Core 9 (C# 13), Clean Architecture, Polly 8 (Retry + Exponential Backoff) |
+| **Database & Cache** | MySQL 8.0 (Pomelo EF Core 9 + Dapper), Redis 7 (Cache, Sliding Rate Limit, Streams) |
+| **Frontend** | React 19, TypeScript, Vite, TanStack Query v5, Zustand, Tailwind CSS, MUI, react-pdf |
+| **Dịch vụ & Giao tiếp** | SignalR Core (Realtime Chat/Noti), Cloudinary (Storage), Brevo SMTP (MailKit), Docker |
+
+---
+
+## 🚀 Điểm nhấn Kỹ thuật (Engineering Highlights)
+
+### 1. Kiến trúc Backend & Tối ưu Truy vấn (.NET 9)
+- **Chuẩn Clean Architecture 4 tầng**: Tách biệt độc lập [`Domain`](./src/SV5T.Domain) $\rightarrow$ [`Application`](./src/SV5T.Application) $\rightarrow$ [`Infrastructure`](./src/SV5T.Infrastructure) $\rightarrow$ [`Api`](./src/SV5T.Api); xem chi tiết tại [docs/architecture.md](./docs/architecture.md).
+- **Mô hình Hybrid ORM (EF Core 9 + Dapper)**: EF Core xử lý ghi dữ liệu, quan hệ phức tạp và migration; Dapper tối ưu hóa các truy vấn đọc báo cáo, dashboard và phân trang lớn để tối đa hóa throughput.
+- **Khả năng phục hồi (Resilience)**: Tích hợp Polly triển khai Retry Pattern với Exponential Backoff & Jitter cho các kết nối ngoại vi (SMTP, Redis).
+
+### 2. Bảo mật & Quản lý Danh tính Đa tầng
+- **Dual-Token Authentication**: Access Token ngắn hạn (15m, stateless) kết hợp Refresh Token lưu trong cookie `HttpOnly`, `Secure`, `SameSite=Strict` (chỉ lưu hash SHA-256 ở database).
+- **Token Reuse Detection & Family Revocation**: Định danh chuỗi refresh qua `FamilyId`. Khi phát hiện token cũ đã thu hồi bị gửi lại (replay attack), hệ thống tự động hủy toàn bộ Token Family của phiên làm việc.
+- **Bảo mật chuyên sâu**: Cơ chế Idle Timeout (120m), mã hóa AES dữ liệu nhạy cảm bằng ASP.NET Core Data Protection, và xác thực tệp upload qua Magic Number binary header.
+
+### 3. Xử lý Bất đồng bộ & Hàng đợi (Redis Streams Outbox)
+- **Transactional Outbox với Redis Streams**: Đẩy toàn bộ tác vụ gửi OTP và thông báo sang Background Worker xử lý bất đồng bộ qua Consumer Group, giúp API phản hồi tức thì không bị chặn bởi tác vụ mạng ngoại vi.
+- **Dead-Letter Queue (DLQ) & Quota Control**: Tự động chuyển message lỗi vượt số lần retry vào DLQ; quản lý hạn mức gửi email hàng ngày và dành riêng hạn ngạch khẩn cấp cho luồng cấp lại mật khẩu.
+
+### 4. Realtime & Trò chuyện Trực tuyến
+- **Kênh hỗ trợ trực tiếp SignalR**: Module Chat thời gian thực giữa Sinh viên và Cán bộ xét duyệt, đồng bộ trạng thái đã đọc và thông báo đẩy khi hồ sơ có cập nhật mới.
+
+### 5. Frontend Modular & Tối ưu Hiệu năng (React 19)
+- **Feature-Driven Architecture**: Cấu trúc thành 15 modules độc lập tại [`frontend/src/features/`](./frontend/src/features) (tách biệt types, services, hooks, components); chuẩn hóa Thin Pages (< 150 dòng).
+- **Tối ưu Bundling & Server State**: Dynamic Imports (`React.lazy`) giảm initial bundle từ 1.78 MB xuống 1.05 MB (~41%); TanStack Query v5 tối ưu hóa caching và revalidation.
+- **Trình xem minh chứng tích hợp**: Tích hợp `react-pdf` kết hợp Cloudinary xem trực tiếp PDF/ảnh trên trình duyệt.
+
+### 6. Nghiệp vụ Tiêu chuẩn & Đảm bảo Chất lượng (QA)
+- **Cây tiêu chí đa cấp**: Cấu hình logic đánh giá linh hoạt (`All`, `Any`, `AtLeast`), quy trình nộp - phản hồi - bổ sung minh chứng đa trạng thái và kiểm toán toàn diện (`ReviewLog`, `AdminAuditLog`).
+- **Kiểm thử tự động**: Xây dựng 112 Unit Tests hoàn chỉnh tại [`tests/SV5T.UnitTests`](./tests/SV5T.UnitTests) (xUnit, Moq, FluentAssertions) kiểm thử 100% logic xác thực, token rotation, mã hóa PII và nghiệp vụ xét duyệt.
+
+---
+
+## 🔐 Luồng Xác thực & Token Rotation
 ```text
-HTTP Request
-    ↓
-Presentation/Controllers
-    ↓
-Application/Services
-    ↓
-Application/Interfaces/Repositories
-    ↑
-Infrastructure/Repositories
-    ↓
-Infrastructure/Persistence/ApplicationDbContext
-    ↓
-Domain/Entities
+Client (React)                         Server (ASP.NET Core)                  Redis / Database
+     │                                          │                                     │
+     ├── 1. POST /api/auth/register ───────────>│── Lưu OTP Challenge (TTL 180s) ────>│ Redis
+     │                                          │── Push Email Outbox Message ───────>│ Redis Stream
+     │                                          │                                     │ (Worker gửi qua Brevo)
+     ├── 2. POST /api/auth/verify-otp ─────────>│── Xác thực OTP & tạo User ─────────>│ MySQL
+     │                                          │                                     │
+     ├── 3. POST /api/auth/login ──────────────>│── Kiểm tra mật khẩu (BCrypt)        │
+     │                                          │── Cấp Access Token (JWT 15m)        │
+     │                                          │── Cấp Refresh Token (FamilyId) ────>│ MySQL (SHA-256)
+     │<── Set-Cookie: refreshToken (HttpOnly) ──│                                     │
+     │                                          │                                     │
+     ├── 4. Khi Access Token hết hạn ──────────>│                                     │
+     │    POST /api/auth/refresh                │── Kiểm tra Idle Timeout (120m)      │
+     │    (Kèm Cookie Refresh Token)            │── Thu hồi Token cũ, cấp Token mới ─>│ MySQL
+     │<── Trả Access Token mới + Cookie mới ────│    (Giữ nguyên FamilyId)            │
+     │                                          │                                     │
+     │    [CẢNH BÁO: TÁI SỬ DỤNG TOKEN CŨ]      │                                     │
+     ├── Token đã rotate bị gửi lại ───────────>│── Phát hiện Token Reuse!           │
+     │<── 401 Unauthorized ─────────────────────│── Thu hồi TOÀN BỘ Family Tokens ───>│ MySQL (Revoke All)
 ```
 
-Quy tắc phụ thuộc:
+---
 
-- `Domain` chứa entity, enum và quy tắc nghiệp vụ; không phụ thuộc layer khác.
-- `Application` chứa DTO, service và abstraction; chỉ được phụ thuộc `Domain`.
-- `Infrastructure` triển khai repository, EF Core, cấu hình dịch vụ ngoài; được
-  phụ thuộc `Application` và `Domain`.
-- `Presentation` chứa controller và middleware; gọi service của `Application`,
-  không truy cập repository hoặc `DbContext` trực tiếp.
-- `Program.cs` là composition root, chịu trách nhiệm ghép các layer.
-
-## Cấu trúc thư mục
-
+## 📁 Cấu trúc Thư mục
 ```text
 SV5T/
-├── api/
-│   ├── Application/
-│   │   ├── DTOs/
-│   │   ├── Interfaces/
-│   │   │   ├── Repositories/
-│   │   │   └── Services/
-│   │   └── Services/
-│   ├── Domain/
-│   │   ├── Entities/
-│   │   └── Enums/
-│   ├── Infrastructure/
-│   │   ├── Options/
-│   │   ├── Persistence/
-│   │   │   └── Configurations/
-│   │   └── Repositories/
-│   ├── Presentation/
-│   │   ├── Controllers/
-│   │   └── Middleware/
-│   ├── scripts/check-architecture.ps1
-│   ├── Program.cs
-│   └── SV5T.Api.csproj
-├── tests/
-│   └── SV5T.UnitTests/
-├── SV5T.sln
+├── src/
+│   ├── SV5T.Domain/          # Entities, Enums, Value Objects, Domain Events
+│   ├── SV5T.Application/     # Use Cases, DTOs, Service Interfaces & Logic
+│   ├── SV5T.Infrastructure/  # EF Core, Dapper, Redis Streams, Cloudinary, Polly
+│   └── SV5T.Api/             # REST API Controllers, SignalR Hubs, Middlewares
 ├── frontend/
-│   └── src/
-│       ├── app/                 # App shell và global styles
-│       ├── pages/               # Các trang theo route
-│       └── shared/              # Asset/component dùng chung
-└── compose.yaml
+│   ├── src/
+│   │   ├── features/         # 15 modules tính năng độc lập (Feature-Driven)
+│   │   ├── components/       # Layout & Reusable UI components
+│   │   └── store/            # Client Auth State (Zustand)
+│   └── package.json
+├── tests/
+│   └── SV5T.UnitTests/       # 112 Unit Tests (xUnit + Moq + FluentAssertions)
+├── docs/                     # Tài liệu kiến trúc & screenshots
+└── compose.yaml              # Docker Compose cấu hình Redis 7 AOF
 ```
 
-## Quy ước đặt tên
+---
 
-- Folder và namespace dùng `PascalCase` ở backend.
-- Class/interface/file dùng `PascalCase`; interface bắt đầu bằng `I`.
-- Entity dùng danh từ số ít: `User`, `UserProfile`, `RefreshToken`.
-- DTO có hậu tố theo vai trò: `UserDto`, `CreateUserRequest`.
-- Implementation repository có hậu tố `Repository`.
-- EF Core configuration có hậu tố `Configuration`.
-- Enum member dùng `PascalCase`, ví dụ `Role.Admin`, không dùng `ADMIN`.
+## ⚙️ Hướng dẫn Cài đặt & Khởi chạy (Local Development)
 
-## Chạy local
+- **Yêu cầu:** [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) | [Node.js 20+](https://nodejs.org/) | [MySQL 8.0+](https://dev.mysql.com/) | [Docker Desktop](https://www.docker.com/)
 
-Yêu cầu: .NET SDK 9, Node.js/npm, MySQL local và Docker Desktop cho Redis.
+### Các bước thực hiện
+1. **Khởi tạo biến môi trường:**
+   ```powershell
+   Copy-Item .env.example .env
+   Copy-Item src/SV5T.Api/.env.example src/SV5T.Api/.env
+   Copy-Item frontend/.env.example frontend/.env
+   ```
+2. **Khởi động Redis & Cập nhật CSDL:**
+   ```powershell
+   docker compose up -d
+   dotnet ef database update --project src/SV5T.Infrastructure/SV5T.Infrastructure.csproj --startup-project src/SV5T.Api/SV5T.Api.csproj
+   ```
+3. **Khởi chạy Backend API (.NET 9):**
+   ```powershell
+   dotnet run --project src/SV5T.Api/SV5T.Api.csproj
+   # Swagger UI: http://localhost:5080/swagger
+   ```
+4. **Khởi chạy Frontend (React 19):**
+   ```powershell
+   npm --prefix frontend install
+   npm --prefix frontend run dev
+   # Ứng dụng: http://localhost:5173 (Thông tin đăng nhập xem tại docs/run_project.txt)
+   ```
 
-```powershell
-# 0. Tạo các file cấu hình local (đều đã được .gitignore bảo vệ)
-Copy-Item .env.example .env
-Copy-Item api/.env.example api/.env
-Copy-Item frontend/.env.example frontend/.env
+---
 
-# Điền các dòng bí mật còn trống. REDIS_PASSWORD ở .env gốc phải trùng với
-# password trong ConnectionStrings__Redis của api/.env.
+## 👤 Tác giả
 
-# 1. Đảm bảo MySQL local đang chạy, sau đó khởi động Redis
-docker compose up -d
-
-# 2. Build và kiểm tra dependency rule
-dotnet restore SV5T.sln
-dotnet build SV5T.sln --no-restore
-powershell -ExecutionPolicy Bypass -File api/scripts/check-architecture.ps1
-
-# 3. Chạy API tại http://localhost:5080/swagger
-dotnet run --project api/SV5T.Api.csproj
-
-# 4. Chạy frontend tại http://localhost:5173
-npm --prefix frontend install
-npm --prefix frontend run dev
-```
-
-Frontend proxy các request `/api` sang `http://localhost:5080`.
-
-## Thêm nghiệp vụ mới
-
-Ví dụ với `Campaign`:
-
-1. Đặt entity trong `Domain/Entities/Campaign.cs`.
-2. Đặt request/response trong `Application/DTOs/Campaigns`.
-3. Tạo `ICampaignService` và `ICampaignRepository` trong
-   `Application/Interfaces`.
-4. Viết `CampaignService` trong `Application/Services`.
-5. Viết `CampaignRepository` trong `Infrastructure/Repositories`.
-6. Thêm EF configuration trong
-   `Infrastructure/Persistence/Configurations`.
-7. Thêm `CampaignsController` trong `Presentation/Controllers`.
-8. Đăng ký service/repository trong file `DependencyInjection.cs` của layer
-   tương ứng.
-
-Không đặt SQL/EF Core trong service, không trả HTTP response từ repository và
-không expose entity trực tiếp qua controller.
-
-## Cấu hình
-
-Secret không được commit. File `.env` ở thư mục gốc dành cho Docker Compose,
-`api/.env` dành cho backend và `frontend/.env` chỉ chứa cấu hình công khai được
-đóng gói vào trình duyệt. API tự nạp `api/.env`; biến môi trường của tiến trình
-luôn được ưu tiên để production có thể inject giá trị từ secret manager.
-Production cần tối thiểu:
-
-```text
-ConnectionStrings__DefaultConnection
-ConnectionStrings__Redis
-Jwt__Key
-Otp__Pepper
-IdentifierHash__Key
-EmailSettings__Username
-EmailSettings__Password
-EmailSettings__FromAddress
-```
-
-### Đăng ký bằng email sinh viên
-
-- Sinh viên đăng ký bằng email `@ms.hanu.edu.vn` và tự tạo mật khẩu.
-- Backend gửi OTP qua Brevo đến hộp thư email trường. Sau khi xác minh OTP, sinh
-  viên đăng nhập bằng email và mật khẩu đã tạo.
-- Danh sách tên miền email được phép cấu hình bằng
-  `SchoolEmail__AllowedDomains__0=ms.hanu.edu.vn`.
-- Outlook chỉ là hộp thư nhận OTP; hệ thống không dùng Microsoft Identity/OAuth.
-
-### Gửi email nền bằng Brevo SMTP
-
-- Tạo và xác minh sender/domain trong Brevo, sau đó lấy SMTP Login và tạo SMTP Key
-  tại `SMTP & API > SMTP`.
-- Điền SMTP Login vào `EmailSettings__Username`, SMTP Key vào
-  `EmailSettings__Password` và sender đã xác minh vào `EmailSettings__FromAddress`
-  trong `api/.env`. Dùng cổng `587`, `StartTls=true`; SMTP Key không phải API Key
-  hay mật khẩu tài khoản Brevo.
-- Challenge OTP có TTL và email outbox được lưu trong Redis; payload chứa
-  email/password hash/body được mã hóa bằng ASP.NET Core Data Protection. Worker dùng
-  Redis Streams consumer group, retry có jitter và chuyển message lỗi sang dead-letter.
-- `EmailSettings__DailyRecipientLimit` mặc định là 300 để khớp gói Brevo Free.
-  `EmailSettings__PasswordResetReserve=50` giữ lại 50 lượt cuối cho email đặt lại
-  mật khẩu, không cho lưu lượng đăng ký chiếm hết quota.
-  OTP có hiệu lực 3 phút (`Otp__ExpirySeconds=180`). Nếu chưa nhận được, đăng
-  ký gọi `POST /api/auth/resend-otp` với `registrationId`; đặt lại mật khẩu dùng
-  `resetId` trả về từ `POST /api/auth/forgot-password`. Mỗi lần gửi lại tạo OTP
-  mới và vô hiệu OTP cũ.
-- Khi nâng cấp Brevo, đặt `EmailSettings__DailyRecipientLimit=0` để tắt giới
-  hạn nội bộ; ứng dụng vẫn phải tuân thủ quota của gói Brevo.
-- Áp dụng migration bằng
-  `dotnet ef database update --project api/Infrastructure/SV5T.Infrastructure.csproj --startup-project api/SV5T.Api.csproj`.
-
-### Refresh token
-
-- Refresh token được lưu trong bảng `refresh_tokens`; cột `Token` chỉ chứa SHA-256
-  hash, không lưu token thô từ cookie.
-- Trạng thái idle nằm trực tiếp trên refresh token family trong bảng `refresh_tokens`;
-  `FamilyId` liên kết các token rotation và `LastUsedAtUtc` là nguồn sự thật của backend
-  cho idle timeout 120 phút (`Jwt__RefreshTokenIdleMinutes=120`). Mốc này chỉ được kiểm tra
-  và cập nhật khi refresh token thành công; các API dùng access token không đọc/ghi trạng thái idle.
-- Refresh token có lifetime tuyệt đối 7 ngày (`Jwt__RefreshTokenDays=7`). `Remember me`
-  chỉ quyết định cookie tồn tại qua lần đóng trình duyệt, không kéo dài lifetime phía server.
-- Mỗi lần refresh sẽ thu hồi token cũ, lưu `ReplacedByTokenId`, giữ nguyên `FamilyId` và
-  đặt `LastUsedAtUtc` của token mới bằng thời điểm hiện tại trong cùng transaction. Việc dùng lại token cũ sẽ
-  revoke toàn bộ token family.
-- Access token JWT stateless có hạn 15 phút, được kiểm tra chữ ký và thời hạn mà không truy vấn
-  database/Redis trên từng API. Logout hoặc idle timeout revoke toàn bộ refresh token trong family;
-  access token đã phát hành có thể còn hiệu lực tối đa 15 phút.
-- Frontend theo dõi hoạt động cục bộ, đồng bộ nhiều tab qua `localStorage`/storage event và chỉ gọi
-  `POST /api/auth/refresh` khi cần access token mới; không gửi heartbeat định kỳ.
-- Token đã thu hồi hoặc đã hết hạn được giữ lại 2 ngày để phát hiện reuse, sau đó
-  background service dọn định kỳ mỗi 6 giờ.
-
-### Redis
-
-- Redis local trong `compose.yaml` yêu cầu `REDIS_PASSWORD`, chỉ publish trên `127.0.0.1`,
-  bật AOF và dùng `noeviction`. Redis lưu throttle/quota, auth challenge có TTL,
-  cùng email queue dùng Redis Streams với consumer group/dead-letter.
-- API chạy trên máy dùng `localhost:6379`; API chạy trong cùng Docker network dùng
-  hostname `redis`.
-- Production phải dùng mật khẩu riêng, TLS (`ssl=true`,
-  `Redis__RequireTls=true`) và không publish cổng Redis ra Internet.
-- Thay đổi `Redis__KeyPrefix` sẽ làm throttle/quota, challenge và email đang chờ
-  dưới prefix cũ không còn được ứng dụng nhìn thấy.
-
-## Kiểm tra trước khi merge
-
-### Operational hardening
-
-- Apply migration `OperationalHardening` sau khi backup và kiểm thử staging.
-- Production bắt buộc dùng absolute shared `DataProtection__KeysPath` và certificate PFX
-  qua `DataProtection__CertificatePath`/`DataProtection__CertificatePassword`.
-- Chạy một lần với `PiiEncryption__ReencryptOnStart=true` để mã hóa dữ liệu legacy, xác minh
-  log hoàn tất rồi trả lại `false`.
-- Frontend giữ access token trong memory; refresh token chỉ tồn tại trong cookie
-  `HttpOnly`, `Secure`, `SameSite=Strict` do backend phát hành.
-- Lịch backup và restore drill nằm tại `ops/backup.ps1` và `ops/RESTORE_RUNBOOK.md`.
-- Credential incident response nằm tại `ops/SECRET_ROTATION.md`; rotate bên ngoài repository
-  là bước bắt buộc trước production.
-
-```powershell
-dotnet build SV5T.sln --no-restore
-powershell -ExecutionPolicy Bypass -File api/scripts/check-architecture.ps1
-powershell -ExecutionPolicy Bypass -File api/scripts/check-secrets.ps1
-npm.cmd --prefix frontend run build
-```
+- **Họ và tên:** Đỗ Minh Sơn
+- **GitHub:** [@Son2k5](https://github.com/Son2k5)
+- **Repository:** [Son2k5/SinhVien5Tot](https://github.com/Son2k5/SinhVien5Tot)
+- **Email:** sonct2k3@gmail.com
